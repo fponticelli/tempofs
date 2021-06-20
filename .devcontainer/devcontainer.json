@@ -1,0 +1,18 @@
+{
+  "name": "TempoFS",
+  "dockerFile": "Dockerfile",
+  "appPort": [
+    8078
+  ],
+  "extensions": [
+	"ionide.ionide-fsharp",
+	"ms-vscode.csharp",
+	"editorconfig.editorconfig",
+	"ionide.ionide-paket",
+	"ionide.ionide-fake",
+	"leo-labs.dotnet",
+	"ms-dotnettools.csharp",
+	"formulahendry.dotnet-test-explorer",
+	"mnxn.fsharp-fsl-fsy"
+]
+}
