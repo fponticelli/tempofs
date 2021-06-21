@@ -1,19 +1,21 @@
 module Tempo.Core
 
-type Value<'V, 'S> =
+type Value<'S, 'V> =
     | Literal of 'V
     | Derived of ('S -> 'V)
+    static member Val(v: 'V) = Literal v
+    static member Val(f: 'S -> 'V) = Derived f
+    static member Val() = Derived id
 
-
-module Value =
-    let resolve<'V, 'S> (value: Value<'V, 'S>) (state: 'S) =
-        match value with
+    static member Resolve v s =
+        match v with
         | Literal v -> v
-        | Derived f -> f state
+        | Derived f -> f s
 
-    let literal v = Literal v
-    let derived f = Derived f
-    let ofState = Derived id
+    static member Map m v =
+        match v with
+        | Literal v -> Literal <| m v
+        | Derived f -> Derived(f >> m)
 
 type Template<'N, 'I, 'S, 'A, 'Q> =
     | Node of 'N
