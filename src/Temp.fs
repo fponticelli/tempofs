@@ -1,4 +1,4 @@
-module Tempo.Core
+module Tempo.Temp
 
 type Value<'V, 'S> =
     | Literal of 'V
@@ -79,7 +79,7 @@ and MS<'S1, 'S2> = MS of ('S1 -> 'S2)
 and Template<'N, 'S, 'A, 'Q> =
     | Node of 'N
     | Fragment of Template<'N, 'S, 'A, 'Q> list
-    | MapState of IMapState<'N, 'S, 'A, 'Q> // * Template<'N, 'S2, 'A, 'Q>
+    | MapState of IMapState<'N, 'S, 'A, 'Q>
 // | MapAction
 // MapImpl
 // BindState

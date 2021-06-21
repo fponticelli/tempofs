@@ -1,29 +1,24 @@
 module Tempo.Dom
 
-open Browser
-open Tempo.Core
-open Tempo.Dom.Helper
-open Browser.Types
+// open Browser
+// open Tempo.Core
+// open Tempo.Dom.Helper
+// open Browser.Types
 
-type DOMTemplate<'S, 'A, 'Q> = Template<DOMNode<'S, 'A, 'Q>, 'S, 'A, 'Q>
+// type DOMTemplate<'S when 'S: equality> = Template<DOMNode<'S>, 'S>
 
-and DOMNode<'S, 'A, 'Q> =
-    | DOMElement of DOMElement<'S, 'A, 'Q>
-    | DOMText of Value<string, 'S>
+// and DOMElement<'S when 'S: equality> =
+//     { Name: string
+//       Attributes: DOMAttribute<'S> list
+//       Children: DOMTemplate<'S> list }
 
-and DOMElement<'S, 'A, 'Q> =
-    { Name: string
-      Attributes: DOMAttribute<'S, 'A> list
-      Children: DOMTemplate<'S, 'A, 'Q> list }
+// and DOMAttributeValue<'S> =
+//     | StringValue of Value<string option, 'S>
+//     | TriggerValue of DOMTrigger<'S>
 
-
-and DOMAttribute<'S, 'A> =
-    { Name: string
-      Value: DOMAttributeValue<'S, 'A> }
-
-and DOMAttributeValue<'S, 'A> =
-    | StringValue of Value<string option, 'S>
-    | TriggerValue of ('S -> 'A)
+// and DOMAttribute<'S> =
+//     { Name: string
+//       Value: DOMAttributeValue<'S> }
 
 // and DOMTrigger<'S> =
 //     abstract Accept : DOMTriggerFunc<'R> -> 'R
@@ -39,8 +34,11 @@ and DOMAttributeValue<'S, 'A> =
 // and DOMTriggerFunc<'R> =
 //     abstract Invoke<'S, 'E, 'A when 'E :> Types.Event> : DOMTrigger<'S, 'E, 'A> -> 'R
 
-//     // Portal
-//     // Namespace / SVG
+// and DOMNode<'S when 'S: equality> =
+//     | DOMElement of DOMElement<'S>
+//     | DOMText of Value<string, 'S>
+// // Portal
+// // Namespace / SVG
 
 
 // let makeTrigger (name: string) (f: 'S -> 'E -> 'A) =
@@ -83,7 +81,7 @@ and DOMAttributeValue<'S, 'A> =
 
 // //     el.addEventListener (name, (fun e -> f (state ()) e))
 
-// let rec renderDOMElement<'S, 'E, 'A when 'S : equality and 'E :> Browser.Types.Event>
+// let rec renderDOMElement<'S, 'E, 'A when 'S: equality and 'E :> Browser.Types.Event>
 //     (dispatch: 'A -> unit)
 //     (node: DOMElement<'S>)
 //     (impl: HTMLElement)
@@ -97,9 +95,11 @@ and DOMAttributeValue<'S, 'A> =
 
 //     let derived = List.map (applyAttributeF el) derived
 
-//     let unpackHandlerF = unpackTrigger { new DOMTriggerFunc<'S -> 'E -> 'A> with
-//                             override this.Invoke(a: DOMTrigger<'S,'E,'A>) =
-//                                 a.Handler  }
+//     let unpackHandlerF =
+//         unpackTrigger
+//             { new DOMTriggerFunc<'S -> 'E -> 'A> with
+//                 override this.Invoke(a: DOMTrigger<'S, 'E, 'A>) = a.Handler }
+
 //     let triggers =
 //         List.fold
 //             (fun acc (curr: DOMAttribute<'S>) ->
@@ -109,8 +109,9 @@ and DOMAttributeValue<'S, 'A> =
 //                 | _ -> acc)
 //             []
 //             node.Attributes
-//             |> List.map (fun (name, trigger) -> (name, unpackHandlerF trigger))
-//             |> List.map (fun (name, f) -> el.addEventListener(name, fun (e: Types.Event) -> dispatch <| f state (e :?> 'E)) )
+//         |> List.map (fun (name, trigger) -> (name, unpackHandlerF trigger))
+//         |> List.map
+//             (fun (name, f) -> el.addEventListener (name, (fun (e: Types.Event) -> dispatch <| f state (e :?> 'E))))
 
 //     List.iter (fun a -> applyAttributeF el a localState) node.Attributes
 
