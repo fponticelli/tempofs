@@ -22,7 +22,7 @@ type Template<'N, 'I, 'S, 'A, 'Q> =
     | Fragment of Template<'N, 'I, 'S, 'A, 'Q> list
     | MapState of IMapState<'N, 'I, 'S, 'A, 'Q>
 
-and View<'S, 'Q, 'I> =
+and View<'I, 'S, 'Q> =
     { Impl: 'I option
       Change: 'S -> unit
       Destroy: unit -> unit
@@ -42,9 +42,9 @@ and MapState<'N, 'I, 'S, 'S2, 'A, 'Q>(m, t, mrn) =
 and IMapStateInvoker<'N, 'I, 'S, 'A, 'Q, 'R> =
     abstract Invoke<'S2> : MapState<'N, 'I, 'S, 'S2, 'A, 'Q> -> 'R
 
-and Render<'S, 'Q, 'I> = 'I -> 'S -> View<'S, 'Q, 'I>
+and Render<'I, 'S, 'Q> = 'I -> 'S -> View<'I, 'S, 'Q>
 
-and MakeNodeRender<'N, 'I, 'S, 'Q> = 'N -> Render<'S, 'Q, 'I>
+and MakeNodeRender<'N, 'I, 'S, 'Q> = 'N -> Render<'I, 'S, 'Q>
 
 let packMapState (mapState: MapState<'N, 'I, 'S, 'S2, 'A, 'Q>) =
     mapState :> IMapState<'N, 'I, 'S, 'A, 'Q>
@@ -63,7 +63,7 @@ let makeMapState<'N, 'I, 'S, 'S2, 'A, 'Q>
 let rec makeRender<'N, 'I, 'S, 'A, 'Q>
     (makeNodeRender: MakeNodeRender<'N, 'I, 'S, 'Q>)
     (template: Template<'N, 'I, 'S, 'A, 'Q>)
-    : Render<'S, 'Q, 'I> =
+    : Render<'I, 'S, 'Q> =
     match template with
     | Node n -> makeNodeRender n
     | Fragment ls ->
@@ -78,11 +78,11 @@ let rec makeRender<'N, 'I, 'S, 'A, 'Q>
               Query = fun q -> List.iter (fun i -> i.Query q) views }
     | MapState mapState -> makeRenderMapState mapState
 
-and makeRenderMapState<'N, 'I, 'S1, 'S2, 'A, 'Q> (mapState: IMapState<'N, 'I, 'S1, 'A, 'Q>) : Render<'S1, 'Q, 'I> =
+and makeRenderMapState<'N, 'I, 'S1, 'S2, 'A, 'Q> (mapState: IMapState<'N, 'I, 'S1, 'A, 'Q>) : Render<'I, 'S1, 'Q> =
     unpackMapState
         mapState
-        { new IMapStateInvoker<'N, 'I, 'S1, 'A, 'Q, Render<'S1, 'Q, 'I>> with
-            member __.Invoke<'S2>(mapState: MapState<'N, 'I, 'S1, 'S2, 'A, 'Q>) : Render<'S1, 'Q, 'I> =
+        { new IMapStateInvoker<'N, 'I, 'S1, 'A, 'Q, Render<'I, 'S1, 'Q>> with
+            member __.Invoke<'S2>(mapState: MapState<'N, 'I, 'S1, 'S2, 'A, 'Q>) : Render<'I, 'S1, 'Q> =
                 let t = mapState.Template
 
                 let render =
