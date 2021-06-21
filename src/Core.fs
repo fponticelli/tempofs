@@ -82,8 +82,7 @@ and makeRenderMapState<'N, 'S1, 'S2, 'A, 'Q, 'I> (mapState: IMapState<'N, 'S1, '
             member __.Invoke<'S2>(mapState: MapState<'N, 'S1, 'S2, 'A, 'Q>) : Render<'S1, 'Q, 'I> =
                 let t = mapState.Template
 
-                let render : Render<'S1, 'Q, 'I> =
-                    (makeRender :?> Render<'S1, 'Q, 'I>) mapState.MakeRenderNode t
+                let render : Render<'S1, 'Q, 'I> = makeRender mapState.MakeRenderNode t
 
                 fun (i: 'I) (s: 'S1) -> render i (mapState.MapF s) }
 
