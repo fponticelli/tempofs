@@ -2,151 +2,248 @@ module Tempo.Dom
 
 open Browser
 open Tempo.Core
+open Tempo.Utils
 open Tempo.Dom.Helper
 open Browser.Types
 
-type DOMTemplate<'S, 'A, 'Q> = Template<DOMNode<'S, 'A, 'Q>, 'S, 'A, 'Q>
+type DOMImpl(el: HTMLElement, doc: Document option) =
+    member this.Element = el
+
+    member this.Doc =
+        Option.defaultValue (ownerOrDocument this.Element) doc
+
+type DOMTemplate<'S, 'A, 'Q> = Template<DOMNode<'S, 'A, 'Q>, DOMImpl, 'S, 'A, 'Q>
 
 and DOMNode<'S, 'A, 'Q> =
     | DOMElement of DOMElement<'S, 'A, 'Q>
-    | DOMText of Value<string, 'S>
+    | DOMText of Value<'S, string>
 
 and DOMElement<'S, 'A, 'Q> =
     { Name: string
       Attributes: DOMAttribute<'S, 'A> list
       Children: DOMTemplate<'S, 'A, 'Q> list }
 
-
 and DOMAttribute<'S, 'A> =
     { Name: string
       Value: DOMAttributeValue<'S, 'A> }
 
 and DOMAttributeValue<'S, 'A> =
-    | StringValue of Value<string option, 'S>
-    | TriggerValue of ('S -> 'A)
+    | StringValue of Value<'S, string option>
+    | TriggerValue of IDOMTrigger<'S, 'A>
 
-// and DOMTrigger<'S> =
-//     abstract Accept : DOMTriggerFunc<'R> -> 'R
+and IDOMTrigger<'S, 'A> =
+    abstract Accept : IDOMTriggerInvoker<'S, 'A, 'R> -> 'R
 
-// and DOMTrigger<'S, 'E, 'A when 'E :> Types.Event>(handler: 'S -> 'E -> 'A) =
-//     // member this.Apply name (el: HTMLElement) (dispatch: 'A -> unit) (state: 'S) =
-//     //     el.addEventListener(name, fun (e: Types.Event) -> dispatch <| this.Handler state (e :?> 'E))
-//     member this.Handler = handler
-//     with
-//         interface DOMTrigger<'S> with
-//             member this.Accept f = f.Invoke<'S, 'E, 'A> this
+and DOMTrigger<'S, 'A, 'E when 'E :> Event>(handler) =
+    member this.Handler : 'S -> 'E -> 'A = handler
+    with
+        interface IDOMTrigger<'S, 'A> with
+            member this.Accept f = f.Invoke<'E> this
 
-// and DOMTriggerFunc<'R> =
-//     abstract Invoke<'S, 'E, 'A when 'E :> Types.Event> : DOMTrigger<'S, 'E, 'A> -> 'R
+and IDOMTriggerInvoker<'S, 'A, 'R> =
+    abstract Invoke<'E when 'E :> Event> : DOMTrigger<'S, 'A, 'E> -> 'R
 
-//     // Portal
-//     // Namespace / SVG
+let inline attribute<'S, 'A> name value : DOMAttribute<'S, 'A> = { Name = name; Value = value }
+
+let packDOMTrigger (trigger: DOMTrigger<'S, 'A, 'E>) = trigger :> IDOMTrigger<'S, 'A>
+
+let unpackDOMTrigger (trigger: IDOMTrigger<'S, 'A>) (f: IDOMTriggerInvoker<'S, 'A, 'R>) : 'R = trigger.Accept f
+
+let makeTrigger<'S, 'A, 'E when 'E :> Event> (f: 'S -> 'E -> 'A) = packDOMTrigger <| DOMTrigger(f)
+
+let applyStringAttribute (name: string) (el: HTMLElement) (s: string option) =
+    match s with
+    | Some s -> el.setAttribute (name, s)
+    | None -> el.removeAttribute name
+
+let derivedApplication ({ Name = name; Value = value }: DOMAttribute<'S, 'A>) =
+    match value with
+    | StringValue (Derived f) ->
+        Some
+        <| fun el state -> applyStringAttribute name el (f state)
+    | StringValue (Literal _) -> None
+    | TriggerValue _ -> None
+
+let applyAttribute
+    (dispatch: 'A -> unit)
+    (el: HTMLElement)
+    (state: unit -> 'S)
+    ({ Value = value; Name = name }: DOMAttribute<'S, 'A>)
+    =
+    match value with
+    | StringValue v ->
+        applyStringAttribute name el
+        <| Value.Resolve v (state ())
+    | TriggerValue domTrigger ->
+        unpackDOMTrigger
+            domTrigger
+            { new IDOMTriggerInvoker<'S, 'A, int> with
+                override this.Invoke<'E when 'E :> Event>(t: DOMTrigger<'S, 'A, 'E>) =
+                    el.addEventListener (name, (fun e -> dispatch <| t.Handler(state ()) (e :?> 'E)))
+                    0 }
+        |> ignore
 
 
-// let makeTrigger (name: string) (f: 'S -> 'E -> 'A) =
-//     let t = new DOMTrigger<'S, 'E, 'A>(f)
+let rec makeRenderDOMNode<'S, 'A, 'Q> (dispatch: 'A -> unit) (node: DOMNode<'S, 'A, 'Q>) : Render<DOMImpl, 'S, 'Q> =
+    match node with
+    | DOMElement el -> makeRenderDOMElement el dispatch
+    | DOMText v -> makeRenderDOMText v
 
-//     { Name = name
-//       Value = TriggerValue <| (t :> DOMTrigger<'S>) }
+and makeRenderDOMElement (node: DOMElement<'S, 'A, 'Q>) (dispatch: 'A -> unit) : Render<DOMImpl, 'S, 'Q> =
+    fun (parent: DOMImpl) (state: 'S) ->
+        let mutable localState = state
 
-// let unpackTrigger (f: DOMTriggerFunc<'R>) (trigger: DOMTrigger<'S>) : 'R = trigger.Accept f
+        let el = document.createElement node.Name
+        let impl = DOMImpl(el, Some parent.Doc)
+        let getState () = localState
 
-// let isAttributeDerived ({ Value = value }: DOMAttribute<_>) =
-//     match value with
-//     | StringValue (Derived _) -> true
-//     | StringValue (Literal _) -> false
-//     | TriggerValue _ -> false
+        List.iter (applyAttribute dispatch el getState) node.Attributes
 
-// let applyAttribute (el: HTMLElement) (state: 'S) ({ Value = value; Name = name }: DOMAttribute<'S>) =
-//     match value with
-//     | StringValue v ->
-//         match resolve v state with
-//         | Some v -> el.setAttribute (name, v)
-//         | None -> el.removeAttribute (name)
-//     | TriggerValue _ -> ()
+        let childRender = makeRender (makeRenderDOMNode dispatch)
 
-// let applyAttributeF (el: HTMLElement) ({ Value = value; Name = name }: DOMAttribute<'S>) : ('S -> unit) =
-//     match value with
-//     | StringValue v ->
-//         fun state ->
-//             match resolve v state with
-//             | Some v -> el.setAttribute (name, v)
-//             | None -> el.removeAttribute (name)
-//     | TriggerValue _ -> fun _ -> ()
+        parent.Element.appendChild el |> ignore
 
-// // let applyTrigger (el: HTMLElement) (state: unit -> 'S) (dispatch: 'A -> unit) (name: string) (trigger: DOMTrigger<'S>) =
-// //     let f =
-// //         unpackTrigger
-// //             trigger
-// //             ({ new DOMTriggerFunc<'S -> 'E -> 'A> with
-// //                 override this.Invoke t = t.Handler })
+        let childViews =
+            List.map (fun child -> childRender child impl localState) node.Children
 
-// //     el.addEventListener (name, (fun e -> f (state ()) e))
+        let childUpdates =
+            List.map (fun ({ Change = change }: View<_, _, _>) -> change) childViews
 
-// let rec renderDOMElement<'S, 'E, 'A when 'S : equality and 'E :> Browser.Types.Event>
-//     (dispatch: 'A -> unit)
-//     (node: DOMElement<'S>)
-//     (impl: HTMLElement)
-//     (state: 'S)
-//     : View<'S, HTMLElement> =
-//     let mutable localState = state
-//     let el = document.createElement node.Name
+        let childDestroys =
+            List.map (fun ({ Destroy = destroy }: View<_, _, _>) -> destroy) childViews
 
-//     let (derived, _) =
-//         List.partition isAttributeDerived node.Attributes
+        let childQueries =
+            List.map (fun ({ Query = query }: View<_, _, _>) -> query) childViews
 
-//     let derived = List.map (applyAttributeF el) derived
+        let attributeUpdates =
+            List.filterMap derivedApplication node.Attributes
+            |> List.map (fun f -> f el)
 
-//     let unpackHandlerF = unpackTrigger { new DOMTriggerFunc<'S -> 'E -> 'A> with
-//                             override this.Invoke(a: DOMTrigger<'S,'E,'A>) =
-//                                 a.Handler  }
-//     let triggers =
-//         List.fold
-//             (fun acc (curr: DOMAttribute<'S>) ->
-//                 match curr with
-//                 | { Name = name
-//                     Value = TriggerValue trigger } -> (name, trigger) :: acc
-//                 | _ -> acc)
-//             []
-//             node.Attributes
-//             |> List.map (fun (name, trigger) -> (name, unpackHandlerF trigger))
-//             |> List.map (fun (name, f) -> el.addEventListener(name, fun (e: Types.Event) -> dispatch <| f state (e :?> 'E)) )
+        let updates = attributeUpdates @ childUpdates
 
-//     List.iter (fun a -> applyAttributeF el a localState) node.Attributes
+        let change =
+            fun state ->
+                localState <- state
+                List.iter (fun change -> change localState) updates
 
-//     let children =
-//         List.map (fun c -> render (renderDOMNode dispatch) c el localState) node.Children
+        let destroy =
+            fun () ->
+                remove el
+                List.iter (fun destroy -> destroy ()) childDestroys
 
-//     impl.appendChild el |> ignore
+        let query =
+            fun (q: 'Q) -> List.iter (fun query -> query q) childQueries
 
-//     { Impl = el
-//       Change =
-//           (fun state ->
-//               localState <- state
-//               List.iter (fun f -> f localState) derived
-//               List.iter (fun v -> v.Change localState) children)
-//       Destroy =
-//           (fun () ->
-//               remove el
-//               List.iter (fun v -> v.Destroy()) children) }
+        { Impl = Some impl
+          Change = change
+          Destroy = destroy
+          Query = query }
 
-// and renderDOMText (node: Value<string, 'S>) (impl: HTMLElement) (state: 'S) : View<'S, HTMLElement> =
-//     let s = resolve node state
-//     let n = document.createTextNode s
+and makeRenderDOMText (value: Value<'S, string>) : Render<DOMImpl, 'S, 'Q> =
+    fun (impl: DOMImpl) (state: 'S) ->
+        let (change, destroy) =
+            match value with
+            | Derived f ->
+                let n = impl.Doc.createTextNode <| f state
+                impl.Element.appendChild n |> ignore
+                ((fun state -> n.nodeValue <- f state), (fun () -> remove n))
+            | Literal s ->
+                let n = impl.Doc.createTextNode s
+                impl.Element.appendChild n |> ignore
+                (ignore, (fun () -> remove n))
 
-//     { Impl = impl
-//       Change = (fun state -> n.nodeValue <- resolve node state)
-//       Destroy = (fun () -> remove n) }
+        { Impl = None
+          Change = change
+          Destroy = destroy
+          Query = ignore }
 
-// and renderDOMNode (dispatch: 'A -> unit) (node: DOMNode<'S>) (impl: HTMLElement) (state: 'S) : View<'S, HTMLElement> =
-//     match node with
-//     | DOMElement el -> renderDOMElement dispatch el impl state
-//     | DOMText v -> renderDOMText v impl state
+type MiddlewarePayload<'S, 'A> =
+    { Current: 'S
+      Old: 'S
+      Action: 'A
+      Dispatch: 'A -> unit }
 
-// let renderDOM
-//     (dispatch: 'A -> unit)
-//     (template: DOMTemplate<'S>)
-//     (parent: HTMLElement)
-//     (state: 'S)
-//     : View<'S, HTMLElement> =
-//     render (renderDOMNode dispatch) template parent state
+type DOM =
+    static member Make<'S, 'A, 'Q>
+        (
+            template: DOMTemplate<'S, 'A, 'Q>,
+            el: HTMLElement,
+            ?audit: 'A -> unit,
+            ?doc: Document
+        ) =
+        let mutable invokes = Option.toList audit
+        let dispatch action = List.iter (fun f -> f action) invokes
+
+        let f =
+            makeRender<DOMNode<'S, 'A, 'Q>, DOMImpl, 'S, 'A, 'Q> (makeRenderDOMNode dispatch) template
+
+        let render = f <| DOMImpl(el, doc)
+
+        fun update middleware state ->
+            let mutable localState = state
+            let view = render localState
+
+            let updateDispatch action =
+                let newState = update localState action
+                view.Change newState
+
+                middleware
+                    { Old = localState
+                      Current = newState
+                      Action = action
+                      Dispatch = dispatch }
+
+                localState <- newState
+
+            invokes <- updateDispatch :: invokes
+
+            { Impl = None
+              Change = view.Change
+              Dispatch = dispatch
+              Destroy = view.Destroy
+              Query = view.Query }: ComponentView<HTMLElement, 'S, 'A, 'Q>
+
+    static member El<'S, 'A, 'Q>
+        (
+            name: string,
+            ?attributes: DOMAttribute<'S, 'A> list,
+            ?children: DOMTemplate<'S, 'A, 'Q> list
+        ) : DOMTemplate<'S, 'A, 'Q> =
+        Node
+        <| DOMElement
+            { Name = name
+              Attributes = Option.defaultValue [] attributes
+              Children = Option.defaultValue [] children }
+
+    static member Text<'S, 'A, 'Q>(value: string) : DOMTemplate<'S, 'A, 'Q> = value |> Literal |> DOMText |> Node
+    static member Text<'S, 'A, 'Q>(f: 'S -> string) : DOMTemplate<'S, 'A, 'Q> = f |> Derived |> DOMText |> Node
+
+    static member Attr<'S, 'A>(name: string, value: string option) : DOMAttribute<'S, 'A> =
+        attribute name (value |> Literal |> StringValue)
+
+    static member Attr<'S, 'A>(name: string, value: string) : DOMAttribute<'S, 'A> =
+        attribute name (value |> String.ToOption |> Literal |> StringValue)
+
+    static member Attr<'S, 'A>(name: string, f: 'S -> string option) : DOMAttribute<'S, 'A> =
+        attribute name (f |> Derived |> StringValue)
+
+    static member Attr<'S, 'A>(name: string, f: 'S -> string) : DOMAttribute<'S, 'A> =
+        attribute name (f >> String.ToOption |> Derived |> StringValue)
+
+    static member On<'S, 'A>(name: string, action: 'A) : DOMAttribute<'S, 'A> =
+        attribute name (makeTrigger (fun _ _ -> action) |> TriggerValue)
+
+    static member On<'S, 'A>(name: string, handler: unit -> 'A) : DOMAttribute<'S, 'A> =
+        attribute
+            name
+            (makeTrigger (fun _ _ -> handler ())
+             |> TriggerValue)
+
+    static member On<'S, 'A, 'E when 'E :> Event>(name: string, handler: 'E -> 'A) : DOMAttribute<'S, 'A> =
+        attribute name (makeTrigger (fun _ e -> handler e) |> TriggerValue)
+
+    static member On<'S, 'A, 'E when 'E :> Event>(name: string, handler: 'S -> 'E -> 'A) : DOMAttribute<'S, 'A> =
+        attribute name (makeTrigger handler |> TriggerValue)
+
+    static member On<'S, 'A>(name: string, handler: 'S -> 'A) : DOMAttribute<'S, 'A> =
+        attribute name (makeTrigger (fun s _ -> handler s) |> TriggerValue)

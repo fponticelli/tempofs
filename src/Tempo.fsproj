@@ -3,8 +3,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="StringExtra.fs" />
+    <Compile Include="ListExtra.fs" />
     <Compile Include="DomHelper.fs" />
-    <Compile Include="Temp.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="Dom.fs" />
     <Compile Include="App.fs" />

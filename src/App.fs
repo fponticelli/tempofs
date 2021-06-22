@@ -5,32 +5,45 @@ open Tempo.Dom
 open Tempo.Core
 
 type Action =
-    | Increment
-    | Decrement
+    | Reset
+    | Increment of int
 
 type State = { Counter: int }
 let makeState v = { Counter = v }
 let state = { Counter = 0 }
 
-let trigger =
-    { new DOMTriggerEvaluator<State> with
-        member __.Eval() = //: DOMTriggerF<State, Types.MouseEvent, Action> =
-            (fun s e -> Increment)  //:> DOMTriggerF<State, 'a, 'b>
-            }
+let template : DOMTemplate<State, Action, unit> =
+    Fragment [ DOM.El(
+                   "div",
+                   [ DOM.Attr("class", "some-class") ],
+                   [ DOM.El("button", [ DOM.On("click", Increment -10) ], [ DOM.Text "-10" ])
+                     DOM.El("button", [ DOM.On("click", Increment -1) ], [ DOM.Text "-" ])
+                     DOM.El("button", [ DOM.On("click", Increment 1) ], [ DOM.Text "+" ])
+                     DOM.El("button", [ DOM.On("click", Increment 10) ], [ DOM.Text "+10" ])
+                     DOM.El("button", [ DOM.On("click", Reset) ], [ DOM.Text "reset" ]) ]
+               )
+               DOM.El(
+                   "div",
+                   [],
+                   [ DOM.Text "count: "
+                     DOM.Text(fun { Counter = counter } -> counter.ToString()) ]
+               ) ]
 
-let template =
-    Node
-    <| DOMElement
-        { Name = "div"
-          Attributes = []
-          Triggers = [] // [ { Name = "click"; Action = trigger } ]
-          Children =
-              [ Derived(fun { Counter = counter } -> $"count: {counter}")
-                |> DOMText
-                |> Node ] }
+let update state action =
+    match action with
+    | Increment by ->
+        { state with
+              Counter = state.Counter + by }
+    | Reset -> { state with Counter = 0 }
 
-let view =
-    renderDOM (fun (v: Action) -> (console.log v)) template document.body state
+let middleware
+    { Current = current
+      Old = old
+      Dispatch = dispatch
+      Action = action }
+    =
+    console.log $"Action: {action}, State: {current}"
 
-let eq = makeState 1 = makeState 1
-console.log eq
+let render = DOM.Make(template, document.body)
+
+let view = render update middleware state
