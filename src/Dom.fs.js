@@ -298,8 +298,12 @@ export function DOM_Make_Z28B756F0(template, el, audit, doc) {
     }));
 }
 
-export function DOM_El_7E2C5EAA(name, attributes, children) {
-    return new Template$5(0, new DOMNode$3(0, new DOMElement$3(name, defaultArg(attributes, empty()), defaultArg(children, empty()))));
+export function DOM_El_BD8EB2A(name, attributes, children) {
+    return new Template$5(0, new DOMNode$3(0, new DOMElement$3(name, attributes, children)));
+}
+
+export function DOM_El_Z46453AFE(name, children) {
+    return DOM_El_BD8EB2A(name, empty(), children);
 }
 
 export function DOM_Text_Z721C83C5(value) {

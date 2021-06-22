@@ -15,7 +15,7 @@ let state = { Counter = 0 }
 let template : DOMTemplate<State, Action, unit> =
     Fragment [ DOM.El(
                    "div",
-                   [ DOM.Attr("class", "some-class") ],
+                   [ DOM.Attr("class", (fun { Counter = counter } -> $"size-{System.Math.Max(1, counter)}")) ],
                    [ DOM.El("button", [ DOM.On("click", Increment -10) ], [ DOM.Text "-10" ])
                      DOM.El("button", [ DOM.On("click", Increment -1) ], [ DOM.Text "-" ])
                      DOM.El("button", [ DOM.On("click", Increment 1) ], [ DOM.Text "+" ])
@@ -24,7 +24,6 @@ let template : DOMTemplate<State, Action, unit> =
                )
                DOM.El(
                    "div",
-                   [],
                    [ DOM.Text "count: "
                      DOM.Text(fun { Counter = counter } -> counter.ToString()) ]
                ) ]

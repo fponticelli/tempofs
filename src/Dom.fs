@@ -206,14 +206,20 @@ type DOM =
     static member El<'S, 'A, 'Q>
         (
             name: string,
-            ?attributes: DOMAttribute<'S, 'A> list,
-            ?children: DOMTemplate<'S, 'A, 'Q> list
+            attributes: DOMAttribute<'S, 'A> list,
+            children: DOMTemplate<'S, 'A, 'Q> list
         ) : DOMTemplate<'S, 'A, 'Q> =
         Node
         <| DOMElement
             { Name = name
-              Attributes = Option.defaultValue [] attributes
-              Children = Option.defaultValue [] children }
+              Attributes = attributes
+              Children = children }
+
+    static member inline El<'S, 'A, 'Q>(name: string, attributes: DOMAttribute<'S, 'A> list) : DOMTemplate<'S, 'A, 'Q> =
+        DOM.El<'S, 'A, 'Q>(name, attributes, [])
+
+    static member El<'S, 'A, 'Q>(name: string, children: DOMTemplate<'S, 'A, 'Q> list) : DOMTemplate<'S, 'A, 'Q> =
+        DOM.El<'S, 'A, 'Q>(name, [], children)
 
     static member Text<'S, 'A, 'Q>(value: string) : DOMTemplate<'S, 'A, 'Q> = value |> Literal |> DOMText |> Node
     static member Text<'S, 'A, 'Q>(f: 'S -> string) : DOMTemplate<'S, 'A, 'Q> = f |> Derived |> DOMText |> Node
