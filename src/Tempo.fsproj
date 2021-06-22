@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -5,12 +6,11 @@
   <ItemGroup>
     <Compile Include="StringExtra.fs" />
     <Compile Include="ListExtra.fs" />
-    <Compile Include="DomHelper.fs" />
     <Compile Include="Core.fs" />
+    <Compile Include="DomHelper.fs" />
     <Compile Include="Dom.fs" />
+    <Compile Include="DomDSL.fs" />
     <Compile Include="App.fs" />
-  </ItemGroup>
-  <ItemGroup>
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

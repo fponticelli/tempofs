@@ -1,4 +1,4 @@
-namespace Tempo.Utils
+namespace Tempo.Std
 
 module List =
     let filterMap<'A, 'B> (f: 'A -> 'B option) (ls: 'A list) : 'B list =

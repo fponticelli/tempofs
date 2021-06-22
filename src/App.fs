@@ -2,6 +2,7 @@ module App
 
 open Browser
 open Tempo.Dom
+open Tempo.Dom.DSL
 open Tempo.Core
 
 type Action =

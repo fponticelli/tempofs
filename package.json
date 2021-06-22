@@ -8,7 +8,7 @@
         "watch": "dotnet fable src --watch --run webpack serve",
         "prebuild": "npx del-cli ./src/**/*.fs.js ./src/.fable output",
         "build": "dotnet fable src --run webpack build --mode production",
-        "deploy": "npm run build && cp output/index.html output/404.html && gh-pages -d output"
+        "deploy": "npm run build && gh-pages -d output"
     },
     "repository": "git@github.com:fponticelli/tempofs.git",
     "author": "Franco Ponticelli",
@@ -16,11 +16,7 @@
     "dependencies": {
         "@babel/polyfill": "^7.8.7",
         "@fortawesome/fontawesome-free": "^5.15.3",
-        "bulma": "0.9.2",
-        "bulma-extensions": "^6.2.7",
-        "core-js": "^3.12.1",
-        "react": "^17.0.2",
-        "react-dom": "^17.0.2"
+        "core-js": "^3.12.1"
     },
     "devDependencies": {
         "@babel/core": "^7.14.0",

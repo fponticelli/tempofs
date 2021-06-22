@@ -32,23 +32,19 @@ export function Value$2_Val() {
 
 export function Value$2_Resolve(v, s) {
     if (v.tag === 1) {
-        const f = v.fields[0];
-        return f(s);
+        return v.fields[0](s);
     }
     else {
-        const v_1 = v.fields[0];
-        return v_1;
+        return v.fields[0];
     }
 }
 
 export function Value$2_Map(m, v) {
     if (v.tag === 1) {
-        const f = v.fields[0];
-        return new Value$2(1, (arg) => m(f(arg)));
+        return new Value$2(1, (arg) => m(v.fields[0](arg)));
     }
     else {
-        const v_1 = v.fields[0];
-        return new Value$2(0, m(v_1));
+        return new Value$2(0, m(v.fields[0]));
     }
 }
 
@@ -143,8 +139,7 @@ export function makeMapState(makeNodeRender, f, t) {
 export function makeRender(makeNodeRender, template) {
     switch (template.tag) {
         case 1: {
-            const ls = template.fields[0];
-            const fs = map((template_1) => makeRender(makeNodeRender, template_1), ls);
+            const fs = map((template_1) => makeRender(makeNodeRender, template_1), template.fields[0]);
             return (i) => ((s) => {
                 const views = map(mapCurriedArgs((f) => f(i, s), [[0, 2]]), fs);
                 return new View$3(void 0, (s_1) => {
@@ -163,12 +158,10 @@ export function makeRender(makeNodeRender, template) {
             });
         }
         case 2: {
-            const mapState = template.fields[0];
-            return makeRenderMapState(mapState);
+            return makeRenderMapState(template.fields[0]);
         }
         default: {
-            const n = template.fields[0];
-            return partialApply(2, makeNodeRender, [n]);
+            return partialApply(2, makeNodeRender, [template.fields[0]]);
         }
     }
 }
