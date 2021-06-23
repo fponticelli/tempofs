@@ -11,6 +11,7 @@ type MiddlewarePayload<'S, 'A> =
       Action: 'A
       Dispatch: 'A -> unit }
 
+[<AbstractClass; Sealed>]
 type DOM =
     static member Make<'S, 'A, 'Q>
         (
@@ -22,10 +23,14 @@ type DOM =
         let mutable invokes = Option.toList audit
         let dispatch action = List.iter (fun f -> f action) invokes
 
-        let f =
-            makeRender<DOMNode<'S, 'A, 'Q>, DOMImpl, 'S, 'A, 'Q> (makeRenderDOMNode dispatch) template
+        let renderInstance = MakeDOMRender(dispatch)
+        let f = renderInstance.Make template
 
-        let render = f <| DOMImpl(el, doc)
+        let render =
+            f
+            <| match doc with
+               | Some doc -> DOMImpl(el, doc)
+               | None -> DOMImpl(el)
 
         fun update middleware state ->
             let mutable localState = state
@@ -45,11 +50,11 @@ type DOM =
 
             invokes <- updateDispatch :: invokes
 
-            { Impl = None
+            { Impl = view.Impl
               Change = view.Change
               Dispatch = dispatch
               Destroy = view.Destroy
-              Query = view.Query }: ComponentView<HTMLElement, 'S, 'A, 'Q>
+              Query = view.Query }: ComponentView<DOMImpl, 'S, 'A, 'Q>
 
     static member El<'S, 'A, 'Q>
         (
@@ -73,6 +78,7 @@ type DOM =
         ) : DOMTemplate<'S, 'A, 'Q> =
         DOM.El<'S, 'A, 'Q>(name, [], children)
 
+    static member Text() : DOMTemplate<string, 'A, 'Q> = id |> Derived |> DOMText |> Node
     static member Text<'S, 'A, 'Q>(value: string) : DOMTemplate<'S, 'A, 'Q> = value |> Literal |> DOMText |> Node
     static member Text<'S, 'A, 'Q>(f: 'S -> string) : DOMTemplate<'S, 'A, 'Q> = f |> Derived |> DOMText |> Node
 
@@ -88,7 +94,7 @@ type DOM =
     static member Attr<'S, 'A>(name: string, f: 'S -> string) : DOMAttribute<'S, 'A> =
         attribute name (f >> String.ToOption |> Derived |> StringValue)
 
-    static member On<'S, 'A>(name: string, action: 'A) : DOMAttribute<'S, 'A> =
+    static member on<'S, 'A>(name: string, action: 'A) : DOMAttribute<'S, 'A> =
         attribute name (makeTrigger (fun _ _ -> action) |> TriggerValue)
 
     static member On<'S, 'A>(name: string, handler: unit -> 'A) : DOMAttribute<'S, 'A> =
@@ -105,3 +111,19 @@ type DOM =
 
     static member On<'S, 'A>(name: string, handler: 'S -> 'A) : DOMAttribute<'S, 'A> =
         attribute name (makeTrigger (fun s _ -> handler s) |> TriggerValue)
+
+    static member MapState<'S1, 'S2, 'A, 'Q>(f: 'S1 -> 'S2, template: DOMTemplate<'S2, 'A, 'Q>) =
+        Template<DOMNode<'S1, 'A, 'Q>, DOMImpl, 'S1, 'A, 'Q>.MapState
+            (packMapState<DOMNode<'S1, 'A, 'Q>, DOMNode<'S2, 'A, 'Q>, DOMImpl, 'S1, 'S2, 'A, 'Q>
+             <| MapState<DOMNode<'S1, 'A, 'Q>, DOMNode<'S2, 'A, 'Q>, DOMImpl, 'S1, 'S2, 'A, 'Q>(f, template))
+
+
+    static member OneOf<'S, 'S1, 'S2, 'A, 'Q>
+        (
+            f: 'S -> Choice<'S1, 'S2>,
+            template1: DOMTemplate<'S1, 'A, 'Q>,
+            template2: DOMTemplate<'S2, 'A, 'Q>
+        ) =
+        Template<DOMNode<'S, 'A, 'Q>, DOMImpl, 'S, 'A, 'Q>.OneOf2
+            (packOneOf2<DOMNode<'S, 'A, 'Q>, DOMNode<'S1, 'A, 'Q>, DOMNode<'S2, 'A, 'Q>, DOMImpl, 'S, 'S1, 'S2, 'A, 'Q>
+             <| OneOf2(f, template1, template2))

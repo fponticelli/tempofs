@@ -17,16 +17,28 @@ let template : DOMTemplate<State, Action, unit> =
     Fragment [ DOM.El(
                    "div",
                    [ DOM.Attr("class", (fun { Counter = counter } -> $"size-{System.Math.Max(1, counter)}")) ],
-                   [ DOM.El("button", [ DOM.On("click", Increment -10) ], [ DOM.Text "-10" ])
-                     DOM.El("button", [ DOM.On("click", Increment -1) ], [ DOM.Text "-" ])
-                     DOM.El("button", [ DOM.On("click", Increment 1) ], [ DOM.Text "+" ])
-                     DOM.El("button", [ DOM.On("click", Increment 10) ], [ DOM.Text "+10" ])
-                     DOM.El("button", [ DOM.On("click", Reset) ], [ DOM.Text "reset" ]) ]
+                   [ DOM.El("button", [ DOM.on ("click", Increment -10) ], [ DOM.Text "-10" ])
+                     DOM.El("button", [ DOM.on ("click", Increment -1) ], [ DOM.Text "-" ])
+                     DOM.El("button", [ DOM.on ("click", Increment 1) ], [ DOM.Text "+" ])
+                     DOM.El("button", [ DOM.on ("click", Increment 10) ], [ DOM.Text "+10" ])
+                     DOM.El("button", [ DOM.on ("click", Reset) ], [ DOM.Text "reset" ]) ]
                )
                DOM.El(
                    "div",
                    [ DOM.Text "count: "
-                     DOM.Text(fun { Counter = counter } -> counter.ToString()) ]
+                     DOM.MapState(
+                         (fun { Counter = counter } -> counter),
+                         Fragment [ DOM.Text(fun s -> s.ToString())
+                                    DOM.OneOf(
+                                        (fun v ->
+                                            if v > 10 then
+                                                (Choice1Of2 "Awesome!")
+                                            else
+                                                (Choice2Of2())),
+                                        DOM.Text(),
+                                        DOM.Text("not so great")
+                                    ) ]
+                     ) ]
                ) ]
 
 let update state action =

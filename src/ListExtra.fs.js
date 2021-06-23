@@ -4,7 +4,13 @@ import { value } from "./.fable/fable-library.3.1.10/Option.js";
 export function filterMap(f, ls) {
     return foldBack((curr, acc) => {
         const matchValue = f(curr);
-        return (matchValue == null) ? acc : cons(value(matchValue), acc);
+        if (matchValue == null) {
+            return acc;
+        }
+        else {
+            const v = value(matchValue);
+            return cons(v, acc);
+        }
     }, ls, empty());
 }
 

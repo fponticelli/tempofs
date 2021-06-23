@@ -14,7 +14,7 @@ var babelOptions = {
             "useBuiltIns": "usage",
             "corejs": 3,
             // This saves around 4KB in minified bundle (not gzipped)
-            // "loose": true,
+            "loose": true,
         }]
     ],
 };
@@ -39,12 +39,12 @@ module.exports = (env, options) => {
         devtool: undefined,
         mode: options.mode,
         entry: {
-                demo: [
-                    "@babel/polyfill",
-                    './src/App.fs.js',
-                    './src/scss/main.scss'
-                ]
-            },
+            demo: [
+                // "@babel/polyfill",
+                './src/App.fs.js',
+                './src/scss/main.scss'
+            ]
+        },
         output: {
             path: path.join(__dirname, './output'),
             filename: isProduction ? '[name].[chunkhash].js' : '[name].js'
