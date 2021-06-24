@@ -1,9 +1,12 @@
 module App
 
 open Browser
-open Tempo.Dom
-open Tempo.Dom.DSL
 open Tempo.Core
+open Tempo.Html
+
+open Tempo.Html.DSL
+
+open type Tempo.Html.DSL.HTML
 
 type Action =
     | Reset
@@ -13,31 +16,37 @@ type State = { Counter: int }
 let makeState v = { Counter = v }
 let state = { Counter = 0 }
 
-let template : DOMTemplate<State, Action, unit> =
-    Fragment [ DOM.El(
+let template : HTMLTemplate<State, Action, unit> =
+    Fragment [ El(
                    "div",
-                   [ DOM.Attr("class", (fun { Counter = counter } -> $"size-{System.Math.Max(1, counter)}")) ],
-                   [ DOM.El("button", [ DOM.on ("click", Increment -10) ], [ DOM.Text "-10" ])
-                     DOM.El("button", [ DOM.on ("click", Increment -1) ], [ DOM.Text "-" ])
-                     DOM.El("button", [ DOM.on ("click", Increment 1) ], [ DOM.Text "+" ])
-                     DOM.El("button", [ DOM.on ("click", Increment 10) ], [ DOM.Text "+10" ])
-                     DOM.El("button", [ DOM.on ("click", Reset) ], [ DOM.Text "reset" ]) ]
+                   [ Attr("class", (fun { Counter = counter } -> $"size-{System.Math.Max(1, counter)}")) ],
+                   [ El("button", [ on ("click", Increment -10) ], Text "-10")
+                     El("button", [ on ("click", Increment -1) ], Text "-")
+                     El("button", [ on ("click", Increment 1) ], Text "+")
+                     El("button", [ on ("click", Increment 10) ], Text "+10")
+                     El("button", [ on ("click", Reset) ], Text "reset") ]
                )
-               DOM.El(
+               El(
                    "div",
-                   [ DOM.Text "count: "
-                     DOM.MapState(
+                   [ Text "count: "
+                     MapState(
                          (fun { Counter = counter } -> counter),
-                         Fragment [ DOM.Text(fun s -> s.ToString())
-                                    DOM.OneOf(
-                                        (fun v ->
-                                            if v > 10 then
-                                                (Choice1Of2 "Awesome!")
-                                            else
-                                                (Choice2Of2())),
-                                        DOM.Text(),
-                                        DOM.Text("not so great")
-                                    ) ]
+                         [ El(
+                             "b",
+                             [ Attr("style", "font-size: 32px;") ],
+                             [ Text("(")
+                               Text(fun s -> s.ToString())
+                               Text(") ") ]
+                           )
+                           OneOf(
+                               (fun v ->
+                                   if v > 9 then (Choice1Of3 "Great!")
+                                   else if v > 4 then (Choice2Of3 v)
+                                   else (Choice3Of3())),
+                               Text(),
+                               Text(fun s -> $"{s} is a good number"),
+                               Text("meh")
+                           ) ]
                      ) ]
                ) ]
 
@@ -56,6 +65,6 @@ let middleware
     =
     console.log $"Action: {action}, State: {current}"
 
-let render = DOM.Make(template, document.body)
+let render = MakeProgram(template, document.body)
 
 let view = render update middleware state

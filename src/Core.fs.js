@@ -1,7 +1,9 @@
 import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
 import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { iterate, empty, map } from "./.fable/fable-library.3.1.10/List.js";
+import { iterate, map } from "./.fable/fable-library.3.1.10/List.js";
+import { printf, toConsole } from "./.fable/fable-library.3.1.10/String.js";
 import { mapCurriedArgs } from "./.fable/fable-library.3.1.10/Util.js";
+import { some } from "./.fable/fable-library.3.1.10/Option.js";
 
 export class Value$2 extends Union {
     constructor(tag, ...fields) {
@@ -52,7 +54,7 @@ export function Value$2_Map(m, v) {
     }
 }
 
-export class Template$5 extends Union {
+export class Template$4 extends Union {
     constructor(tag, ...fields) {
         super();
         this.tag = (tag | 0);
@@ -63,11 +65,11 @@ export class Template$5 extends Union {
     }
 }
 
-export function Template$5$reflection(gen0, gen1, gen2, gen3, gen4) {
-    return union_type("Tempo.Core.Template`5", [gen0, gen1, gen2, gen3, gen4], Template$5, () => [[["Item", gen0]], [["Item", list_type(Template$5$reflection(gen0, gen1, gen2, gen3, gen4))]], [["Item", class_type("Tempo.Core.IMapState`5", [gen0, gen1, gen2, gen3, gen4])]], [["Item", class_type("Tempo.Core.IOneOf2`5", [gen0, gen1, gen2, gen3, gen4])]]]);
+export function Template$4$reflection(gen0, gen1, gen2, gen3) {
+    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.IMapState`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]]]);
 }
 
-export class ComponentView$4 extends Record {
+export class ComponentView$3 extends Record {
     constructor(Impl, Dispatch, Change, Destroy, Query) {
         super();
         this.Impl = Impl;
@@ -78,11 +80,11 @@ export class ComponentView$4 extends Record {
     }
 }
 
-export function ComponentView$4$reflection(gen0, gen1, gen2, gen3) {
-    return record_type("Tempo.Core.ComponentView`4", [gen0, gen1, gen2, gen3], ComponentView$4, () => [["Impl", gen0], ["Dispatch", lambda_type(gen2, unit_type)], ["Change", lambda_type(gen1, unit_type)], ["Destroy", lambda_type(unit_type, unit_type)], ["Query", lambda_type(gen3, unit_type)]]);
+export function ComponentView$3$reflection(gen0, gen1, gen2) {
+    return record_type("Tempo.Core.ComponentView`3", [gen0, gen1, gen2], ComponentView$3, () => [["Impl", class_type("Tempo.Core.Impl")], ["Dispatch", lambda_type(gen1, unit_type)], ["Change", lambda_type(gen0, unit_type)], ["Destroy", lambda_type(unit_type, unit_type)], ["Query", lambda_type(gen2, unit_type)]]);
 }
 
-export class View$3 extends Record {
+export class View$2 extends Record {
     constructor(Impl, Change, Destroy, Query) {
         super();
         this.Impl = Impl;
@@ -92,11 +94,11 @@ export class View$3 extends Record {
     }
 }
 
-export function View$3$reflection(gen0, gen1, gen2) {
-    return record_type("Tempo.Core.View`3", [gen0, gen1, gen2], View$3, () => [["Impl", gen0], ["Change", lambda_type(gen1, unit_type)], ["Destroy", lambda_type(unit_type, unit_type)], ["Query", lambda_type(gen2, unit_type)]]);
+export function View$2$reflection(gen0, gen1) {
+    return record_type("Tempo.Core.View`2", [gen0, gen1], View$2, () => [["Impl", class_type("Tempo.Core.Impl")], ["Change", lambda_type(gen0, unit_type)], ["Destroy", lambda_type(unit_type, unit_type)], ["Query", lambda_type(gen1, unit_type)]]);
 }
 
-export class MapState$7 {
+export class MapState$6 {
     constructor(m, t) {
         this.m = m;
         this.t = t;
@@ -107,15 +109,15 @@ export class MapState$7 {
     }
 }
 
-export function MapState$7$reflection(gen0, gen1, gen2, gen3, gen4, gen5, gen6) {
-    return class_type("Tempo.Core.MapState`7", [gen0, gen1, gen2, gen3, gen4, gen5, gen6], MapState$7);
+export function MapState$6$reflection(gen0, gen1, gen2, gen3, gen4, gen5) {
+    return class_type("Tempo.Core.MapState`6", [gen0, gen1, gen2, gen3, gen4, gen5], MapState$6);
 }
 
-export function MapState$7_$ctor_3D37D6BB(m, t) {
-    return new MapState$7(m, t);
+export function MapState$6_$ctor_Z445964B9(m, t) {
+    return new MapState$6(m, t);
 }
 
-export class OneOf2$9 {
+export class OneOf2$8 {
     constructor(m, c1, c2) {
         this.m = m;
         this.c1 = c1;
@@ -127,31 +129,31 @@ export class OneOf2$9 {
     }
 }
 
-export function OneOf2$9$reflection(gen0, gen1, gen2, gen3, gen4, gen5, gen6, gen7, gen8) {
-    return class_type("Tempo.Core.OneOf2`9", [gen0, gen1, gen2, gen3, gen4, gen5, gen6, gen7, gen8], OneOf2$9);
+export function OneOf2$8$reflection(gen0, gen1, gen2, gen3, gen4, gen5, gen6, gen7) {
+    return class_type("Tempo.Core.OneOf2`8", [gen0, gen1, gen2, gen3, gen4, gen5, gen6, gen7], OneOf2$8);
 }
 
-export function OneOf2$9_$ctor_Z6CB02F2D(m, c1, c2) {
-    return new OneOf2$9(m, c1, c2);
+export function OneOf2$8_$ctor_Z4F5F76C(m, c1, c2) {
+    return new OneOf2$8(m, c1, c2);
 }
 
-export function MapState$7__get_MapF(this$) {
+export function MapState$6__get_MapF(this$) {
     return this$.m;
 }
 
-export function MapState$7__get_Template(this$) {
+export function MapState$6__get_Template(this$) {
     return this$.t;
 }
 
-export function OneOf2$9__get_MapF(this$) {
+export function OneOf2$8__get_MapF(this$) {
     return this$.m;
 }
 
-export function OneOf2$9__get_Template1(this$) {
+export function OneOf2$8__get_Template1(this$) {
     return this$.c1;
 }
 
-export function OneOf2$9__get_Template2(this$) {
+export function OneOf2$8__get_Template2(this$) {
     return this$.c2;
 }
 
@@ -171,55 +173,73 @@ export function unpackOneOf2(oneOf2, f) {
     return oneOf2.Accept(f);
 }
 
-export class MakeRender$5 {
+export class ChoiceAssignament$2 extends Union {
+    constructor(tag, ...fields) {
+        super();
+        this.tag = (tag | 0);
+        this.fields = fields;
+    }
+    cases() {
+        return ["FirstOnly", "SecondOnly", "FirstAndSecond", "SecondAndFirst"];
+    }
+}
+
+export function ChoiceAssignament$2$reflection(gen0, gen1) {
+    return union_type("Tempo.Core.ChoiceAssignament`2", [gen0, gen1], ChoiceAssignament$2, () => [[["Item", gen0]], [["Item", gen1]], [["Item1", gen0], ["Item2", gen1]], [["Item1", gen0], ["Item2", gen1]]]);
+}
+
+export class MakeRender$4 {
     constructor() {
     }
 }
 
-export function MakeRender$5$reflection(gen0, gen1, gen2, gen3, gen4) {
-    return class_type("Tempo.Core.MakeRender`5", [gen0, gen1, gen2, gen3, gen4], MakeRender$5);
+export function MakeRender$4$reflection(gen0, gen1, gen2, gen3) {
+    return class_type("Tempo.Core.MakeRender`4", [gen0, gen1, gen2, gen3], MakeRender$4);
 }
 
-export function MakeRender$5_$ctor() {
-    return new MakeRender$5();
+export function MakeRender$4_$ctor() {
+    return new MakeRender$4();
 }
 
-export function MakeRender$5__Make_Z982EEB6(this$, template) {
+export function MakeRender$4__Make_1DCD9633(this$, template) {
     switch (template.tag) {
         case 1: {
             const ls = template.fields[0];
-            return MakeRender$5__MakeFragment_Z1C923E80(this$, ls);
+            return MakeRender$4__MakeFragmentRender_7D0C1B99(this$, ls);
         }
         case 2: {
             const mapState = template.fields[0];
-            return MakeRender$5__MakeMapState_5E25218(this$, mapState);
+            return MakeRender$4__MakeMapStateRender_Z738BD09F(this$, mapState);
         }
         case 3: {
             const oneOf2 = template.fields[0];
-            return MakeRender$5__MakeOneOf2_369027EC(this$, oneOf2);
+            return MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2);
         }
         default: {
             const n = template.fields[0];
-            return this$["Tempo.Core.MakeRender`5.MakeNode2B595"](n);
+            return this$["Tempo.Core.MakeRender`4.MakeNodeRender2B595"](n);
         }
     }
 }
 
-export function MakeRender$5__MakeRenderS(this$) {
+export function MakeRender$4__MakeRenderS(this$) {
     return this$;
 }
 
-export function MakeRender$5__MakeFragment_Z1C923E80(this$, templates) {
-    const fs = map((arg00) => MakeRender$5__Make_Z982EEB6(this$, arg00), templates);
+export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
+    const fs = map((arg00) => MakeRender$4__Make_1DCD9633(this$, arg00), templates);
     return (parent) => ((s) => {
-        const impl = this$["Tempo.Core.MakeRender`5.MakeRef"](parent, empty());
-        this$["Tempo.Core.MakeRender`5.AppendNode"](parent, impl);
-        const views = map(mapCurriedArgs((f) => f(impl, s), [[0, 2]]), fs);
-        return new View$3(impl, (s_1) => {
+        const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("Fragment");
+        toConsole(printf("Make Fragment"));
+        parent.Append(group);
+        toConsole(printf("Make Fragment (Appended)"));
+        const views = map(mapCurriedArgs((render) => render(group, s), [[0, 2]]), fs);
+        return new View$2(group, (s_1) => {
             iterate((i) => {
                 i.Change(s_1);
             }, views);
         }, () => {
+            parent.Remove(group);
             iterate((i_1) => {
                 i_1.Destroy();
             }, views);
@@ -231,39 +251,195 @@ export function MakeRender$5__MakeFragment_Z1C923E80(this$, templates) {
     });
 }
 
-export function MakeRender$5__MakeMapState_5E25218(this$, mapState) {
+export function MakeRender$4__MakeMapStateRender_Z738BD09F(this$, mapState) {
     return unpackMapState(mapState, {
         Invoke(mapState_1) {
-            const render = MakeRender$5__Make_Z982EEB6(MakeRender$5__MakeRenderS(this$), MapState$7__get_Template(mapState_1));
-            return (i) => ((s) => {
-                const view = render(i)(MapState$7__get_MapF(mapState_1)(s));
-                return new View$3(view.Impl, (s1) => {
-                    view.Change(MapState$7__get_MapF(mapState_1)(s1));
+            const render = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), MapState$6__get_Template(mapState_1));
+            return (parent) => ((s) => {
+                const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("MapState");
+                toConsole(printf("Make MapState"));
+                parent.Append(group);
+                toConsole(printf("Make MapState (Appended)"));
+                const view = render(group)(MapState$6__get_MapF(mapState_1)(s));
+                toConsole(printf("MakeMapState"));
+                parent.Append(view.Impl);
+                return new View$2(group, (s1) => {
+                    view.Change(MapState$6__get_MapF(mapState_1)(s1));
                 }, view.Destroy, view.Query);
             });
         },
     });
 }
 
-export function MakeRender$5__MakeOneOf2_369027EC(this$, oneOf2) {
+export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
     return unpackOneOf2(oneOf2, {
         Invoke(oneOf2_1) {
-            const render1 = MakeRender$5__Make_Z982EEB6(MakeRender$5__MakeRenderS(this$), OneOf2$9__get_Template1(oneOf2_1));
-            const render2 = MakeRender$5__Make_Z982EEB6(MakeRender$5__MakeRenderS(this$), OneOf2$9__get_Template2(oneOf2_1));
+            const render1 = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), OneOf2$8__get_Template1(oneOf2_1));
+            const render2 = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), OneOf2$8__get_Template2(oneOf2_1));
             return (parent) => ((s) => {
-                let views = void 0;
-                const matchValue = OneOf2$9__get_MapF(oneOf2_1)(s);
+                const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("OneOf2");
+                toConsole(printf("MakeOneOf2"));
+                parent.Append(group);
+                toConsole(printf("MakeOneOf2 (Appended)"));
+                let assignament;
+                const matchValue = OneOf2$8__get_MapF(oneOf2_1)(s);
                 if (matchValue.tag === 1) {
                     const s2 = matchValue.fields[0];
+                    toConsole(printf("MakeOneOf2 Render2"));
+                    const view2 = render2(group)(s2);
+                    toConsole(printf("MakeOneOf2 Render2 (Appended)"));
+                    assignament = (new ChoiceAssignament$2(1, view2));
                 }
                 else {
                     const s1 = matchValue.fields[0];
-                    const view1 = render1(parent)(s1);
+                    toConsole(printf("MakeOneOf2 Render1"));
+                    const view1 = render1(group)(s1);
+                    toConsole(printf("MakeOneOf2 Render1 (Appended)"));
+                    assignament = (new ChoiceAssignament$2(0, view1));
                 }
-                return new View$3(parent, (value) => {
-                }, () => {
-                }, (value_1) => {
-                });
+                const change = (state) => {
+                    toConsole(printf("MaoneOf2.Change"));
+                    const matchValue_1 = [assignament, OneOf2$8__get_MapF(oneOf2_1)(state)];
+                    if (matchValue_1[0].tag === 2) {
+                        if (matchValue_1[1].tag === 1) {
+                            const s2_4 = matchValue_1[1].fields[0];
+                            const view1_4 = matchValue_1[0].fields[0];
+                            const view2_4 = matchValue_1[0].fields[1];
+                            toConsole(printf("MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2"));
+                            view2_4.Change(s2_4);
+                            group.Append(view2_4.Impl);
+                            toConsole(printf("MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2 (Appended)"));
+                            group.Remove(view1_4.Impl);
+                            toConsole(printf("MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2 (After Remove)"));
+                            assignament = (new ChoiceAssignament$2(3, view1_4, view2_4));
+                        }
+                        else {
+                            const s1_2 = matchValue_1[1].fields[0];
+                            const view1_2 = matchValue_1[0].fields[0];
+                            toConsole(printf("FirstAndSecond (view1, _), Choice1Of2 s1"));
+                            view1_2.Change(s1_2);
+                        }
+                    }
+                    else if (matchValue_1[0].tag === 1) {
+                        if (matchValue_1[1].tag === 0) {
+                            const s1_3 = matchValue_1[1].fields[0];
+                            const view2_5 = matchValue_1[0].fields[0];
+                            toConsole(printf("MakeOneOf2 SecondOnly view2, Choice1Of2 s1"));
+                            console.log(some(render1), group, s1_3);
+                            const view1_5 = render1(group)(s1_3);
+                            console.log(some(view1_5));
+                            toConsole(printf("MakeOneOf2 SecondOnly view2, Choice1Of2 s1 (Appended)"));
+                            group.Remove(view2_5.Impl);
+                            toConsole(printf("MakeOneOf2 SecondOnly view2, Choice1Of2 s1 (After Remove)"));
+                            assignament = (new ChoiceAssignament$2(2, view1_5, view2_5));
+                        }
+                        else {
+                            const s2_1 = matchValue_1[1].fields[0];
+                            const view2_1 = matchValue_1[0].fields[0];
+                            toConsole(printf("SecondOnly view2, Choice2Of2 s2"));
+                            view2_1.Change(s2_1);
+                        }
+                    }
+                    else if (matchValue_1[0].tag === 3) {
+                        if (matchValue_1[1].tag === 0) {
+                            const s1_4 = matchValue_1[1].fields[0];
+                            const view1_6 = matchValue_1[0].fields[0];
+                            const view2_6 = matchValue_1[0].fields[1];
+                            toConsole(printf("MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1"));
+                            view1_6.Change(s1_4);
+                            group.Append(view1_6.Impl);
+                            toConsole(printf("MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1 (Appended)"));
+                            group.Remove(view2_6.Impl);
+                            toConsole(printf("MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1 (After Remove)"));
+                            assignament = (new ChoiceAssignament$2(2, view1_6, view2_6));
+                        }
+                        else {
+                            const s2_2 = matchValue_1[1].fields[0];
+                            const view2_2 = matchValue_1[0].fields[1];
+                            toConsole(printf("SecondAndFirst (_, view2), Choice2Of2 s2"));
+                            view2_2.Change(s2_2);
+                        }
+                    }
+                    else if (matchValue_1[1].tag === 1) {
+                        const s2_3 = matchValue_1[1].fields[0];
+                        const view1_3 = matchValue_1[0].fields[0];
+                        toConsole(printf("MakeOneOf2 FirstOnly view1, Choice2Of2 s2"));
+                        const view2_3 = render2(group)(s2_3);
+                        toConsole(printf("MakeOneOf2 FirstOnly view1, Choice2Of2 s2 (Appended)"));
+                        group.Remove(view1_3.Impl);
+                        toConsole(printf("MakeOneOf2 FirstOnly view1, Choice2Of2 s2 (After Remove)"));
+                        assignament = (new ChoiceAssignament$2(3, view1_3, view2_3));
+                    }
+                    else {
+                        const s1_1 = matchValue_1[1].fields[0];
+                        const view1_1 = matchValue_1[0].fields[0];
+                        toConsole(printf("FirstOnly view1, Choice1Of2 s1"));
+                        view1_1.Change(s1_1);
+                    }
+                };
+                const query = (q) => {
+                    let pattern_matching_result, view1_7, view2_7;
+                    switch (assignament.tag) {
+                        case 0: {
+                            pattern_matching_result = 0;
+                            view1_7 = assignament.fields[0];
+                            break;
+                        }
+                        case 3: {
+                            pattern_matching_result = 1;
+                            view2_7 = assignament.fields[1];
+                            break;
+                        }
+                        case 1: {
+                            pattern_matching_result = 1;
+                            view2_7 = assignament.fields[0];
+                            break;
+                        }
+                        default: {
+                            pattern_matching_result = 0;
+                            view1_7 = assignament.fields[0];
+                        }
+                    }
+                    switch (pattern_matching_result) {
+                        case 0: {
+                            view1_7.Query(q);
+                            break;
+                        }
+                        case 1: {
+                            view2_7.Query(q);
+                            break;
+                        }
+                    }
+                };
+                const destroy = (q_1) => {
+                    parent.Remove(group);
+                    switch (assignament.tag) {
+                        case 0: {
+                            const view1_9 = assignament.fields[0];
+                            view1_9.Destroy();
+                            break;
+                        }
+                        case 3: {
+                            const view2_9 = assignament.fields[1];
+                            const view1_10 = assignament.fields[0];
+                            view2_9.Destroy();
+                            view1_10.Destroy();
+                            break;
+                        }
+                        case 1: {
+                            const view2_10 = assignament.fields[0];
+                            view2_10.Destroy();
+                            break;
+                        }
+                        default: {
+                            const view2_8 = assignament.fields[1];
+                            const view1_8 = assignament.fields[0];
+                            view1_8.Destroy();
+                            view2_8.Destroy();
+                        }
+                    }
+                };
+                return new View$2(group, change, destroy, query);
             });
         },
     });
