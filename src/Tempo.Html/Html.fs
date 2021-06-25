@@ -110,16 +110,17 @@ and HTMLTemplateNode<'S, 'A, 'Q> =
 
 and HTMLTemplateElement<'S, 'A, 'Q> =
     { Name: string
-      Attributes: HTMLTemplateAttribute<'S, 'A> list
+      Attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list
       Children: HTMLTemplate<'S, 'A, 'Q> list }
 
-and HTMLTemplateAttribute<'S, 'A> =
+and HTMLTemplateAttribute<'S, 'A, 'Q> =
     { Name: string
-      Value: HTMLTemplateAttributeValue<'S, 'A> }
+      Value: HTMLTemplateAttributeValue<'S, 'A, 'Q> }
 
-and HTMLTemplateAttributeValue<'S, 'A> =
+and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
     | StringValue of Value<'S, string option>
     | TriggerValue of IHTMLTrigger<'S, 'A>
+    | LifecycleValue of ILifecycleValue<'S, 'Q>
 
 and IHTMLTrigger<'S, 'A> =
     abstract Accept : IHTMLTriggerInvoker<'S, 'A, 'R> -> 'R
@@ -135,7 +136,25 @@ and HTMLTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element>(handler) =
 and IHTMLTriggerInvoker<'S, 'A, 'R> =
     abstract Invoke<'E, 'EL when 'E :> Event and 'EL :> Element> : HTMLTrigger<'S, 'A, 'E, 'EL> -> 'R
 
-let inline attribute<'S, 'A> name value : HTMLTemplateAttribute<'S, 'A> = { Name = name; Value = value }
+
+and ILifecycleValue<'S, 'Q> =
+    abstract Accept : ILifecycleValueInvoker<'S, 'Q, 'R> -> 'R
+
+and LifecycleValuePayload<'S, 'Q, 'EL when 'EL :> Element> = { State: 'S; Element: 'EL }
+
+and LifecycleValue<'S, 'Q, 'EL when 'EL :> Element>(beforeChange, afterChange, beforeDestroy, respond) =
+    member this.BeforeChange : LifecycleValuePayload<'S, 'Q, 'EL> -> bool = beforeChange
+    member this.AfterChange : LifecycleValuePayload<'S, 'Q, 'EL> -> unit = afterChange
+    member this.BeforeDestroy : LifecycleValuePayload<'S, 'Q, 'EL> -> unit = beforeDestroy
+    member this.Respond : LifecycleValuePayload<'S, 'Q, 'EL> -> unit = respond
+    with
+        interface ILifecycleValue<'S, 'Q> with
+            member this.Accept f = f.Invoke<'EL> this
+
+and ILifecycleValueInvoker<'S, 'Q, 'R> =
+    abstract Invoke<'EL when 'EL :> Element> : LifecycleValue<'S, 'Q, 'EL> -> 'R
+
+let inline attribute<'S, 'A, 'Q> name value : HTMLTemplateAttribute<'S, 'A, 'Q> = { Name = name; Value = value }
 
 let packHTMLTrigger (trigger: HTMLTrigger<'S, 'A, 'E, 'EL>) = trigger :> IHTMLTrigger<'S, 'A>
 
@@ -148,15 +167,16 @@ let applyStringAttribute (name: string) (el: HTMLElement) (s: string option) =
     | Some s -> el.setAttribute (name, s)
     | None -> el.removeAttribute name
 
-let derivedApplication ({ Name = name; Value = value }: HTMLTemplateAttribute<'S, 'A>) =
+let derivedApplication ({ Name = name; Value = value }: HTMLTemplateAttribute<'S, 'A, 'Q>) =
     match value with
     | StringValue (Derived f) ->
         Some
         <| fun el state -> applyStringAttribute name el (f state)
     | StringValue (Literal _) -> None
     | TriggerValue _ -> None
+    | LifecycleValue _ -> None
 
-let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) ({ Value = value; Name = name }: HTMLTemplateAttribute<'S, 'A>) =
+let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) ({ Value = value; Name = name }: HTMLTemplateAttribute<'S, 'A, 'Q>) =
     match value with
     | StringValue v ->
         applyStringAttribute name el
@@ -181,6 +201,7 @@ let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) 
 
                     0 }
         |> ignore
+    | LifecycleValue lc -> failwith "ainono"
 
 type MakeHTMLRender<'S, 'A, 'Q>(dispatch: 'A -> unit) =
     inherit MakeRender<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>()

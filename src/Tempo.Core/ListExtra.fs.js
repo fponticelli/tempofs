@@ -1,5 +1,5 @@
-import { empty, cons, foldBack } from "./.fable/fable-library.3.1.10/List.js";
-import { value } from "./.fable/fable-library.3.1.10/Option.js";
+import { empty, cons, foldBack } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 
 export function filterMap(f, ls) {
     return foldBack((curr, acc) => {

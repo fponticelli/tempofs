@@ -1,10 +1,10 @@
-import { Record } from "./.fable/fable-library.3.1.10/Types.js";
-import { class_type, record_type, lambda_type, unit_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { empty, cons, iterate, ofArray } from "./.fable/fable-library.3.1.10/List.js";
-import { toArray } from "./.fable/fable-library.3.1.10/Option.js";
+import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
+import { class_type, record_type, lambda_type, unit_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { empty, cons, iterate, ofArray } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { toArray } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 import { makeTrigger, HTMLTemplateAttribute$2, HTMLTemplateAttributeValue$2, HTMLTemplateElement$3, HTMLTemplateNode$3, HTMLElementImpl_$ctor_4C3D2741, MakeHTMLRender$3_$ctor_Z6156FC82 } from "./Html.fs.js";
-import { Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, MapState$6_$ctor_Z445964B9, packMapState, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "./Core.fs.js";
-import { FSharpChoice$2 } from "./.fable/fable-library.3.1.10/Choice.js";
+import { Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, MapState$6_$ctor_Z445964B9, packMapState, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "../Tempo.Core/Core.fs.js";
+import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
 
 export class MiddlewarePayload$2 extends Record {
     constructor(Current, Old, Action, Dispatch) {

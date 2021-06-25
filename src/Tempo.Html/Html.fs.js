@@ -1,11 +1,11 @@
-import { option_type, record_type, list_type, union_type, string_type, class_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { append, map, empty, filter, cons, reverse, collect, iterate, singleton } from "./.fable/fable-library.3.1.10/List.js";
-import { interpolate, toText } from "./.fable/fable-library.3.1.10/String.js";
+import { option_type, record_type, list_type, union_type, string_type, class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { append, map, empty, filter, cons, reverse, collect, iterate, singleton } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
 import { remove } from "./HtmlTools.fs.js";
-import { partialApply, mapCurriedArgs, equals } from "./.fable/fable-library.3.1.10/Util.js";
-import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
-import { View$2, MakeRender$4__Make_1DCD9633, MakeRender$4$reflection, MakeRender$4, Value$2_Resolve, Template$4$reflection, Value$2$reflection } from "./Core.fs.js";
-import { filterMap } from "./ListExtra.fs.js";
+import { partialApply, mapCurriedArgs, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
+import { View$2, MakeRender$4__Make_1DCD9633, MakeRender$4$reflection, MakeRender$4, Value$2_Resolve, Template$4$reflection, Value$2$reflection } from "../Tempo.Core/Core.fs.js";
+import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
 
 export class HTMLImpl {
     constructor() {
@@ -164,12 +164,12 @@ export class HTMLTemplateNode$3 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["HTMLTemplateElement", "HTMLTemplateText"];
+        return ["HTMLTemplateElement", "HTMLTemplateText", "HTMLTemplateLifecycle"];
     }
 }
 
 export function HTMLTemplateNode$3$reflection(gen0, gen1, gen2) {
-    return union_type("Tempo.Html.HTMLTemplateNode`3", [gen0, gen1, gen2], HTMLTemplateNode$3, () => [[["Item", HTMLTemplateElement$3$reflection(gen0, gen1, gen2)]], [["Item", Value$2$reflection(gen0, string_type)]]]);
+    return union_type("Tempo.Html.HTMLTemplateNode`3", [gen0, gen1, gen2], HTMLTemplateNode$3, () => [[["Item", HTMLTemplateElement$3$reflection(gen0, gen1, gen2)]], [["Item", Value$2$reflection(gen0, string_type)]], [["Item", class_type("Tempo.Html.IHTMLTemplateLifecycle`3", [gen0, gen1, gen2])]]]);
 }
 
 export class HTMLTemplateElement$3 extends Record {
@@ -243,8 +243,57 @@ export function HTMLTrigger$4_$ctor_75095B8B(handler) {
     return new HTMLTrigger$4(handler);
 }
 
+export class HTMLTemplateLifecyclePayload$4 extends Record {
+    constructor(State, Element$) {
+        super();
+        this.State = State;
+        this.Element = Element$;
+    }
+}
+
+export function HTMLTemplateLifecyclePayload$4$reflection(gen0, gen1, gen2, gen3) {
+    return record_type("Tempo.Html.HTMLTemplateLifecyclePayload`4", [gen0, gen1, gen2, gen3], HTMLTemplateLifecyclePayload$4, () => [["State", gen0], ["Element", gen3]]);
+}
+
+export class HTMLTemplateLifecycle$4 {
+    constructor(beforeChange, afterChange, beforeDestroy, respond) {
+        this.beforeChange = beforeChange;
+        this.afterChange = afterChange;
+        this.beforeDestroy = beforeDestroy;
+        this.respond = respond;
+    }
+    Accept(f) {
+        const this$ = this;
+        return f.Invoke(this$);
+    }
+}
+
+export function HTMLTemplateLifecycle$4$reflection(gen0, gen1, gen2, gen3) {
+    return class_type("Tempo.Html.HTMLTemplateLifecycle`4", [gen0, gen1, gen2, gen3], HTMLTemplateLifecycle$4);
+}
+
+export function HTMLTemplateLifecycle$4_$ctor_Z21F3106A(beforeChange, afterChange, beforeDestroy, respond) {
+    return new HTMLTemplateLifecycle$4(beforeChange, afterChange, beforeDestroy, respond);
+}
+
 export function HTMLTrigger$4__get_Handler(this$) {
     return this$.handler;
+}
+
+export function HTMLTemplateLifecycle$4__get_BeforeChange(this$) {
+    return this$.beforeChange;
+}
+
+export function HTMLTemplateLifecycle$4__get_AfterChange(this$) {
+    return this$.afterChange;
+}
+
+export function HTMLTemplateLifecycle$4__get_BeforeDestroy(this$) {
+    return this$.beforeDestroy;
+}
+
+export function HTMLTemplateLifecycle$4__get_Respond(this$) {
+    return this$.respond;
 }
 
 export function packHTMLTrigger(trigger) {
@@ -315,13 +364,18 @@ export class MakeHTMLRender$3 extends MakeRender$4 {
     }
     ["Tempo.Core.MakeRender`4.MakeNodeRender2B595"](node) {
         const this$ = this;
-        if (node.tag === 1) {
-            const v = node.fields[0];
-            return MakeHTMLRender$3__MakeRenderDOMText_Z320284C0(this$, v);
-        }
-        else {
-            const el = node.fields[0];
-            return MakeHTMLRender$3__MakeRenderDOMElement_3B41954E(this$, el);
+        switch (node.tag) {
+            case 0: {
+                const el = node.fields[0];
+                return MakeHTMLRender$3__MakeRenderDOMElement_3B41954E(this$, el);
+            }
+            case 1: {
+                const v = node.fields[0];
+                return MakeHTMLRender$3__MakeRenderDOMText_Z320284C0(this$, v);
+            }
+            default: {
+                throw (new Error("Match failure: Tempo.Html.HTMLTemplateNode`3"));
+            }
         }
     }
     ["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"](label) {

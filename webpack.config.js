@@ -22,7 +22,7 @@ var babelOptions = {
 var commonPlugins = [
     new HtmlWebpackPlugin({
         filename: './index.html',
-        template: './src/index.html'
+        template: './src/Tempo.Demo/index.html'
     })
 ];
 
@@ -41,8 +41,8 @@ module.exports = (env, options) => {
         entry: {
             demo: [
                 // "@babel/polyfill",
-                './src/App.fs.js',
-                './src/scss/main.scss'
+                './src/Tempo.Demo/App.fs.js',
+                './src/Tempo.Demo/scss/main.scss'
             ]
         },
         output: {

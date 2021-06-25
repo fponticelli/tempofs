@@ -31,6 +31,7 @@ type Template<'N, 'S, 'A, 'Q> =
 // Lifecycle
 // Request/Respond
 // Virtual Lifecycle
+// Block Changes on Equality
 // Capture capture/release state
 // Component
 
@@ -39,7 +40,14 @@ type Template<'N, 'S, 'A, 'Q> =
 // MapQuery
 // Adapter???
 // Lazy???
-// When???/If/Else
+// Interpolate State over time
+// Time Changes
+// SimpleComponent (State = Action)
+
+// HTML: Unsafe HTML
+// HTML: Portal
+// HTML: Generate HTML Elements and Attributes
+// HTML: Generate SVG Elements and Attributes
 
 and ComponentView<'S, 'A, 'Q> =
     { Impl: Impl

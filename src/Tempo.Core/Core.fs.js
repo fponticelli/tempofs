@@ -1,7 +1,7 @@
-import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
-import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { append, take, skip, zip, length, iterate, map } from "./.fable/fable-library.3.1.10/List.js";
-import { comparePrimitives, min as min_1, mapCurriedArgs } from "./.fable/fable-library.3.1.10/Util.js";
+import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
+import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { append, take, skip, zip, length, iterate, map } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { comparePrimitives, min as min_1, mapCurriedArgs } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 
 export class Value$2 extends Union {
     constructor(tag, ...fields) {

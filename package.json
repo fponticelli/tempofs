@@ -5,9 +5,9 @@
     "main": "index.js",
     "scripts": {
         "postinstall": "dotnet tool restore",
-        "watch": "dotnet fable src --watch --run webpack serve",
-        "prebuild": "npx del-cli ./src/**/*.fs.js ./src/.fable output",
-        "build": "dotnet fable src --run webpack build --mode production",
+        "watch": "dotnet fable src/Tempo.Demo --watch --run webpack serve",
+        "prebuild": "npx del-cli ./src/**/*.fs.js ./src/**/.fable **/output",
+        "build": "dotnet fable src/Tempo.Demo --run webpack build --mode production",
         "deploy": "npm run build && gh-pages -d output"
     },
     "repository": "git@github.com:fponticelli/tempofs.git",

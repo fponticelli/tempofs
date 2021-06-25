@@ -1,6 +1,6 @@
 import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
 import { record_type, union_type, int32_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { HTML_MakeProgram_Z7A39E9B2, HTML_Seq_Z7461BB91, HTML_Text, HTML_OneOf_Z2AFE4804, HTML_Text_77A7E8C8, HTML_MapState_Z5D9F8A77, HTML_Attr_Z3A5D29FA, HTML_Attr_3DF4EB53, HTML_On_47AABEE2, HTML_Text_Z721C83C5, HTML_On_4A53169E, HTML_Attr_Z384F8060, HTML_El_Z67FF9A04 } from "./HtmlDSL.fs.js";
+import { HTML_MakeProgram_Z7A39E9B2, HTML_Seq_Z7461BB91, HTML_Text, HTML_OneOf_Z2AFE4804, HTML_Text_77A7E8C8, HTML_MapState_Z5D9F8A77, HTML_Attr_Z3A5D29FA, HTML_Attr_3DF4EB53, HTML_On_47AABEE2, HTML_Text_Z721C83C5, HTML_On_4A53169E, HTML_Attr_Z384F8060, HTML_El_Z67FF9A04 } from "../Tempo.Html/HtmlDSL.fs.js";
 import { empty, singleton, ofArray } from "./.fable/fable-library.3.1.10/List.js";
 import { interpolate, toText } from "./.fable/fable-library.3.1.10/String.js";
 import { int32ToString } from "./.fable/fable-library.3.1.10/Util.js";
