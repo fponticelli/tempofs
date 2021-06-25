@@ -1,6 +1,6 @@
 import { Record } from "./.fable/fable-library.3.1.10/Types.js";
 import { class_type, record_type, lambda_type, unit_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { cons, iterate, ofArray } from "./.fable/fable-library.3.1.10/List.js";
+import { empty, cons, iterate, ofArray } from "./.fable/fable-library.3.1.10/List.js";
 import { toArray } from "./.fable/fable-library.3.1.10/Option.js";
 import { makeTrigger, HTMLTemplateAttribute$2, HTMLTemplateAttributeValue$2, HTMLTemplateElement$3, HTMLTemplateNode$3, HTMLElementImpl_$ctor_4C3D2741, MakeHTMLRender$3_$ctor_Z6156FC82 } from "./Html.fs.js";
 import { Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, MapState$6_$ctor_Z445964B9, packMapState, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "./Core.fs.js";
@@ -250,6 +250,18 @@ export function HTML_OneOf_390DE0B8(f, template1, template2, template3, template
             }
         }
     }, HTML_OneOf_Z2AFE4804((x) => x, template1, template2, template3), HTML_OneOf_Z1F5D2DDE((x_1) => x_1, template4, template5, template6, template7));
+}
+
+export function HTML_If_14D8D259(predicate, trueTemplate, falseTemplate) {
+    return HTML_OneOf_Z491B0F3C((s) => (predicate(s) ? (new FSharpChoice$2(0, s)) : (new FSharpChoice$2(1, s))), trueTemplate, falseTemplate);
+}
+
+export function HTML_When_4FF1974C(predicate, template) {
+    return HTML_If_14D8D259(predicate, template, new Template$4(1, empty()));
+}
+
+export function HTML_Unless_4FF1974C(predicate, template) {
+    return HTML_When_4FF1974C((arg) => (!predicate(arg)), template);
 }
 
 export function HTML_Seq_Z7461BB91(f, template) {

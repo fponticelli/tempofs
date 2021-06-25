@@ -274,6 +274,28 @@ type HTML =
             )
         )
 
+    static member If<'S, 'A, 'Q>
+        (
+            predicate: 'S -> bool,
+            trueTemplate: HTMLTemplate<'S, 'A, 'Q>,
+            falseTemplate: HTMLTemplate<'S, 'A, 'Q>
+        ) =
+        HTML.OneOf(
+            (fun s ->
+                if predicate s then
+                    Choice1Of2 s
+                else
+                    Choice2Of2 s),
+            trueTemplate,
+            falseTemplate
+        )
+
+    static member When<'S, 'A, 'Q>(predicate: 'S -> bool, template: HTMLTemplate<'S, 'A, 'Q>) =
+        HTML.If(predicate, template, Fragment [])
+
+    static member Unless<'S, 'A, 'Q>(predicate: 'S -> bool, template: HTMLTemplate<'S, 'A, 'Q>) =
+        HTML.When(predicate >> not, template)
+
     static member Seq<'S, 'S1, 'A, 'Q>
         (
             f: 'S -> 'S1 list,

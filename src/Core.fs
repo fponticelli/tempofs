@@ -28,11 +28,11 @@ type Template<'N, 'S, 'A, 'Q> =
     | OneOf2 of IOneOf2<'N, 'S, 'A, 'Q>
     | Iterator of IIterator<'N, 'S, 'A, 'Q>
 
-// Iterator
 // Lifecycle
+// Request/Respond
+// Virtual Lifecycle
 // Capture capture/release state
 // Component
-// Request/Respond
 
 // MapAction
 // MapImpl
@@ -272,7 +272,7 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
                         parent.Append group
                         let ls = iterator.MapF s
                         let mutable views = List.map (render group) ls
-                        
+
                         let query =
                             fun q -> List.iter (fun view -> view.Query q) views
 
