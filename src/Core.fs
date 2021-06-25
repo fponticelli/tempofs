@@ -26,11 +26,14 @@ type Template<'N, 'S, 'A, 'Q> =
     | Fragment of Template<'N, 'S, 'A, 'Q> list
     | MapState of IMapState<'N, 'S, 'A, 'Q>
     | OneOf2 of IOneOf2<'N, 'S, 'A, 'Q>
+    | Iterator of IIterator<'N, 'S, 'A, 'Q>
 
+// Iterator
 // Lifecycle
 // Capture capture/release state
+// Component
 // Request/Respond
-// Sequence
+
 // MapAction
 // MapImpl
 // MapQuery
@@ -78,6 +81,19 @@ and OneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q>(m, c1, c2) =
 and IOneOf2Invoker<'N, 'S, 'A, 'Q, 'R> =
     abstract Invoke<'N1, 'N2, 'S1, 'S2> : OneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q> -> 'R
 
+and IIterator<'N, 'S, 'A, 'Q> =
+    abstract Accept : IIteratorInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
+
+and Iterator<'N, 'N1, 'S, 'S1, 'A, 'Q>(f, template) =
+    member this.MapF : 'S -> 'S1 list = f
+    member this.Template : Template<'N1, 'S1, 'A, 'Q> = template
+    with
+        interface IIterator<'N, 'S, 'A, 'Q> with
+            member this.Accept f = f.Invoke<'N1, 'S1> this
+
+and IIteratorInvoker<'N, 'S, 'A, 'Q, 'R> =
+    abstract Invoke<'N1, 'S1> : Iterator<'N, 'N1, 'S, 'S1, 'A, 'Q> -> 'R
+
 and Render<'S, 'Q> = Impl -> 'S -> View<'S, 'Q>
 
 and MakeNodeRender<'N, 'S, 'Q> = 'N -> Render<'S, 'Q>
@@ -93,6 +109,12 @@ let packOneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q> (oneOf2: OneOf2<'N, 'N1, 'N2,
 
 let unpackOneOf2 (oneOf2: IOneOf2<'N, 'S, 'A, 'Q>) (f: IOneOf2Invoker<'N, 'S, 'A, 'Q, 'R>) : 'R = oneOf2.Accept f
 
+let packIterator<'N, 'N1, 'S, 'S1, 'A, 'Q> (iterator: Iterator<'N, 'N1, 'S, 'S1, 'A, 'Q>) =
+    iterator :> IIterator<'N, 'S, 'A, 'Q>
+
+let unpackIterator (iterator: IIterator<'N, 'S, 'A, 'Q>) (f: IIteratorInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R =
+    iterator.Accept f
+
 type ChoiceAssignament<'A, 'B> =
     | FirstOnly of 'A
     | SecondOnly of 'B
@@ -107,6 +129,7 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
         | Fragment ls -> this.MakeFragmentRender ls
         | MapState mapState -> this.MakeMapStateRender mapState
         | OneOf2 oneOf2 -> this.MakeOneOf2Render oneOf2
+        | Iterator iterator -> this.MakeIteratorRender iterator
 
     abstract MakeNodeRender : 'N -> (Impl -> 'S -> View<'S, 'Q>)
     abstract CreateGroupNode : string -> Impl
@@ -130,7 +153,7 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
               Change = fun s -> List.iter (fun i -> i.Change s) views
               Destroy =
                   fun () ->
-                      parent.Remove(group) // TODO this tries to remove nodes in the collection twice
+                      parent.Remove(group) // TODO this tries to remove nodes in the iterator twice
                       List.iter (fun i -> i.Destroy()) views
               Query = fun q -> List.iter (fun i -> i.Query q) views }
 
@@ -234,3 +257,41 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
                           Change = change
                           Query = query
                           Destroy = destroy } }
+
+    member this.MakeIteratorRender(iterator: IIterator<'N, 'S, 'A, 'Q>) : Impl -> 'S -> View<'S, 'Q> =
+        unpackIterator
+            iterator
+            { new IIteratorInvoker<'N, 'S, 'A, 'Q, Render<'S, 'Q>> with
+                member __.Invoke<'N2, 'S2>(iterator: Iterator<'N, 'N2, 'S, 'S2, 'A, 'Q>) : Render<'S, 'Q> =
+                    let render =
+                        (this.MakeRenderS<'N2, 'S2>())
+                            .Make iterator.Template
+
+                    fun (parent: Impl) (s: 'S) ->
+                        let group = this.CreateGroupNode("Iterator")
+                        parent.Append group
+                        let ls = iterator.MapF s
+                        let mutable views = List.map (render group) ls
+                        List.iter (fun view -> parent.Append view.Impl) views
+
+                        let query =
+                            fun q -> List.iter (fun view -> view.Query q) views
+
+                        let change =
+                            fun (state: 'S) ->
+                                let states = iterator.MapF state
+
+                                let min =
+                                    System.Math.Min(views.Length, states.Length)
+
+                                for i in 1 .. min do
+
+                                    List.iter (fun s -> view.Change s) states
+
+                        let destroy =
+                            fun () -> List.iter (fun view -> view.Destroy()) views
+
+                        { Impl = group
+                          Query = query
+                          Destroy = destroy
+                          Change = change } }
