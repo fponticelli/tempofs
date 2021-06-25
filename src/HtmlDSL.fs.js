@@ -3,8 +3,7 @@ import { class_type, record_type, lambda_type, unit_type } from "./.fable/fable-
 import { cons, iterate, ofArray } from "./.fable/fable-library.3.1.10/List.js";
 import { toArray } from "./.fable/fable-library.3.1.10/Option.js";
 import { makeTrigger, HTMLTemplateAttribute$2, HTMLTemplateAttributeValue$2, HTMLTemplateElement$3, HTMLTemplateNode$3, HTMLElementImpl_$ctor_4C3D2741, MakeHTMLRender$3_$ctor_Z6156FC82 } from "./Html.fs.js";
-import { OneOf2$8_$ctor_Z4F5F76C, packOneOf2, MapState$6_$ctor_Z445964B9, packMapState, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "./Core.fs.js";
-import { ToOption } from "./StringExtra.fs.js";
+import { Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, MapState$6_$ctor_Z445964B9, packMapState, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "./Core.fs.js";
 import { FSharpChoice$2 } from "./.fable/fable-library.3.1.10/Choice.js";
 
 export class MiddlewarePayload$2 extends Record {
@@ -78,7 +77,7 @@ export function HTML_Attr_68C4AEB5(name, value) {
 }
 
 export function HTML_Attr_Z384F8060(name, value) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(0, ToOption(value))));
+    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(0, value)));
 }
 
 export function HTML_Attr_Z3A5D29FA(name, f) {
@@ -86,27 +85,19 @@ export function HTML_Attr_Z3A5D29FA(name, f) {
 }
 
 export function HTML_Attr_3DF4EB53(name, f) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(1, (arg) => ToOption(f(arg)))));
+    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(1, (arg) => f(arg))));
 }
 
-export function HTML_on_4A53169E(name, action) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((_arg2, _arg1) => action)));
+export function HTML_On_4A53169E(name, action) {
+    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((_arg1) => action)));
 }
 
 export function HTML_On_459CDA74(name, handler) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((_arg4, _arg3) => handler())));
+    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((_arg2) => handler())));
 }
 
-export function HTML_On_16D4E2A2(name, handler) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((_arg5, e) => handler(e))));
-}
-
-export function HTML_On_Z5276E2EF(name, handler) {
+export function HTML_On_47AABEE2(name, handler) {
     return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger(handler)));
-}
-
-export function HTML_On_36180E4D(name, handler) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((s, _arg6) => handler(s))));
 }
 
 export function HTML_MapState_5F509A03(f, template) {
@@ -259,5 +250,9 @@ export function HTML_OneOf_390DE0B8(f, template1, template2, template3, template
             }
         }
     }, HTML_OneOf_Z2AFE4804((x) => x, template1, template2, template3), HTML_OneOf_Z1F5D2DDE((x_1) => x_1, template4, template5, template6, template7));
+}
+
+export function HTML_Seq_Z7461BB91(f, template) {
+    return new Template$4(4, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
 }
 

@@ -272,21 +272,30 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
                         parent.Append group
                         let ls = iterator.MapF s
                         let mutable views = List.map (render group) ls
-                        List.iter (fun view -> parent.Append view.Impl) views
-
+                        
                         let query =
                             fun q -> List.iter (fun view -> view.Query q) views
 
                         let change =
-                            fun (state: 'S) ->
-                                let states = iterator.MapF state
+                            fun (s: 'S) ->
+                                let states = iterator.MapF s
 
                                 let min =
                                     System.Math.Min(views.Length, states.Length)
 
-                                for i in 1 .. min do
+                                List.zip views states
+                                |> List.iter (fun (view, state) -> view.Change state)
 
-                                    List.iter (fun s -> view.Change s) states
+                                List.skip min views
+                                |> List.iter (fun view -> view.Destroy())
+
+                                views <- List.take min views
+
+                                let newViews =
+                                    List.skip min states
+                                    |> List.map (fun state -> render group state)
+
+                                views <- views @ newViews
 
                         let destroy =
                             fun () -> List.iter (fun view -> view.Destroy()) views

@@ -121,35 +121,26 @@ type HTML =
         attribute name (value |> Literal |> StringValue)
 
     static member Attr<'S, 'A>(name: string, value: string) : HTMLTemplateAttribute<'S, 'A> =
-        attribute name (value |> String.ToOption |> Literal |> StringValue)
+        attribute name (value |> Some |> Literal |> StringValue)
 
     static member Attr<'S, 'A>(name: string, f: 'S -> string option) : HTMLTemplateAttribute<'S, 'A> =
         attribute name (f |> Derived |> StringValue)
 
     static member Attr<'S, 'A>(name: string, f: 'S -> string) : HTMLTemplateAttribute<'S, 'A> =
-        attribute name (f >> String.ToOption |> Derived |> StringValue)
+        attribute name (f >> Some |> Derived |> StringValue)
 
-    static member on<'S, 'A>(name: string, action: 'A) : HTMLTemplateAttribute<'S, 'A> =
-        attribute name (makeTrigger (fun _ _ -> action) |> TriggerValue)
+    static member On<'S, 'A>(name: string, action: 'A) : HTMLTemplateAttribute<'S, 'A> =
+        attribute name (makeTrigger (fun _ -> action) |> TriggerValue)
 
     static member On<'S, 'A>(name: string, handler: unit -> 'A) : HTMLTemplateAttribute<'S, 'A> =
-        attribute
-            name
-            (makeTrigger (fun _ _ -> handler ())
-             |> TriggerValue)
+        attribute name (makeTrigger (fun _ -> handler ()) |> TriggerValue)
 
-    static member On<'S, 'A, 'E when 'E :> Event>(name: string, handler: 'E -> 'A) : HTMLTemplateAttribute<'S, 'A> =
-        attribute name (makeTrigger (fun _ e -> handler e) |> TriggerValue)
-
-    static member On<'S, 'A, 'E when 'E :> Event>
+    static member On<'S, 'A, 'EL, 'E when 'E :> Event and 'EL :> Element>
         (
             name: string,
-            handler: 'S -> 'E -> 'A
+            handler: TriggerPayload<'S, 'E, 'EL> -> 'A
         ) : HTMLTemplateAttribute<'S, 'A> =
         attribute name (makeTrigger handler |> TriggerValue)
-
-    static member On<'S, 'A>(name: string, handler: 'S -> 'A) : HTMLTemplateAttribute<'S, 'A> =
-        attribute name (makeTrigger (fun s _ -> handler s) |> TriggerValue)
 
     static member MapState<'S1, 'S2, 'A, 'Q>(f: 'S1 -> 'S2, template: HTMLTemplate<'S2, 'A, 'Q>) =
         Template<HTMLTemplateNode<'S1, 'A, 'Q>, 'S1, 'A, 'Q>.MapState
@@ -282,3 +273,12 @@ type HTML =
                 template7
             )
         )
+
+    static member Seq<'S, 'S1, 'A, 'Q>
+        (
+            f: 'S -> 'S1 list,
+            template: HTMLTemplate<'S1, 'A, 'Q>
+        ) : HTMLTemplate<'S, 'A, 'Q> =
+        Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>.Iterator
+            (packIterator<HTMLTemplateNode<'S, 'A, 'Q>, HTMLTemplateNode<'S1, 'A, 'Q>, 'S, 'S1, 'A, 'Q>
+             <| Iterator(f, template))

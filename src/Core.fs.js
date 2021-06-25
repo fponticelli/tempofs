@@ -1,9 +1,7 @@
 import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
 import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { iterate, map } from "./.fable/fable-library.3.1.10/List.js";
-import { printf, toConsole } from "./.fable/fable-library.3.1.10/String.js";
-import { mapCurriedArgs } from "./.fable/fable-library.3.1.10/Util.js";
-import { some } from "./.fable/fable-library.3.1.10/Option.js";
+import { append, take, skip, zip, length, iterate, map } from "./.fable/fable-library.3.1.10/List.js";
+import { comparePrimitives, min as min_1, mapCurriedArgs } from "./.fable/fable-library.3.1.10/Util.js";
 
 export class Value$2 extends Union {
     constructor(tag, ...fields) {
@@ -20,15 +18,15 @@ export function Value$2$reflection(gen0, gen1) {
     return union_type("Tempo.Core.Value`2", [gen0, gen1], Value$2, () => [[["Item", gen1]], [["Item", lambda_type(gen0, gen1)]]]);
 }
 
-export function Value$2_Val_2B594(v) {
+export function Value$2_Of_2B594(v) {
     return new Value$2(0, v);
 }
 
-export function Value$2_Val_Z1FC644C9(f) {
+export function Value$2_Of_Z1FC644C9(f) {
     return new Value$2(1, f);
 }
 
-export function Value$2_Val() {
+export function Value$2_Of() {
     return new Value$2(1, (x) => x);
 }
 
@@ -61,12 +59,12 @@ export class Template$4 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["Node", "Fragment", "MapState", "OneOf2"];
+        return ["Node", "Fragment", "MapState", "OneOf2", "Iterator"];
     }
 }
 
 export function Template$4$reflection(gen0, gen1, gen2, gen3) {
-    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.IMapState`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]]]);
+    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.IMapState`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IIterator`4", [gen0, gen1, gen2, gen3])]]]);
 }
 
 export class ComponentView$3 extends Record {
@@ -137,6 +135,25 @@ export function OneOf2$8_$ctor_Z4F5F76C(m, c1, c2) {
     return new OneOf2$8(m, c1, c2);
 }
 
+export class Iterator$6 {
+    constructor(f, template) {
+        this.f = f;
+        this.template = template;
+    }
+    Accept(f) {
+        const this$ = this;
+        return f.Invoke(this$);
+    }
+}
+
+export function Iterator$6$reflection(gen0, gen1, gen2, gen3, gen4, gen5) {
+    return class_type("Tempo.Core.Iterator`6", [gen0, gen1, gen2, gen3, gen4, gen5], Iterator$6);
+}
+
+export function Iterator$6_$ctor_4854B10D(f, template) {
+    return new Iterator$6(f, template);
+}
+
 export function MapState$6__get_MapF(this$) {
     return this$.m;
 }
@@ -157,6 +174,14 @@ export function OneOf2$8__get_Template2(this$) {
     return this$.c2;
 }
 
+export function Iterator$6__get_MapF(this$) {
+    return this$.f;
+}
+
+export function Iterator$6__get_Template(this$) {
+    return this$.template;
+}
+
 export function packMapState(mapState) {
     return mapState;
 }
@@ -171,6 +196,14 @@ export function packOneOf2(oneOf2) {
 
 export function unpackOneOf2(oneOf2, f) {
     return oneOf2.Accept(f);
+}
+
+export function packIterator(iterator) {
+    return iterator;
+}
+
+export function unpackIterator(iterator, f) {
+    return iterator.Accept(f);
 }
 
 export class ChoiceAssignament$2 extends Union {
@@ -215,6 +248,10 @@ export function MakeRender$4__Make_1DCD9633(this$, template) {
             const oneOf2 = template.fields[0];
             return MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2);
         }
+        case 4: {
+            const iterator = template.fields[0];
+            return MakeRender$4__MakeIteratorRender_40023148(this$, iterator);
+        }
         default: {
             const n = template.fields[0];
             return this$["Tempo.Core.MakeRender`4.MakeNodeRender2B595"](n);
@@ -230,9 +267,7 @@ export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
     const fs = map((arg00) => MakeRender$4__Make_1DCD9633(this$, arg00), templates);
     return (parent) => ((s) => {
         const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("Fragment");
-        toConsole(printf("Make Fragment"));
         parent.Append(group);
-        toConsole(printf("Make Fragment (Appended)"));
         const views = map(mapCurriedArgs((render) => render(group, s), [[0, 2]]), fs);
         return new View$2(group, (s_1) => {
             iterate((i) => {
@@ -257,11 +292,8 @@ export function MakeRender$4__MakeMapStateRender_Z738BD09F(this$, mapState) {
             const render = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), MapState$6__get_Template(mapState_1));
             return (parent) => ((s) => {
                 const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("MapState");
-                toConsole(printf("Make MapState"));
                 parent.Append(group);
-                toConsole(printf("Make MapState (Appended)"));
                 const view = render(group)(MapState$6__get_MapF(mapState_1)(s));
-                toConsole(printf("MakeMapState"));
                 parent.Append(view.Impl);
                 return new View$2(group, (s1) => {
                     view.Change(MapState$6__get_MapF(mapState_1)(s1));
@@ -278,45 +310,34 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
             const render2 = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), OneOf2$8__get_Template2(oneOf2_1));
             return (parent) => ((s) => {
                 const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("OneOf2");
-                toConsole(printf("MakeOneOf2"));
                 parent.Append(group);
-                toConsole(printf("MakeOneOf2 (Appended)"));
                 let assignament;
                 const matchValue = OneOf2$8__get_MapF(oneOf2_1)(s);
                 if (matchValue.tag === 1) {
                     const s2 = matchValue.fields[0];
-                    toConsole(printf("MakeOneOf2 Render2"));
                     const view2 = render2(group)(s2);
-                    toConsole(printf("MakeOneOf2 Render2 (Appended)"));
                     assignament = (new ChoiceAssignament$2(1, view2));
                 }
                 else {
                     const s1 = matchValue.fields[0];
-                    toConsole(printf("MakeOneOf2 Render1"));
                     const view1 = render1(group)(s1);
-                    toConsole(printf("MakeOneOf2 Render1 (Appended)"));
                     assignament = (new ChoiceAssignament$2(0, view1));
                 }
                 const change = (state) => {
-                    toConsole(printf("MaoneOf2.Change"));
                     const matchValue_1 = [assignament, OneOf2$8__get_MapF(oneOf2_1)(state)];
                     if (matchValue_1[0].tag === 2) {
                         if (matchValue_1[1].tag === 1) {
                             const s2_4 = matchValue_1[1].fields[0];
                             const view1_4 = matchValue_1[0].fields[0];
                             const view2_4 = matchValue_1[0].fields[1];
-                            toConsole(printf("MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2"));
-                            view2_4.Change(s2_4);
                             group.Append(view2_4.Impl);
-                            toConsole(printf("MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2 (Appended)"));
+                            view2_4.Change(s2_4);
                             group.Remove(view1_4.Impl);
-                            toConsole(printf("MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2 (After Remove)"));
                             assignament = (new ChoiceAssignament$2(3, view1_4, view2_4));
                         }
                         else {
                             const s1_2 = matchValue_1[1].fields[0];
                             const view1_2 = matchValue_1[0].fields[0];
-                            toConsole(printf("FirstAndSecond (view1, _), Choice1Of2 s1"));
                             view1_2.Change(s1_2);
                         }
                     }
@@ -324,19 +345,13 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
                         if (matchValue_1[1].tag === 0) {
                             const s1_3 = matchValue_1[1].fields[0];
                             const view2_5 = matchValue_1[0].fields[0];
-                            toConsole(printf("MakeOneOf2 SecondOnly view2, Choice1Of2 s1"));
-                            console.log(some(render1), group, s1_3);
                             const view1_5 = render1(group)(s1_3);
-                            console.log(some(view1_5));
-                            toConsole(printf("MakeOneOf2 SecondOnly view2, Choice1Of2 s1 (Appended)"));
                             group.Remove(view2_5.Impl);
-                            toConsole(printf("MakeOneOf2 SecondOnly view2, Choice1Of2 s1 (After Remove)"));
                             assignament = (new ChoiceAssignament$2(2, view1_5, view2_5));
                         }
                         else {
                             const s2_1 = matchValue_1[1].fields[0];
                             const view2_1 = matchValue_1[0].fields[0];
-                            toConsole(printf("SecondOnly view2, Choice2Of2 s2"));
                             view2_1.Change(s2_1);
                         }
                     }
@@ -345,35 +360,27 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
                             const s1_4 = matchValue_1[1].fields[0];
                             const view1_6 = matchValue_1[0].fields[0];
                             const view2_6 = matchValue_1[0].fields[1];
-                            toConsole(printf("MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1"));
-                            view1_6.Change(s1_4);
                             group.Append(view1_6.Impl);
-                            toConsole(printf("MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1 (Appended)"));
+                            view1_6.Change(s1_4);
                             group.Remove(view2_6.Impl);
-                            toConsole(printf("MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1 (After Remove)"));
                             assignament = (new ChoiceAssignament$2(2, view1_6, view2_6));
                         }
                         else {
                             const s2_2 = matchValue_1[1].fields[0];
                             const view2_2 = matchValue_1[0].fields[1];
-                            toConsole(printf("SecondAndFirst (_, view2), Choice2Of2 s2"));
                             view2_2.Change(s2_2);
                         }
                     }
                     else if (matchValue_1[1].tag === 1) {
                         const s2_3 = matchValue_1[1].fields[0];
                         const view1_3 = matchValue_1[0].fields[0];
-                        toConsole(printf("MakeOneOf2 FirstOnly view1, Choice2Of2 s2"));
                         const view2_3 = render2(group)(s2_3);
-                        toConsole(printf("MakeOneOf2 FirstOnly view1, Choice2Of2 s2 (Appended)"));
                         group.Remove(view1_3.Impl);
-                        toConsole(printf("MakeOneOf2 FirstOnly view1, Choice2Of2 s2 (After Remove)"));
                         assignament = (new ChoiceAssignament$2(3, view1_3, view2_3));
                     }
                     else {
                         const s1_1 = matchValue_1[1].fields[0];
                         const view1_1 = matchValue_1[0].fields[0];
-                        toConsole(printf("FirstOnly view1, Choice1Of2 s1"));
                         view1_1.Change(s1_1);
                     }
                 };
@@ -438,6 +445,46 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
                             view2_8.Destroy();
                         }
                     }
+                };
+                return new View$2(group, change, destroy, query);
+            });
+        },
+    });
+}
+
+export function MakeRender$4__MakeIteratorRender_40023148(this$, iterator) {
+    return unpackIterator(iterator, {
+        Invoke(iterator_1) {
+            const render = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), Iterator$6__get_Template(iterator_1));
+            return (parent) => ((s) => {
+                const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("Iterator");
+                parent.Append(group);
+                const ls = Iterator$6__get_MapF(iterator_1)(s);
+                let views = map(render(group), ls);
+                const query = (q) => {
+                    iterate((view) => {
+                        view.Query(q);
+                    }, views);
+                };
+                const change = (s_1) => {
+                    const states = Iterator$6__get_MapF(iterator_1)(s_1);
+                    const min = min_1((x, y) => comparePrimitives(x, y), length(views), length(states)) | 0;
+                    iterate((tupledArg) => {
+                        const view_1 = tupledArg[0];
+                        const state = tupledArg[1];
+                        view_1.Change(state);
+                    }, zip(views, states));
+                    iterate((view_2) => {
+                        view_2.Destroy();
+                    }, skip(min, views));
+                    views = take(min, views);
+                    const newViews = map((state_1) => render(group)(state_1), skip(min, states));
+                    views = append(views, newViews);
+                };
+                const destroy = () => {
+                    iterate((view_3) => {
+                        view_3.Destroy();
+                    }, views);
                 };
                 return new View$2(group, change, destroy, query);
             });

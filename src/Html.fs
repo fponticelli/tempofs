@@ -22,7 +22,6 @@ type HTMLElementImpl =
                 let nodes = child.GetNodes()
                 List.iter (this.element.appendChild >> ignore) nodes
             else
-                console.log child
                 failwith $"HTMLElementImpl doesn't know how to append a child of type {child}"
 
         override this.Remove(child: Impl) =
@@ -78,8 +77,6 @@ type HTMLGroupImpl =
                 let nodes = child.GetNodes()
                 let parent = this.ref.parentNode
 
-                printfn $"Appending to Group {nodes.Length} nodes"
-
                 List.iter (fun node -> parent.insertBefore (node, this.ref) |> ignore) nodes
             else
                 failwith $"HTMLGroupImpl doesn't know how to append a child of type {child}"
@@ -87,19 +84,23 @@ type HTMLGroupImpl =
         override this.Remove(child: Impl) =
             if hasProperty (child, "GetNodes") then
                 let htmlChild = unsafeCast<HTMLImpl, Impl> (child)
-                console.log ($"Before {this.children.Length}")
                 this.children <- List.filter (fun c -> c <> child) this.children
-                console.log ($"After {this.children.Length}")
                 let ls = htmlChild.GetNodes()
                 List.iter remove ls
             else
                 failwith $"HTMLGroupImpl doesn't know how to append a child of type {child}"
 
     new(label: string) =
+#if DEBUG
         counter <- counter + 1
 
         { ref = document.createComment $"{label}: {counter}"
           children = [] }
+#else
+        { ref = document.createTextNode ""
+          children = [] }
+#endif
+
 
 type HTMLTemplate<'S, 'A, 'Q> = Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>
 
@@ -123,22 +124,24 @@ and HTMLTemplateAttributeValue<'S, 'A> =
 and IHTMLTrigger<'S, 'A> =
     abstract Accept : IHTMLTriggerInvoker<'S, 'A, 'R> -> 'R
 
-and HTMLTrigger<'S, 'A, 'E when 'E :> Event>(handler) =
-    member this.Handler : 'S -> 'E -> 'A = handler
+and TriggerPayload<'S, 'E, 'EL when 'E :> Event and 'EL :> Element> = { State: 'S; Event: 'E; Element: 'EL }
+
+and HTMLTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element>(handler) =
+    member this.Handler : TriggerPayload<'S, 'E, 'EL> -> 'A = handler
     with
         interface IHTMLTrigger<'S, 'A> with
-            member this.Accept f = f.Invoke<'E> this
+            member this.Accept f = f.Invoke<'E, 'EL> this
 
 and IHTMLTriggerInvoker<'S, 'A, 'R> =
-    abstract Invoke<'E when 'E :> Event> : HTMLTrigger<'S, 'A, 'E> -> 'R
+    abstract Invoke<'E, 'EL when 'E :> Event and 'EL :> Element> : HTMLTrigger<'S, 'A, 'E, 'EL> -> 'R
 
 let inline attribute<'S, 'A> name value : HTMLTemplateAttribute<'S, 'A> = { Name = name; Value = value }
 
-let packHTMLTrigger (trigger: HTMLTrigger<'S, 'A, 'E>) = trigger :> IHTMLTrigger<'S, 'A>
+let packHTMLTrigger (trigger: HTMLTrigger<'S, 'A, 'E, 'EL>) = trigger :> IHTMLTrigger<'S, 'A>
 
 let unpackHTMLTrigger (trigger: IHTMLTrigger<'S, 'A>) (f: IHTMLTriggerInvoker<'S, 'A, 'R>) : 'R = trigger.Accept f
 
-let makeTrigger<'S, 'A, 'E when 'E :> Event> (f: 'S -> 'E -> 'A) = packHTMLTrigger <| HTMLTrigger(f)
+let makeTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'E, 'EL> -> 'A) = packHTMLTrigger <| HTMLTrigger(f)
 
 let applyStringAttribute (name: string) (el: HTMLElement) (s: string option) =
     match s with
@@ -162,8 +165,20 @@ let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) 
         unpackHTMLTrigger
             domTrigger
             { new IHTMLTriggerInvoker<'S, 'A, int> with
-                override this.Invoke<'E when 'E :> Event>(t: HTMLTrigger<'S, 'A, 'E>) =
-                    el.addEventListener (name, (fun e -> dispatch <| t.Handler(state ()) (e :?> 'E)))
+                override this.Invoke<'E, 'EL when 'E :> Event and 'EL :> Element>(t: HTMLTrigger<'S, 'A, 'E, 'EL>) =
+                    let el = (el :> Element :?> 'EL)
+
+                    el.addEventListener (
+                        name,
+                        (fun e ->
+                            dispatch
+                            <| t.Handler(
+                                { State = state ()
+                                  Event = (e :?> 'E)
+                                  Element = el }
+                            ))
+                    )
+
                     0 }
         |> ignore
 
@@ -187,8 +202,6 @@ type MakeHTMLRender<'S, 'A, 'Q>(dispatch: 'A -> unit) =
 
             // TODO use HTMLElementImpl methods
             List.iter (applyAttribute dispatch htmlImpl.element getState) node.Attributes
-
-            printfn "DOMElement"
             parent.Append impl
 
             // TODO use HTMLElementImpl methods
@@ -235,9 +248,7 @@ type MakeHTMLRender<'S, 'A, 'Q>(dispatch: 'A -> unit) =
             | Derived f ->
                 let htmlImpl = HTMLTextImpl(f state)
                 let impl = htmlImpl :> Impl
-                printfn $"Text Node Derived: {htmlImpl.text.nodeValue}"
                 parent.Append impl
-                printfn "Text Node Derived (Appended)"
 
                 { Impl = impl
                   Change = fun state -> htmlImpl.text.nodeValue <- f state // TODO use HTMLTextImpl methods
@@ -246,9 +257,7 @@ type MakeHTMLRender<'S, 'A, 'Q>(dispatch: 'A -> unit) =
             | Literal s ->
                 let htmlImpl = HTMLTextImpl s
                 let impl = htmlImpl :> Impl
-                printfn "Text Node Literal"
                 parent.Append impl
-                printfn "Text Node Literal (Appended)"
 
                 { Impl = impl
                   Change = ignore
