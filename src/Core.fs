@@ -3,9 +3,9 @@ module Tempo.Core
 type Value<'S, 'V> =
     | Literal of 'V
     | Derived of ('S -> 'V)
-    static member Val<'V>(v: 'V) = Literal v
-    static member Val<'S, 'V>(f: 'S -> 'V) = Derived f
-    static member Val<'S>() = Derived id<'S>
+    static member Of<'V>(v: 'V) = Literal v
+    static member Of<'S, 'V>(f: 'S -> 'V) = Derived f
+    static member Of<'S>() = Derived id<'S>
 
     static member Resolve (v: Value<'S, 'V>) (s: 'S) =
         match v with
@@ -29,6 +29,7 @@ type Template<'N, 'S, 'A, 'Q> =
 
 // Lifecycle
 // Capture capture/release state
+// Request/Respond
 // Sequence
 // MapAction
 // MapImpl
@@ -119,10 +120,8 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
 
         fun (parent: Impl) (s: 'S) ->
             let group = this.CreateGroupNode("Fragment")
-            printfn "Make Fragment"
-            parent.Append group // TODO move after views?
-            printfn "Make Fragment (Appended)"
-            // this.AppendNode parent ref
+            parent.Append group
+
             let views =
                 List.map (fun render -> render group s) (fs)
 
@@ -146,12 +145,8 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
 
                     fun (parent: Impl) (s: 'S) ->
                         let group = this.CreateGroupNode("MapState")
-                        printfn "Make MapState"
-                        parent.Append group // TODO move after view?
-                        printfn "Make MapState (Appended)"
+                        parent.Append group
                         let view = render group (mapState.MapF s)
-                        printfn "MakeMapState"
-                        // this.AppendNode parent view.Impl
                         parent.Append view.Impl
 
                         { Impl = group
@@ -176,79 +171,43 @@ type MakeRender<'N, 'S, 'A, 'Q>() =
 
                     fun (parent: Impl) (s: 'S) ->
                         let group = this.CreateGroupNode("OneOf2")
-                        printfn "MakeOneOf2"
-                        parent.Append group // TODO move after views?
-                        printfn "MakeOneOf2 (Appended)"
-                        // this.AppendNode parent ref
+                        parent.Append group
 
                         let mutable assignament =
                             match oneOf2.MapF s with
                             | Choice1Of2 s1 ->
-                                printfn "MakeOneOf2 Render1"
                                 let view1 = render1 group s1
-                                // group.Append view1.Impl
-                                printfn "MakeOneOf2 Render1 (Appended)"
-                                // this.InsertBeforeNode group view1.Impl
                                 FirstOnly view1
                             | Choice2Of2 s2 ->
-                                printfn "MakeOneOf2 Render2"
                                 let view2 = render2 group s2
-                                // group.Append view2.Impl
-                                printfn "MakeOneOf2 Render2 (Appended)"
-                                // this.InsertBeforeNode group view2.Impl
                                 SecondOnly view2
 
                         let change state =
-                            printfn "MaoneOf2.Change"
 
                             match (assignament, oneOf2.MapF state) with
-                            | (FirstOnly view1, Choice1Of2 s1) ->
-                                printfn "FirstOnly view1, Choice1Of2 s1"
-                                view1.Change s1
-                            | (FirstAndSecond (view1, _), Choice1Of2 s1) ->
-                                printfn "FirstAndSecond (view1, _), Choice1Of2 s1"
-                                view1.Change s1
+                            | (FirstOnly view1, Choice1Of2 s1) -> view1.Change s1
+                            | (FirstAndSecond (view1, _), Choice1Of2 s1) -> view1.Change s1
 
-                            | (SecondOnly view2, Choice2Of2 s2) ->
-                                printfn "SecondOnly view2, Choice2Of2 s2"
-                                view2.Change s2
-                            | (SecondAndFirst (_, view2), Choice2Of2 s2) ->
-                                printfn "SecondAndFirst (_, view2), Choice2Of2 s2"
-                                view2.Change s2
+                            | (SecondOnly view2, Choice2Of2 s2) -> view2.Change s2
+                            | (SecondAndFirst (_, view2), Choice2Of2 s2) -> view2.Change s2
 
                             | (FirstOnly view1, Choice2Of2 s2) ->
-                                printfn "MakeOneOf2 FirstOnly view1, Choice2Of2 s2"
                                 let view2 = render2 group s2
-                                // group.Append view2.Impl
-                                printfn "MakeOneOf2 FirstOnly view1, Choice2Of2 s2 (Appended)"
                                 group.Remove view1.Impl
-                                printfn "MakeOneOf2 FirstOnly view1, Choice2Of2 s2 (After Remove)"
                                 assignament <- SecondAndFirst(view1, view2)
                             | (FirstAndSecond (view1, view2), Choice2Of2 s2) ->
-                                printfn "MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2"
-                                view2.Change s2
                                 group.Append view2.Impl
-                                printfn "MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2 (Appended)"
+                                view2.Change s2
                                 group.Remove view1.Impl
-                                printfn "MakeOneOf2 FirstAndSecond (view1, view2), Choice2Of2 s2 (After Remove)"
                                 assignament <- SecondAndFirst(view1, view2)
                             | (SecondOnly view2, Choice1Of2 s1) ->
-                                printfn "MakeOneOf2 SecondOnly view2, Choice1Of2 s1"
-                                Browser.Dom.console.log (render1, group, s1)
                                 let view1 = render1 group s1
-                                Browser.Dom.console.log (view1)
-                                // group.Append view1.Impl
-                                printfn "MakeOneOf2 SecondOnly view2, Choice1Of2 s1 (Appended)"
                                 group.Remove view2.Impl
-                                printfn "MakeOneOf2 SecondOnly view2, Choice1Of2 s1 (After Remove)"
                                 assignament <- FirstAndSecond(view1, view2)
                             | (SecondAndFirst (view1, view2), Choice1Of2 s1) ->
-                                printfn "MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1"
-                                view1.Change s1
                                 group.Append view1.Impl
-                                printfn "MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1 (Appended)"
+                                view1.Change s1
                                 group.Remove view2.Impl
-                                printfn "MakeOneOf2 SecondAndFirst (view1, view2), Choice1Of2 s1 (After Remove)"
                                 assignament <- FirstAndSecond(view1, view2)
 
                         let query q =
