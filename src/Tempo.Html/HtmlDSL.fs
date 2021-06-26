@@ -346,3 +346,41 @@ module DSL =
             Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>.Iterator
                 (packIterator<HTMLTemplateNode<'S, 'A, 'Q>, HTMLTemplateNode<'S1, 'A, 'Q>, 'S, 'S1, 'A, 'Q>
                  <| Iterator(f, template))
+
+        static member inline Lifecycle<'S, 'A, 'Q, 'P>
+            (
+                afterRender: 'S -> 'P,
+                beforeChange: 'S -> 'P -> bool,
+                afterChange: 'S -> 'P -> 'P,
+                beforeDestroy: 'P -> unit,
+                respond: 'Q -> 'P -> unit,
+                template: HTMLTemplateNode<'S, 'A, 'Q>
+            ) : HTMLTemplate<'S, 'A, 'Q> =
+            lifecycle
+                afterRender
+                beforeChange
+                afterChange
+                beforeDestroy
+                respond
+                (template :> obj :?> Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>) // TODO not sure why I have to cheat here
+
+        static member CompareStates<'S, 'A, 'Q>
+            (
+                f: 'S -> 'S -> bool,
+                template: HTMLTemplate<'S, 'A, 'Q>
+            ) : HTMLTemplate<'S, 'A, 'Q> =
+            lifecycle id f (fun state _ -> state) ignore (fun _ _ -> ()) template
+
+        static member inline Filter<'S, 'A, 'Q>
+            (
+                f: 'S -> bool,
+                template: HTMLTemplate<'S, 'A, 'Q>
+            ) : HTMLTemplate<'S, 'A, 'Q> =
+            lifecycle ignore ((fun s _ -> f s)) (fun _ _ -> ()) ignore (fun _ _ -> ()) template
+
+        static member inline WhenStateChanges<'S, 'A, 'Q when 'S: equality>
+            (
+                f: 'S -> bool,
+                template: HTMLTemplate<'S, 'A, 'Q>
+            ) : HTMLTemplate<'S, 'A, 'Q> =
+            HTML.CompareStates((=), template)

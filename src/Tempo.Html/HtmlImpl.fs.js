@@ -3,7 +3,7 @@ import { append, map, empty, filter, cons, reverse, collect, iterate, singleton 
 import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
 import { remove } from "./HtmlTools.fs.js";
 import { partialApply, mapCurriedArgs, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { HTMLTemplateNode$3$reflection, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
+import { HTMLTemplateNode$3$reflection, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLLifecycle$4_$ctor_55038AA3, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
 import { View$2, MakeRender$4__Make_1DCD9633, MakeRender$4$reflection, MakeRender$4, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
 import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
 
@@ -169,6 +169,18 @@ export function makeTrigger(f) {
     return packHTMLTrigger(HTMLTrigger$4_$ctor_75095B8B(f));
 }
 
+export function packHTMLLifecycle(lifecycle) {
+    return lifecycle;
+}
+
+export function unpackHTMLLifecycle(lifecycle, f) {
+    return lifecycle.Accept(f);
+}
+
+export function makeLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
+    return packHTMLLifecycle(HTMLLifecycle$4_$ctor_55038AA3(afterRender, beforeChange, afterChange, beforeDestroy, respond));
+}
+
 export function applyStringAttribute(name, el, s) {
     if (s == null) {
         el.removeAttribute(name);
@@ -219,7 +231,11 @@ export function applyAttribute(dispatch, el, state, _arg1) {
         }
         case 2: {
             const lc = value.fields[0];
-            throw (new Error("ainono"));
+            void unpackHTMLLifecycle(lc, {
+                Invoke(t_1) {
+                    throw (new Error("Not implemented by me"));
+                },
+            });
             break;
         }
         default: {

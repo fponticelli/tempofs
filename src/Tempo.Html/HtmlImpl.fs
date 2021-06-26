@@ -111,6 +111,14 @@ module Impl =
 
     let makeTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'E, 'EL> -> 'A) = packHTMLTrigger <| HTMLTrigger(f)
 
+    let packHTMLLifecycle (lifecycle: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = lifecycle :> IHTMLLifecycle<'S, 'Q>
+
+    let unpackHTMLLifecycle (lifecycle: IHTMLLifecycle<'S, 'Q>) (f: IHTMLLifecycleInvoker<'S, 'Q, 'R>) : 'R = lifecycle.Accept f
+
+    let makeLifecycle<'S, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'Q, 'EL> -> 'P, beforeChange: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> (bool * 'P), afterChange: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> 'P, beforeDestroy: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> 'P, respond: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> 'P) =
+        packHTMLLifecycle
+        <| HTMLLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond)
+
     let applyStringAttribute (name: string) (el: HTMLElement) (s: string option) =
         match s with
         | Some s -> el.setAttribute (name, s)
@@ -150,7 +158,13 @@ module Impl =
 
                         0 }
             |> ignore
-        | LifecycleValue lc -> failwith "ainono"
+        | LifecycleValue lc ->
+            unpackHTMLLifecycle
+                lc
+                { new IHTMLLifecycleInvoker<'S, 'Q, int> with
+                    override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) =
+                        failwith "Not implemented by me" }
+            |> ignore
 
     type MakeHTMLRender<'S, 'A, 'Q>() =
         inherit MakeRender<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>()

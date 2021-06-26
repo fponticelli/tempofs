@@ -221,7 +221,7 @@ module Core =
                                 view.Destroy()
 
                             let change state =
-                                if lifecycle.BeforeChange state payload then
+                                if not <| lifecycle.BeforeChange state payload then
                                     view.Change state
                                     payload <- lifecycle.AfterChange state payload
 

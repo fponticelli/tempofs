@@ -393,7 +393,7 @@ export function MakeRender$4__MakeLifecycleRender_Z6106CFA4(this$, lifecycle_1) 
                     view.Destroy();
                 };
                 const change = (state_1) => {
-                    if (Lifecycle$5__get_BeforeChange(lifecycle_2)(state_1)(payload)) {
+                    if (!Lifecycle$5__get_BeforeChange(lifecycle_2)(state_1)(payload)) {
                         view.Change(state_1);
                         payload = Lifecycle$5__get_AfterChange(lifecycle_2)(state_1)(payload);
                     }
