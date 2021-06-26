@@ -1,23 +1,23 @@
 import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { class_type, record_type, lambda_type, unit_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { empty, cons, iterate, ofArray } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
-import { toArray } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
-import { makeTrigger, HTMLTemplateAttribute$2, HTMLTemplateAttributeValue$2, HTMLTemplateElement$3, HTMLTemplateNode$3, HTMLElementImpl_$ctor_4C3D2741, MakeHTMLRender$3_$ctor_Z6156FC82 } from "./Html.fs.js";
-import { Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, MapState$6_$ctor_Z445964B9, packMapState, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "../Tempo.Core/Core.fs.js";
+import { makeTrigger, HTMLElementImpl_$ctor_4C3D2741, MakeHTMLRender$3_$ctor } from "./HtmlImpl.fs.js";
+import { Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "../Tempo.Core/Core.fs.js";
+import { HTMLTemplateAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
 import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
+import { empty } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
 
 export class MiddlewarePayload$2 extends Record {
-    constructor(Current, Old, Action, Dispatch) {
+    constructor(Current, Previous, Action, Dispatch) {
         super();
         this.Current = Current;
-        this.Old = Old;
+        this.Previous = Previous;
         this.Action = Action;
         this.Dispatch = Dispatch;
     }
 }
 
 export function MiddlewarePayload$2$reflection(gen0, gen1) {
-    return record_type("Tempo.Html.DSL.MiddlewarePayload`2", [gen0, gen1], MiddlewarePayload$2, () => [["Current", gen0], ["Old", gen0], ["Action", gen1], ["Dispatch", lambda_type(gen1, unit_type)]]);
+    return record_type("Tempo.Html.DSL.MiddlewarePayload`2", [gen0, gen1], MiddlewarePayload$2, () => [["Current", gen0], ["Previous", gen0], ["Action", gen1], ["Dispatch", lambda_type(gen1, unit_type)]]);
 }
 
 export class HTML {
@@ -29,34 +29,30 @@ export function HTML$reflection() {
     return class_type("Tempo.Html.DSL.HTML", void 0, HTML);
 }
 
-export function HTML_MakeProgram_Z7A39E9B2(template, el, audit) {
-    let invokes = ofArray(toArray(audit));
-    const dispatch = (action) => {
-        iterate((f) => {
-            f(action);
-        }, invokes);
-    };
-    const renderInstance = MakeHTMLRender$3_$ctor_Z6156FC82(dispatch);
-    const f_1 = MakeRender$4__Make_1DCD9633(renderInstance, template);
+export function HTML_MakeProgram_Z9447D8C(template, el) {
+    const renderInstance = MakeHTMLRender$3_$ctor();
+    const f = MakeRender$4__Make_1DCD9633(renderInstance, template);
     const parent = HTMLElementImpl_$ctor_4C3D2741(el);
     let render;
-    const clo1 = f_1(parent);
-    render = ((arg10) => clo1(arg10));
+    const clo1 = f(parent);
+    render = ((arg10) => {
+        const clo2 = clo1(arg10);
+        return (arg20) => clo2(arg20);
+    });
     return (update) => ((middleware) => ((state) => {
         let localState = state;
-        const view = render(localState);
-        const updateDispatch = (action_1) => {
-            const newState = update(localState, action_1);
+        const dispatch = (action) => {
+            const newState = update(localState, action);
             view.Change(newState);
-            middleware(new MiddlewarePayload$2(newState, localState, action_1, dispatch));
+            middleware(new MiddlewarePayload$2(newState, localState, action, dispatch));
             localState = newState;
         };
-        invokes = cons(updateDispatch, invokes);
+        const view = render(localState)(dispatch);
         return new ComponentView$3(view.Impl, dispatch, view.Change, view.Destroy, view.Query);
     }));
 }
 
-export function HTML_El_Z67FF9A04(name, attributes, children) {
+export function HTML_El_Z7374416F(name, attributes, children) {
     return new Template$4(0, new HTMLTemplateNode$3(0, new HTMLTemplateElement$3(name, attributes, children)));
 }
 
@@ -73,43 +69,35 @@ export function HTML_Text_77A7E8C8(f) {
 }
 
 export function HTML_Attr_68C4AEB5(name, value) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(0, value)));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value)));
 }
 
 export function HTML_Attr_Z384F8060(name, value) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(0, value)));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value)));
 }
 
 export function HTML_Attr_Z3A5D29FA(name, f) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(1, f)));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, f)));
 }
 
 export function HTML_Attr_3DF4EB53(name, f) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(0, new Value$2(1, (arg) => f(arg))));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (arg) => f(arg))));
 }
 
 export function HTML_On_4A53169E(name, action) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((_arg1) => action)));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(1, makeTrigger((_arg1) => action)));
 }
 
 export function HTML_On_459CDA74(name, handler) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger((_arg2) => handler())));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(1, makeTrigger((_arg2) => handler())));
 }
 
 export function HTML_On_47AABEE2(name, handler) {
-    return new HTMLTemplateAttribute$2(name, new HTMLTemplateAttributeValue$2(1, makeTrigger(handler)));
-}
-
-export function HTML_MapState_5F509A03(f, template) {
-    return new Template$4(2, packMapState(MapState$6_$ctor_Z445964B9(f, template)));
-}
-
-export function HTML_MapState_Z5D9F8A77(f, templates) {
-    return HTML_MapState_5F509A03(f, new Template$4(1, templates));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(1, makeTrigger(handler)));
 }
 
 export function HTML_OneOf_Z491B0F3C(f, template1, template2) {
-    return new Template$4(3, packOneOf2(OneOf2$8_$ctor_Z4F5F76C(f, template1, template2)));
+    return new Template$4(4, packOneOf2(OneOf2$8_$ctor_Z4F5F76C(f, template1, template2)));
 }
 
 export function HTML_OneOf_Z2AFE4804(f, template1, template2, template3) {
@@ -265,6 +253,6 @@ export function HTML_Unless_4FF1974C(predicate, template) {
 }
 
 export function HTML_Seq_Z7461BB91(f, template) {
-    return new Template$4(4, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
+    return new Template$4(5, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
 }
 

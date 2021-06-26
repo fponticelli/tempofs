@@ -41,7 +41,7 @@ let template : HTMLTemplate<State, Action, unit> =
                 )
                 El(
                     "sp-number-field",
-                    [ On<_, _, Types.HTMLInputElement, _>(
+                    [ On<_, _, _, Types.HTMLInputElement, _>(
                         "input",
                         (fun { Element = el } -> Set(el.value :> obj :?> int))
                       )
@@ -52,7 +52,7 @@ let template : HTMLTemplate<State, Action, unit> =
           )
           El(
               "sp-slider",
-              [ On<_, _, Types.HTMLInputElement, _>("input", (fun { Element = el } -> Set(el.value :> obj :?> int)))
+              [ On<_, _, _, Types.HTMLInputElement, _>("input", (fun { Element = el } -> Set(el.value :> obj :?> int)))
                 Attr("value", (fun { Counter = c } -> $"{c}"))
                 Attr("label", "Slider")
                 Attr("variant", "tick")
@@ -126,13 +126,13 @@ let update state action =
     | Set v -> { state with Counter = v }
 
 let middleware
-    { Current = current
-      Old = old
-      Dispatch = dispatch
-      Action = action }
+    ({ Current = current
+       Previous = prev
+       Action = action }: MiddlewarePayload<_, _>)
     =
-    console.log $"Action: {action}, State: {current}, Previous {old}"
+    console.log $"Action: {action}, State: {current}, Previous {prev}"
 
-let render = MakeProgram(template, document.body)
+let render =
+    HTML.MakeProgram(template, document.body)
 
 let view = render update middleware state
