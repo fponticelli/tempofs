@@ -142,19 +142,28 @@ module DSL =
             ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
             attribute name (makeTrigger handler |> TriggerValue)
 
+        static member inline Map<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
+            (
+                state: 'S1 -> 'S2,
+                action: 'A2 -> 'A1,
+                query: 'Q1 -> 'Q2,
+                template: HTMLTemplate<'S2, 'A2, 'Q2>
+            ) : HTMLTemplate<'S1, 'A1, 'Q1> =
+            map state action query template
+
         static member inline MapState<'S1, 'S2, 'A, 'Q>
             (
                 f: 'S1 -> 'S2,
                 template: HTMLTemplate<'S2, 'A, 'Q>
             ) : HTMLTemplate<'S1, 'A, 'Q> =
-            (mapState f template)
+            mapState f template
 
         static member inline MapState<'S1, 'S2, 'A, 'Q>
             (
                 f: 'S1 -> 'S2,
                 templates: HTMLTemplate<'S2, 'A, 'Q> list
             ) : HTMLTemplate<'S1, 'A, 'Q> =
-            (mapState f <| Fragment templates)
+            mapState f <| Fragment templates
 
         static member inline MapAction<'S, 'A1, 'A2, 'Q>
             (

@@ -26,7 +26,7 @@ module Core =
         | Node of 'N
         | Fragment of Template<'N, 'S, 'A, 'Q> list
         | Map of IMap<'N, 'S, 'A, 'Q>
-        | Virtual of IVirtual<'N, 'S, 'A, 'Q>
+        | Lifecycle of ILifecycle<'N, 'S, 'A, 'Q>
         | OneOf2 of IOneOf2<'N, 'S, 'A, 'Q>
         | Iterator of IIterator<'N, 'S, 'A, 'Q>
 
@@ -58,10 +58,10 @@ module Core =
     and IMapInvoker<'N1, 'S1, 'A1, 'Q1, 'R> =
         abstract Invoke<'N2, 'S2, 'A2, 'Q2> : Map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> -> 'R
 
-    and IVirtual<'N, 'S, 'A, 'Q> =
-        abstract Accept : IVirtualInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
+    and ILifecycle<'N, 'S, 'A, 'Q> =
+        abstract Accept : ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
 
-    and Virtual<'N, 'S, 'A, 'Q, 'P>(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) =
+    and Lifecycle<'N, 'S, 'A, 'Q, 'P>(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) =
         member this.AfterRender : 'S -> 'P = afterRender
         member this.BeforeChange : 'S -> 'P -> bool = beforeChange
         member this.AfterChange : 'S -> 'P -> 'P = afterChange
@@ -69,11 +69,11 @@ module Core =
         member this.Respond : 'Q -> 'P -> unit = respond
         member this.Template : Template<'N, 'S, 'A, 'Q> = template
         with
-            interface IVirtual<'N, 'S, 'A, 'Q> with
+            interface ILifecycle<'N, 'S, 'A, 'Q> with
                 member this.Accept f = f.Invoke<'P> this
 
-    and IVirtualInvoker<'N, 'S, 'A, 'Q, 'R> =
-        abstract Invoke<'P> : Virtual<'N, 'S, 'A, 'Q, 'P> -> 'R
+    and ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R> =
+        abstract Invoke<'P> : Lifecycle<'N, 'S, 'A, 'Q, 'P> -> 'R
 
     and IOneOf2<'N, 'S, 'A, 'Q> =
         abstract Accept : IOneOf2Invoker<'N, 'S, 'A, 'Q, 'R> -> 'R
@@ -113,9 +113,9 @@ module Core =
 
     let unpackMap (map: IMap<'N, 'S, 'A, 'Q>) (f: IMapInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
 
-    let packVirtual<'N, 'S, 'A, 'Q, 'P> (map: Virtual<'N, 'S, 'A, 'Q, 'P>) = map :> IVirtual<'N, 'S, 'A, 'Q>
+    let packLifecycle<'N, 'S, 'A, 'Q, 'P> (map: Lifecycle<'N, 'S, 'A, 'Q, 'P>) = map :> ILifecycle<'N, 'S, 'A, 'Q>
 
-    let unpackVirtual (map: IVirtual<'N, 'S, 'A, 'Q>) (f: IVirtualInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
+    let unpackLifecycle (map: ILifecycle<'N, 'S, 'A, 'Q>) (f: ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
 
     let packOneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q> (oneOf2: OneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q>) =
         oneOf2 :> IOneOf2<'N, 'S, 'A, 'Q>
@@ -141,7 +141,7 @@ module Core =
             | Node n -> this.MakeNodeRender n
             | Fragment ls -> this.MakeFragmentRender ls
             | Map map -> this.MakeMapRender map
-            | Virtual virt -> this.MakeVirtualRender virt
+            | Lifecycle lifecycle -> this.MakeLifecycleRender lifecycle
             | OneOf2 oneOf2 -> this.MakeOneOf2Render oneOf2
             | Iterator iterator -> this.MakeIteratorRender iterator
 
@@ -199,29 +199,31 @@ module Core =
                               Destroy = destroy
                               Change = change } }
 
-        member this.MakeVirtualRender<'P>(virt: IVirtual<'N, 'S, 'A, 'Q>) : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
-            unpackVirtual
-                virt
-                { new IVirtualInvoker<'N, 'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
-                    member __.Invoke<'P>(virt: Virtual<'N, 'S, 'A, 'Q, 'P>) : Render<'S, 'A, 'Q> =
-                        let render = this.Make virt.Template
+        member this.MakeLifecycleRender<'P>
+            (lifecycle: ILifecycle<'N, 'S, 'A, 'Q>)
+            : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
+            unpackLifecycle
+                lifecycle
+                { new ILifecycleInvoker<'N, 'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
+                    member __.Invoke<'P>(lifecycle: Lifecycle<'N, 'S, 'A, 'Q, 'P>) : Render<'S, 'A, 'Q> =
+                        let render = this.Make lifecycle.Template
 
                         fun (impl: Impl) (state: 'S) (dispatch: Dispatch<'A>) ->
                             let view = render impl state dispatch
-                            let mutable payload = virt.AfterRender state
+                            let mutable payload = lifecycle.AfterRender state
 
                             let query q =
-                                virt.Respond q payload
+                                lifecycle.Respond q payload
                                 view.Query q
 
                             let destroy () =
-                                virt.BeforeDestroy payload
+                                lifecycle.BeforeDestroy payload
                                 view.Destroy()
 
                             let change state =
-                                if virt.BeforeChange state payload then
+                                if lifecycle.BeforeChange state payload then
                                     view.Change state
-                                    payload <- virt.AfterChange state payload
+                                    payload <- lifecycle.AfterChange state payload
 
                             { Impl = impl
                               Change = change
@@ -360,6 +362,14 @@ module Core =
                               Destroy = destroy
                               Change = change } }
 
+    let map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
+        (state: 'S1 -> 'S2)
+        (action: 'A2 -> 'A1)
+        (query: 'Q1 -> 'Q2)
+        (template: Template<'N2, 'S2, 'A2, 'Q2>)
+        =
+        Template<'N1, 'S1, 'A1, 'Q1>.Map (packMap <| Map(state, action, query, template))
+
     let mapState<'N1, 'N2, 'S1, 'S2, 'A, 'Q> (f: 'S1 -> 'S2) (template: Template<'N2, 'S2, 'A, 'Q>) =
         Template<'N1, 'S1, 'A, 'Q>.Map (packMap <| Map(f, id, id, template))
 
@@ -368,3 +378,15 @@ module Core =
 
     let mapQuery<'N1, 'N2, 'S, 'A, 'Q1, 'Q2> (f: 'Q1 -> 'Q2) (template: Template<'N2, 'S, 'A, 'Q2>) =
         Template<'N1, 'S, 'A, 'Q1>.Map (packMap <| Map(id, id, f, template))
+
+    let lifecycle
+        (afterRender: 'S -> 'P)
+        (beforeChange: 'S -> 'P -> bool)
+        (afterChange: 'S -> 'P -> 'P)
+        (beforeDestroy: 'P -> unit)
+        (respond: 'Q -> 'P -> unit)
+        (template: Template<'N, 'S, 'A, 'Q>)
+        =
+        Template<'N, 'S, 'A, 'Q>.Lifecycle
+            (packLifecycle
+             <| Lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond, template))

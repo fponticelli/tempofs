@@ -1,7 +1,7 @@
 import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { comparePrimitives, min as min_1, mapCurriedArgs, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { append, take, skip, zip, length, iterate, map as map_2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { append, take, skip, zip, length, iterate, map as map_3 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
 
 export class Value$2 extends Union {
     constructor(tag, ...fields) {
@@ -59,12 +59,12 @@ export class Template$4 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["Node", "Fragment", "Map", "Virtual", "OneOf2", "Iterator"];
+        return ["Node", "Fragment", "Map", "Lifecycle", "OneOf2", "Iterator"];
     }
 }
 
 export function Template$4$reflection(gen0, gen1, gen2, gen3) {
-    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.IMap`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IVirtual`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IIterator`4", [gen0, gen1, gen2, gen3])]]]);
+    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.IMap`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.ILifecycle`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IIterator`4", [gen0, gen1, gen2, gen3])]]]);
 }
 
 export class ComponentView$3 extends Record {
@@ -117,7 +117,7 @@ export function Map$8_$ctor_755F4A4(state, action, query, template) {
     return new Map$8(state, action, query, template);
 }
 
-export class Virtual$5 {
+export class Lifecycle$5 {
     constructor(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {
         this.afterRender = afterRender;
         this.beforeChange = beforeChange;
@@ -132,12 +132,12 @@ export class Virtual$5 {
     }
 }
 
-export function Virtual$5$reflection(gen0, gen1, gen2, gen3, gen4) {
-    return class_type("Tempo.Core.Virtual`5", [gen0, gen1, gen2, gen3, gen4], Virtual$5);
+export function Lifecycle$5$reflection(gen0, gen1, gen2, gen3, gen4) {
+    return class_type("Tempo.Core.Lifecycle`5", [gen0, gen1, gen2, gen3, gen4], Lifecycle$5);
 }
 
-export function Virtual$5_$ctor_85C1E3B(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {
-    return new Virtual$5(afterRender, beforeChange, afterChange, beforeDestroy, respond, template);
+export function Lifecycle$5_$ctor_85C1E3B(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {
+    return new Lifecycle$5(afterRender, beforeChange, afterChange, beforeDestroy, respond, template);
 }
 
 export class OneOf2$8 {
@@ -195,27 +195,27 @@ export function Map$8__get_Template(this$) {
     return this$.template;
 }
 
-export function Virtual$5__get_AfterRender(this$) {
+export function Lifecycle$5__get_AfterRender(this$) {
     return this$.afterRender;
 }
 
-export function Virtual$5__get_BeforeChange(this$) {
+export function Lifecycle$5__get_BeforeChange(this$) {
     return curry(2, this$.beforeChange);
 }
 
-export function Virtual$5__get_AfterChange(this$) {
+export function Lifecycle$5__get_AfterChange(this$) {
     return curry(2, this$.afterChange);
 }
 
-export function Virtual$5__get_BeforeDestroy(this$) {
+export function Lifecycle$5__get_BeforeDestroy(this$) {
     return this$.beforeDestroy;
 }
 
-export function Virtual$5__get_Respond(this$) {
+export function Lifecycle$5__get_Respond(this$) {
     return curry(2, this$.respond);
 }
 
-export function Virtual$5__get_Template(this$) {
+export function Lifecycle$5__get_Template(this$) {
     return this$.template;
 }
 
@@ -239,20 +239,20 @@ export function Iterator$6__get_Template(this$) {
     return this$.template;
 }
 
-export function packMap(map) {
-    return map;
+export function packMap(map_1) {
+    return map_1;
 }
 
-export function unpackMap(map, f) {
-    return map.Accept(f);
+export function unpackMap(map_1, f) {
+    return map_1.Accept(f);
 }
 
-export function packVirtual(map) {
-    return map;
+export function packLifecycle(map_1) {
+    return map_1;
 }
 
-export function unpackVirtual(map, f) {
-    return map.Accept(f);
+export function unpackLifecycle(map_1, f) {
+    return map_1.Accept(f);
 }
 
 export function packOneOf2(oneOf2) {
@@ -306,12 +306,12 @@ export function MakeRender$4__Make_1DCD9633(this$, template) {
             return MakeRender$4__MakeFragmentRender_7D0C1B99(this$, ls);
         }
         case 2: {
-            const map = template.fields[0];
-            return MakeRender$4__MakeMapRender_Z4770FAEA(this$, map);
+            const map_1 = template.fields[0];
+            return MakeRender$4__MakeMapRender_Z4770FAEA(this$, map_1);
         }
         case 3: {
-            const virt = template.fields[0];
-            return MakeRender$4__MakeVirtualRender_Z464A25B5(this$, virt);
+            const lifecycle_1 = template.fields[0];
+            return MakeRender$4__MakeLifecycleRender_Z6106CFA4(this$, lifecycle_1);
         }
         case 4: {
             const oneOf2 = template.fields[0];
@@ -333,11 +333,11 @@ export function MakeRender$4__MakeRenderS(this$) {
 }
 
 export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
-    const fs = map_2((arg00) => MakeRender$4__Make_1DCD9633(this$, arg00), templates);
+    const fs = map_3((arg00) => MakeRender$4__Make_1DCD9633(this$, arg00), templates);
     return (parent) => ((s) => ((dispatch) => {
         const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("Fragment");
         parent.Append(group);
-        const views = map_2(mapCurriedArgs((render) => render(group, s, dispatch), [[0, 3]]), fs);
+        const views = map_3(mapCurriedArgs((render) => render(group, s, dispatch), [[0, 3]]), fs);
         return new View$2(group, (s_1) => {
             iterate((i) => {
                 i.Change(s_1);
@@ -355,21 +355,21 @@ export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
     }));
 }
 
-export function MakeRender$4__MakeMapRender_Z4770FAEA(this$, map) {
-    return unpackMap(map, {
-        Invoke(map_1) {
-            const render = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), Map$8__get_Template(map_1));
+export function MakeRender$4__MakeMapRender_Z4770FAEA(this$, map_1) {
+    return unpackMap(map_1, {
+        Invoke(map_2) {
+            const render = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), Map$8__get_Template(map_2));
             return (parent) => ((s) => ((dispatch) => {
                 const dispatch2 = (a) => {
-                    dispatch(Map$8__get_MapActionF(map_1)(a));
+                    dispatch(Map$8__get_MapActionF(map_2)(a));
                 };
-                const view = render(parent)(Map$8__get_MapStateF(map_1)(s))(dispatch2);
+                const view = render(parent)(Map$8__get_MapStateF(map_2)(s))(dispatch2);
                 const query = (arg) => {
-                    view.Query(Map$8__get_MapQueryF(map_1)(arg));
+                    view.Query(Map$8__get_MapQueryF(map_2)(arg));
                 };
                 const destroy = view.Destroy;
                 const change = (arg_1) => {
-                    view.Change(Map$8__get_MapStateF(map_1)(arg_1));
+                    view.Change(Map$8__get_MapStateF(map_2)(arg_1));
                 };
                 return new View$2(parent, change, destroy, query);
             }));
@@ -377,25 +377,25 @@ export function MakeRender$4__MakeMapRender_Z4770FAEA(this$, map) {
     });
 }
 
-export function MakeRender$4__MakeVirtualRender_Z464A25B5(this$, virt) {
-    return unpackVirtual(virt, {
-        Invoke(virt_1) {
-            const render = MakeRender$4__Make_1DCD9633(this$, Virtual$5__get_Template(virt_1));
+export function MakeRender$4__MakeLifecycleRender_Z6106CFA4(this$, lifecycle_1) {
+    return unpackLifecycle(lifecycle_1, {
+        Invoke(lifecycle_2) {
+            const render = MakeRender$4__Make_1DCD9633(this$, Lifecycle$5__get_Template(lifecycle_2));
             return (impl) => ((state) => ((dispatch) => {
                 const view = render(impl)(state)(dispatch);
-                let payload = Virtual$5__get_AfterRender(virt_1)(state);
+                let payload = Lifecycle$5__get_AfterRender(lifecycle_2)(state);
                 const query = (q) => {
-                    Virtual$5__get_Respond(virt_1)(q)(payload);
+                    Lifecycle$5__get_Respond(lifecycle_2)(q)(payload);
                     view.Query(q);
                 };
                 const destroy = () => {
-                    Virtual$5__get_BeforeDestroy(virt_1)(payload);
+                    Lifecycle$5__get_BeforeDestroy(lifecycle_2)(payload);
                     view.Destroy();
                 };
                 const change = (state_1) => {
-                    if (Virtual$5__get_BeforeChange(virt_1)(state_1)(payload)) {
+                    if (Lifecycle$5__get_BeforeChange(lifecycle_2)(state_1)(payload)) {
                         view.Change(state_1);
-                        payload = Virtual$5__get_AfterChange(virt_1)(state_1)(payload);
+                        payload = Lifecycle$5__get_AfterChange(lifecycle_2)(state_1)(payload);
                     }
                 };
                 return new View$2(impl, change, destroy, query);
@@ -561,7 +561,7 @@ export function MakeRender$4__MakeIteratorRender_40023148(this$, iterator) {
                 const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("Iterator");
                 parent.Append(group);
                 const ls = Iterator$6__get_MapF(iterator_1)(s);
-                let views = map_2((state) => render(group)(state)(dispatch), ls);
+                let views = map_3((state) => render(group)(state)(dispatch), ls);
                 const query = (q) => {
                     iterate((view) => {
                         view.Query(q);
@@ -579,7 +579,7 @@ export function MakeRender$4__MakeIteratorRender_40023148(this$, iterator) {
                         view_2.Destroy();
                     }, skip(min, views));
                     views = take(min, views);
-                    const newViews = map_2((state_2) => render(group)(state_2)(dispatch), skip(min, states));
+                    const newViews = map_3((state_2) => render(group)(state_2)(dispatch), skip(min, states));
                     views = append(views, newViews);
                 };
                 const destroy = () => {
@@ -593,6 +593,10 @@ export function MakeRender$4__MakeIteratorRender_40023148(this$, iterator) {
     });
 }
 
+export function map(state, action, query, template) {
+    return new Template$4(2, packMap(Map$8_$ctor_755F4A4(state, action, query, template)));
+}
+
 export function mapState(f, template) {
     return new Template$4(2, packMap(Map$8_$ctor_755F4A4(f, (x) => x, (x_1) => x_1, template)));
 }
@@ -603,5 +607,9 @@ export function mapAction(f, template) {
 
 export function mapQuery(f, template) {
     return new Template$4(2, packMap(Map$8_$ctor_755F4A4((x) => x, (x_1) => x_1, f, template)));
+}
+
+export function lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {
+    return new Template$4(3, packLifecycle(Lifecycle$5_$ctor_85C1E3B(afterRender, beforeChange, afterChange, beforeDestroy, respond, template)));
 }
 
