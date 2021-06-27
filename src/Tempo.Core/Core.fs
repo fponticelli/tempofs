@@ -27,7 +27,6 @@ module Core =
         | Fragment of Template<'N, 'S, 'A, 'Q> list
         | Transform of ITransform<'N, 'S, 'A, 'Q>
         | OneOf2 of IOneOf2<'N, 'S, 'A, 'Q>
-        | Iterator of IIterator<'N, 'S, 'A, 'Q>
 
     and ComponentView<'S, 'A, 'Q> =
         { Impl: Impl
@@ -69,19 +68,6 @@ module Core =
     and IOneOf2Invoker<'N, 'S, 'A, 'Q, 'R> =
         abstract Invoke<'N1, 'N2, 'S1, 'S2> : OneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q> -> 'R
 
-    and IIterator<'N, 'S, 'A, 'Q> =
-        abstract Accept : IIteratorInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
-
-    and Iterator<'N, 'N1, 'S, 'S1, 'A, 'Q>(f, template) =
-        member this.MapF : 'S -> 'S1 list = f
-        member this.Template : Template<'N1, 'S1, 'A, 'Q> = template
-        with
-            interface IIterator<'N, 'S, 'A, 'Q> with
-                member this.Accept f = f.Invoke<'N1, 'S1> this
-
-    and IIteratorInvoker<'N, 'S, 'A, 'Q, 'R> =
-        abstract Invoke<'N1, 'S1> : Iterator<'N, 'N1, 'S, 'S1, 'A, 'Q> -> 'R
-
     and Dispatch<'A> = 'A -> unit
 
     and Render<'S, 'A, 'Q> = Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q>
@@ -101,12 +87,6 @@ module Core =
 
     let unpackOneOf2 (oneOf2: IOneOf2<'N, 'S, 'A, 'Q>) (f: IOneOf2Invoker<'N, 'S, 'A, 'Q, 'R>) : 'R = oneOf2.Accept f
 
-    let packIterator<'N, 'N1, 'S, 'S1, 'A, 'Q> (iterator: Iterator<'N, 'N1, 'S, 'S1, 'A, 'Q>) =
-        iterator :> IIterator<'N, 'S, 'A, 'Q>
-
-    let unpackIterator (iterator: IIterator<'N, 'S, 'A, 'Q>) (f: IIteratorInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R =
-        iterator.Accept f
-
     type ChoiceAssignament<'A, 'B> =
         | FirstOnly of 'A
         | SecondOnly of 'B
@@ -124,7 +104,7 @@ module Core =
             | Fragment ls -> this.MakeFragmentRender ls
             | Transform map -> this.MakeTransformRender map
             | OneOf2 oneOf2 -> this.MakeOneOf2Render oneOf2
-            | Iterator iterator -> this.MakeIteratorRender iterator
+        // | Iterator iterator -> this.MakeIteratorRender iterator
 
         // TODO super cheating!
         member this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>() : MakeRender<'N2, 'S2, 'A2, 'Q2> =
@@ -149,20 +129,20 @@ module Core =
                   Query = fun q -> List.iter (fun i -> i.Query q) views }
 
         member this.MakeTransformRender<'N2, 'S2, 'A2, 'Q2>
-            (map: ITransform<'N, 'S, 'A, 'Q>)
+            (transform: ITransform<'N, 'S, 'A, 'Q>)
             : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
             unpackTransform
-                map
+                transform
                 { new ITransformInvoker<'N, 'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
                     member __.Invoke<'N2, 'S2, 'A2, 'Q2>
-                        (map: Transform<'N, 'N2, 'S, 'S2, 'A, 'A2, 'Q, 'Q2>)
+                        (transform: Transform<'N, 'N2, 'S, 'S2, 'A, 'A2, 'Q, 'Q2>)
                         : Render<'S, 'A, 'Q> =
 
                         let render2 =
                             (this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>())
-                                .Make map.Template
+                                .Make transform.Template
 
-                        fun impl state dispatch -> (map.Transform render2) impl state dispatch }
+                        fun impl state dispatch -> (transform.Transform render2) impl state dispatch }
 
         member this.MakeOneOf2Render(oneOf2: IOneOf2<'N, 'S, 'A, 'Q>) : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
             unpackOneOf2
@@ -245,57 +225,6 @@ module Core =
                               Query = query
                               Destroy = destroy } }
 
-        member this.MakeIteratorRender
-            (iterator: IIterator<'N, 'S, 'A, 'Q>)
-            : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
-            unpackIterator
-                iterator
-                { new IIteratorInvoker<'N, 'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
-                    member __.Invoke<'N2, 'S2>(iterator: Iterator<'N, 'N2, 'S, 'S2, 'A, 'Q>) : Render<'S, 'A, 'Q> =
-                        let render =
-                            (this.MakeRenderS<'N2, 'S2, 'A, 'Q>())
-                                .Make iterator.Template
-
-                        fun (parent: Impl) (s: 'S) dispatch ->
-                            let group = createGroupNode ("Iterator")
-                            parent.Append group
-                            let ls = iterator.MapF s
-
-                            let mutable views =
-                                List.map (fun state -> render group state dispatch) ls
-
-                            let query =
-                                fun q -> List.iter (fun view -> view.Query q) views
-
-                            let change =
-                                fun (s: 'S) ->
-                                    let states = iterator.MapF s
-
-                                    let min =
-                                        System.Math.Min(views.Length, states.Length)
-
-                                    List.zip views states
-                                    |> List.iter (fun (view, state) -> view.Change state)
-
-                                    List.skip min views
-                                    |> List.iter (fun view -> view.Destroy())
-
-                                    views <- List.take min views
-
-                                    let newViews =
-                                        List.skip min states
-                                        |> List.map (fun state -> render group state dispatch)
-
-                                    views <- views @ newViews
-
-                            let destroy =
-                                fun () -> List.iter (fun view -> view.Destroy()) views
-
-                            { Impl = group
-                              Query = query
-                              Destroy = destroy
-                              Change = change } }
-
     let transform<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
         (transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>)
         (template: Template<'N2, 'S2, 'A2, 'Q2>)
@@ -345,7 +274,7 @@ module Core =
         (beforeDestroy: 'P -> unit)
         (respond: 'Q -> 'P -> 'P)
         (template: Template<'N, 'S, 'A, 'Q>)
-        =
+        : Template<'N, 'S, 'A, 'Q> =
         transform<'N, 'N, 'S, 'S, 'A, 'A, 'Q, 'Q>
             (fun render ->
                 (fun impl state dispatch ->
@@ -366,4 +295,52 @@ module Core =
                           fun () ->
                               beforeDestroy payload
                               view.Destroy() }))
+            template
+
+    let iterator<'N1, 'N2, 'S1, 'S2, 'A, 'Q>
+        (createGroupNode: string -> Impl)
+        (map: 'S1 -> 'S2 list)
+        (template: Template<'N2, 'S2, 'A, 'Q>)
+        : Template<'N1, 'S1, 'A, 'Q> =
+        transform
+            (fun render ->
+                fun (parent: Impl) (s: 'S1) dispatch ->
+                    let group = createGroupNode "Iterator"
+                    parent.Append group
+                    let ls = map s
+
+                    let mutable views =
+                        List.map (fun state -> render group state dispatch) ls
+
+                    let query =
+                        fun q -> List.iter (fun view -> view.Query q) views
+
+                    let change =
+                        fun (s: 'S1) ->
+                            let states = map s
+
+                            let min =
+                                System.Math.Min(views.Length, states.Length)
+
+                            List.zip views states
+                            |> List.iter (fun (view, state) -> view.Change state)
+
+                            List.skip min views
+                            |> List.iter (fun view -> view.Destroy())
+
+                            views <- List.take min views
+
+                            let newViews =
+                                List.skip min states
+                                |> List.map (fun state -> render group state dispatch)
+
+                            views <- views @ newViews
+
+                    let destroy =
+                        fun () -> List.iter (fun view -> view.Destroy()) views
+
+                    { Impl = group
+                      Query = query
+                      Destroy = destroy
+                      Change = change })
             template

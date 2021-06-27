@@ -1,7 +1,7 @@
 import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { append, take, skip, zip, length, iterate, map as map_3 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { append, take, skip, zip, length, iterate, map as map_2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
 import { value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 
 export class Value$2 extends Union {
@@ -60,12 +60,12 @@ export class Template$4 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["Node", "Fragment", "Transform", "OneOf2", "Iterator"];
+        return ["Node", "Fragment", "Transform", "OneOf2"];
     }
 }
 
 export function Template$4$reflection(gen0, gen1, gen2, gen3) {
-    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.ITransform`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IIterator`4", [gen0, gen1, gen2, gen3])]]]);
+    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.ITransform`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]]]);
 }
 
 export class ComponentView$3 extends Record {
@@ -136,25 +136,6 @@ export function OneOf2$8_$ctor_Z4F5F76C(m, c1, c2) {
     return new OneOf2$8(m, c1, c2);
 }
 
-export class Iterator$6 {
-    constructor(f, template) {
-        this.f = f;
-        this.template = template;
-    }
-    Accept(f) {
-        const this$ = this;
-        return f.Invoke(this$);
-    }
-}
-
-export function Iterator$6$reflection(gen0, gen1, gen2, gen3, gen4, gen5) {
-    return class_type("Tempo.Core.Iterator`6", [gen0, gen1, gen2, gen3, gen4, gen5], Iterator$6);
-}
-
-export function Iterator$6_$ctor_4854B10D(f, template) {
-    return new Iterator$6(f, template);
-}
-
 export function Transform$8__get_Transform(this$) {
     return curry(4, this$.transform);
 }
@@ -175,14 +156,6 @@ export function OneOf2$8__get_Template2(this$) {
     return this$.c2;
 }
 
-export function Iterator$6__get_MapF(this$) {
-    return this$.f;
-}
-
-export function Iterator$6__get_Template(this$) {
-    return this$.template;
-}
-
 export function packTransform(transform_1) {
     return transform_1;
 }
@@ -197,14 +170,6 @@ export function packOneOf2(oneOf2) {
 
 export function unpackOneOf2(oneOf2, f) {
     return oneOf2.Accept(f);
-}
-
-export function packIterator(iterator) {
-    return iterator;
-}
-
-export function unpackIterator(iterator, f) {
-    return iterator.Accept(f);
 }
 
 export class ChoiceAssignament$2 extends Union {
@@ -251,10 +216,6 @@ export function MakeRender$4__Make_1DCD9633(this$, template) {
             const oneOf2 = template.fields[0];
             return MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2);
         }
-        case 4: {
-            const iterator = template.fields[0];
-            return MakeRender$4__MakeIteratorRender_40023148(this$, iterator);
-        }
         default: {
             const n = template.fields[0];
             return partialApply(3, this$.makeNodeRender, [uncurry(4, (arg00) => MakeRender$4__Make_1DCD9633(this$, arg00)), n]);
@@ -267,11 +228,11 @@ export function MakeRender$4__MakeRenderS(this$) {
 }
 
 export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
-    const fs = map_3((arg00) => MakeRender$4__Make_1DCD9633(this$, arg00), templates);
+    const fs = map_2((arg00) => MakeRender$4__Make_1DCD9633(this$, arg00), templates);
     return (parent) => ((s) => ((dispatch) => {
         const group = this$.createGroupNode("Fragment");
         parent.Append(group);
-        const views = map_3(mapCurriedArgs((render) => render(group, s, dispatch), [[0, 3]]), fs);
+        const views = map_2(mapCurriedArgs((render) => render(group, s, dispatch), [[0, 3]]), fs);
         return new View$2(group, (s_1) => {
             iterate((i) => {
                 i.Change(s_1);
@@ -289,11 +250,11 @@ export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
     }));
 }
 
-export function MakeRender$4__MakeTransformRender_Z673AFE5A(this$, map_1) {
-    return unpackTransform(map_1, {
-        Invoke(map_2) {
-            const render2 = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), Transform$8__get_Template(map_2));
-            return (impl) => ((state) => ((dispatch) => Transform$8__get_Transform(map_2)(uncurry(3, render2))(impl)(state)(dispatch)));
+export function MakeRender$4__MakeTransformRender_Z673AFE5A(this$, transform_1) {
+    return unpackTransform(transform_1, {
+        Invoke(transform_2) {
+            const render2 = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), Transform$8__get_Template(transform_2));
+            return (impl) => ((state) => ((dispatch) => Transform$8__get_Transform(transform_2)(uncurry(3, render2))(impl)(state)(dispatch)));
         },
     });
 }
@@ -447,46 +408,6 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
     });
 }
 
-export function MakeRender$4__MakeIteratorRender_40023148(this$, iterator) {
-    return unpackIterator(iterator, {
-        Invoke(iterator_1) {
-            const render = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), Iterator$6__get_Template(iterator_1));
-            return (parent) => ((s) => ((dispatch) => {
-                const group = this$.createGroupNode("Iterator");
-                parent.Append(group);
-                const ls = Iterator$6__get_MapF(iterator_1)(s);
-                let views = map_3((state) => render(group)(state)(dispatch), ls);
-                const query = (q) => {
-                    iterate((view) => {
-                        view.Query(q);
-                    }, views);
-                };
-                const change = (s_1) => {
-                    const states = Iterator$6__get_MapF(iterator_1)(s_1);
-                    const min = min_1((x, y) => comparePrimitives(x, y), length(views), length(states)) | 0;
-                    iterate((tupledArg) => {
-                        const view_1 = tupledArg[0];
-                        const state_1 = tupledArg[1];
-                        view_1.Change(state_1);
-                    }, zip(views, states));
-                    iterate((view_2) => {
-                        view_2.Destroy();
-                    }, skip(min, views));
-                    views = take(min, views);
-                    const newViews = map_3((state_2) => render(group)(state_2)(dispatch), skip(min, states));
-                    views = append(views, newViews);
-                };
-                const destroy = () => {
-                    iterate((view_3) => {
-                        view_3.Destroy();
-                    }, views);
-                };
-                return new View$2(group, change, destroy, query);
-            }));
-        },
-    });
-}
-
 export function transform(transform_1, template) {
     return new Template$4(2, packTransform(Transform$8_$ctor_Z75B4529B(transform_1, template)));
 }
@@ -529,6 +450,41 @@ export function lifecycle(afterRender, beforeChange, afterChange, beforeDestroy,
             view.Query(q);
             payload = respond(q, payload);
         });
+    }, template);
+}
+
+export function iterator(createGroupNode, map_1, template) {
+    return transform((render, parent, s, dispatch) => {
+        const group = createGroupNode("Iterator");
+        parent.Append(group);
+        const ls = map_1(s);
+        let views = map_2((state) => render(group, state, dispatch), ls);
+        const query = (q) => {
+            iterate((view) => {
+                view.Query(q);
+            }, views);
+        };
+        const change = (s_1) => {
+            const states = map_1(s_1);
+            const min = min_1((x, y) => comparePrimitives(x, y), length(views), length(states)) | 0;
+            iterate((tupledArg) => {
+                const view_1 = tupledArg[0];
+                const state_1 = tupledArg[1];
+                view_1.Change(state_1);
+            }, zip(views, states));
+            iterate((view_2) => {
+                view_2.Destroy();
+            }, skip(min, views));
+            views = take(min, views);
+            const newViews = map_2((state_2) => render(group, state_2, dispatch), skip(min, states));
+            views = append(views, newViews);
+        };
+        const destroy = () => {
+            iterate((view_3) => {
+                view_3.Destroy();
+            }, views);
+        };
+        return new View$2(group, change, destroy, query);
     }, template);
 }
 

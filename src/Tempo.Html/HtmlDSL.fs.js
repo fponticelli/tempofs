@@ -1,6 +1,6 @@
 import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { class_type, record_type, lambda_type, unit_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { lifecycle, Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
+import { lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
 import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { makeTrigger, packProperty, HTMLElementImpl_$ctor_4C3D2741, createGroupNode, makeHTMLNodeRender } from "./HtmlImpl.fs.js";
 import { Property$2_$ctor_57011354, HTMLTemplateAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
@@ -277,7 +277,7 @@ export function HTML_Unless_4FF1974C(predicate, template) {
 }
 
 export function HTML_Seq_Z7461BB91(f, template) {
-    return new Template$4(4, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
+    return iterator((label) => createGroupNode(label), f, template);
 }
 
 export function HTML_CompareStates_5C9B84BF(f, template) {

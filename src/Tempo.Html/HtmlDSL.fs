@@ -363,14 +363,12 @@ module DSL =
         static member Unless<'S, 'A, 'Q>(predicate: 'S -> bool, template: HTMLTemplate<'S, 'A, 'Q>) =
             HTML.When(predicate >> not, template)
 
-        static member Seq<'S, 'S1, 'A, 'Q>
+        static member Seq<'S1, 'S2, 'A, 'Q>
             (
-                f: 'S -> 'S1 list,
-                template: HTMLTemplate<'S1, 'A, 'Q>
-            ) : HTMLTemplate<'S, 'A, 'Q> =
-            Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>.Iterator
-                (packIterator<HTMLTemplateNode<'S, 'A, 'Q>, HTMLTemplateNode<'S1, 'A, 'Q>, 'S, 'S1, 'A, 'Q>
-                 <| Iterator(f, template))
+                f: 'S1 -> 'S2 list,
+                template: HTMLTemplate<'S2, 'A, 'Q>
+            ) : HTMLTemplate<'S1, 'A, 'Q> =
+            iterator createGroupNode f template
 
         static member inline Lifecycle<'S, 'A, 'Q, 'P>
             (
