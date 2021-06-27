@@ -1,5 +1,5 @@
 import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { class_type, option_type, record_type, list_type, union_type, string_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { option_type, class_type, record_type, list_type, union_type, string_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { Template$4$reflection, Value$2$reflection } from "../Tempo.Core/Core.fs.js";
 import { curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 
@@ -31,7 +31,7 @@ export function HTMLTemplateElement$3$reflection(gen0, gen1, gen2) {
     return record_type("Tempo.Html.HTMLTemplateElement`3", [gen0, gen1, gen2], HTMLTemplateElement$3, () => [["Name", string_type], ["Attributes", list_type(HTMLTemplateAttribute$3$reflection(gen0, gen1, gen2))], ["Children", list_type(Template$4$reflection(HTMLTemplateNode$3$reflection(gen0, gen1, gen2), gen0, gen1, gen2))]]);
 }
 
-export class HTMLTemplateAttribute$3 extends Record {
+export class HTMLNamedAttribute$3 extends Record {
     constructor(Name, Value) {
         super();
         this.Name = Name;
@@ -39,8 +39,23 @@ export class HTMLTemplateAttribute$3 extends Record {
     }
 }
 
+export function HTMLNamedAttribute$3$reflection(gen0, gen1, gen2) {
+    return record_type("Tempo.Html.HTMLNamedAttribute`3", [gen0, gen1, gen2], HTMLNamedAttribute$3, () => [["Name", string_type], ["Value", HTMLTemplateAttributeValue$3$reflection(gen0, gen1, gen2)]]);
+}
+
+export class HTMLTemplateAttribute$3 extends Union {
+    constructor(tag, ...fields) {
+        super();
+        this.tag = (tag | 0);
+        this.fields = fields;
+    }
+    cases() {
+        return ["HTMLNamedAttribute", "Lifecycle"];
+    }
+}
+
 export function HTMLTemplateAttribute$3$reflection(gen0, gen1, gen2) {
-    return record_type("Tempo.Html.HTMLTemplateAttribute`3", [gen0, gen1, gen2], HTMLTemplateAttribute$3, () => [["Name", string_type], ["Value", HTMLTemplateAttributeValue$3$reflection(gen0, gen1, gen2)]]);
+    return union_type("Tempo.Html.HTMLTemplateAttribute`3", [gen0, gen1, gen2], HTMLTemplateAttribute$3, () => [[["Item", HTMLNamedAttribute$3$reflection(gen0, gen1, gen2)]], [["Item", class_type("Tempo.Html.IHTMLLifecycle`2", [gen0, gen2])]]]);
 }
 
 export class HTMLTemplateAttributeValue$3 extends Union {
@@ -50,12 +65,12 @@ export class HTMLTemplateAttributeValue$3 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["StringAttr", "Property", "Trigger", "Lifecycle"];
+        return ["StringAttr", "Property", "Trigger"];
     }
 }
 
 export function HTMLTemplateAttributeValue$3$reflection(gen0, gen1, gen2) {
-    return union_type("Tempo.Html.HTMLTemplateAttributeValue`3", [gen0, gen1, gen2], HTMLTemplateAttributeValue$3, () => [[["Item", Value$2$reflection(gen0, option_type(string_type))]], [["Item", class_type("Tempo.Html.IProperty`1", [gen0])]], [["Item", class_type("Tempo.Html.IHTMLTrigger`2", [gen0, gen1])]], [["Item", class_type("Tempo.Html.IHTMLLifecycle`2", [gen0, gen2])]]]);
+    return union_type("Tempo.Html.HTMLTemplateAttributeValue`3", [gen0, gen1, gen2], HTMLTemplateAttributeValue$3, () => [[["Item", Value$2$reflection(gen0, option_type(string_type))]], [["Item", class_type("Tempo.Html.IProperty`1", [gen0])]], [["Item", class_type("Tempo.Html.IHTMLTrigger`2", [gen0, gen1])]]]);
 }
 
 export class Property$2 {

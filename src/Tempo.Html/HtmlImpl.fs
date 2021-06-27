@@ -104,12 +104,13 @@ module Impl =
 #endif
 
     type LifecycleImpl<'S, 'Q> =
-        { BeforeChange: 'S -> Element -> bool
-          AfterChange: 'S -> Element -> unit
-          BeforeDestroy: 'S -> Element -> unit
-          Respond: 'Q -> 'S -> Element -> unit }
+        { BeforeChange: 'S -> bool
+          AfterChange: 'S -> unit
+          BeforeDestroy: unit -> unit
+          Respond: 'Q -> unit }
 
-    let inline attribute<'S, 'A, 'Q> name value : HTMLTemplateAttribute<'S, 'A, 'Q> = { Name = name; Value = value }
+    let inline attribute<'S, 'A, 'Q> name value : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        HTMLNamedAttribute { Name = name; Value = value }
 
     let packHTMLTrigger (trigger: HTMLTrigger<'S, 'A, 'E, 'EL>) = trigger :> IHTMLTrigger<'S, 'A>
 
@@ -122,18 +123,23 @@ module Impl =
     let unpackProperty (trigger: IProperty<'S>) (f: IPropertyInvoker<'S, 'R>) : 'R = trigger.Accept f
 
     let inline property<'S, 'A, 'Q, 'V> (name: string) (value: Value<'S, 'V>) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        { Name = name
-          Value =
-              HTMLTemplateAttributeValue.Property
-              <| (packProperty <| Property(name, value)) }
+        HTMLNamedAttribute
+            { Name = name
+              Value =
+                  HTMLTemplateAttributeValue.Property
+                  <| (packProperty <| Property(name, value)) }
 
     let packHTMLLifecycle (lifecycle: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = lifecycle :> IHTMLLifecycle<'S, 'Q>
 
     let unpackHTMLLifecycle (lifecycle: IHTMLLifecycle<'S, 'Q>) (f: IHTMLLifecycleInvoker<'S, 'Q, 'R>) : 'R = lifecycle.Accept f
 
-    let makeLifecycle<'S, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P, beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P), afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P, beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit, respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) =
+    // TODO this should be optimizable and wrapped in Transform without the need for special treatment
+    let makeLifecycle<'S, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) =
         packHTMLLifecycle
         <| HTMLLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond)
+
+    let lifecycleAttribute<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) =
+        HTMLTemplateAttribute<'S, 'A, 'Q>.Lifecycle (makeLifecycle<'S, 'Q, 'EL, 'P> afterRender beforeChange afterChange beforeDestroy respond)
 
     let applyStringAttribute (name: string) (el: HTMLElement) (s: string option) =
         match s with
@@ -181,27 +187,24 @@ module Impl =
                     | Derived f -> Some(fun el state -> assign el prop.Name (f state))
                     | Literal _ -> None }
 
-    let derivedApplication ({ Name = name; Value = value }: HTMLTemplateAttribute<'S, 'A, 'Q>) =
+    let derivedApplication ({ Name = name; Value = value }: HTMLNamedAttribute<'S, 'A, 'Q>) =
         match value with
         | StringAttr (Derived f) ->
             Some
             <| fun el state -> applyStringAttribute name el (f state)
-        | Property prop -> extractDerivedProperty prop // TODO
+        | Property prop -> extractDerivedProperty prop
         | StringAttr (Literal _) -> None
         | Trigger _ -> None
-        | Lifecycle _ -> None
 
-    let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) ({ Value = value; Name = name }: HTMLTemplateAttribute<'S, 'A, 'Q>) =
+    let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) ({ Value = value; Name = name }: HTMLNamedAttribute<'S, 'A, 'Q>) =
         match value with
         | StringAttr v ->
             applyStringAttribute name el
             <| Value.Resolve v (state ())
         | Property prop -> applyProperty prop el (state ())
         | Trigger domTrigger -> applyTrigger domTrigger name el dispatch state
-        | Lifecycle _ -> // TODO
-            ()
 
-    let extractLifecycle lc =
+    let extractLifecycle<'S, 'Q> (lc: IHTMLLifecycle<'S, 'Q>) =
         unpackHTMLLifecycle
             lc
             { new IHTMLLifecycleInvoker<'S, 'Q, Element -> 'S -> LifecycleImpl<'S, 'Q>> with
@@ -210,7 +213,7 @@ module Impl =
                         let mutable payload : 'P =
                             t.AfterRender { State = state; Element = el :?> 'EL }
 
-                        let beforeChange state (el: Element) =
+                        let beforeChange state =
                             let (result, newPayload) =
                                 t.BeforeChange
                                     { State = state
@@ -220,20 +223,20 @@ module Impl =
                             payload <- newPayload
                             result
 
-                        let afterChange state (el: Element) =
+                        let afterChange state =
                             payload <-
                                 t.AfterChange
                                     { State = state
                                       Element = el :?> 'EL
                                       Payload = payload }
 
-                        let beforeDestroy state (el: Element) =
+                        let beforeDestroy () =
                             t.BeforeDestroy
                                 { State = state
                                   Element = el :?> 'EL
                                   Payload = payload }
 
-                        let respond query state (el: Element) =
+                        let respond query =
                             payload <-
                                 t.Respond
                                     query
@@ -248,33 +251,33 @@ module Impl =
 
 
 
-    let mergeLifecycles ls =
+    let mergeLifecycles (ls: LifecycleImpl<'S, 'Q> list) =
         let merge a b =
             { BeforeChange =
-                  fun s el ->
-                      let ra = a.BeforeChange s el
-                      let rb = b.BeforeChange s el
+                  fun s ->
+                      let ra = a.BeforeChange s
+                      let rb = b.BeforeChange s
                       ra || rb
               AfterChange =
-                  fun s el ->
-                      a.AfterChange s el
-                      b.AfterChange s el
+                  fun s ->
+                      a.AfterChange s
+                      b.AfterChange s
               BeforeDestroy =
-                  fun s el ->
-                      a.BeforeDestroy s el
-                      b.BeforeDestroy s el
+                  fun () ->
+                      a.BeforeDestroy()
+                      b.BeforeDestroy()
               Respond =
-                  fun q s el ->
-                      a.Respond q s el
-                      b.Respond q s el }
+                  fun q ->
+                      a.Respond q
+                      b.Respond q }
 
         let start =
-            { BeforeChange = fun _ _ -> true
-              AfterChange = fun _ _ -> ()
-              BeforeDestroy = fun _ _ -> ()
-              Respond = fun _ _ _ -> () }
+            { BeforeChange = fun _ -> true
+              AfterChange = ignore
+              BeforeDestroy = ignore
+              Respond = ignore }
 
-        List.fold (fun acc curr -> acc) start ls
+        List.fold merge start ls
 
     let createGroupNode (label: string) = HTMLGroupImpl(label) :> Impl
 
@@ -291,13 +294,31 @@ module Impl =
             let impl = htmlImpl :> Impl
             let getState () = localState
 
+            let namedAttributes =
+                List.filterMap
+                    (function
+                    | HTMLNamedAttribute at -> Some at
+                    | _ -> None)
+                    node.Attributes
+
             // TODO use HTMLElementImpl methods
-            List.iter (applyAttribute dispatch htmlImpl.element getState) node.Attributes
+            List.iter (applyAttribute dispatch htmlImpl.element getState) namedAttributes
             parent.Append impl
 
             // TODO use HTMLElementImpl methods
             let childViews =
                 List.map (fun child -> make child impl localState dispatch) node.Children
+
+            let { BeforeChange = beforeChange
+                  AfterChange = afterChange
+                  BeforeDestroy = beforeDestroy
+                  Respond = respond } =
+                List.filterMap
+                    (function
+                    | Lifecycle lc -> extractLifecycle lc htmlImpl.element state |> Some
+                    | _ -> None)
+                    node.Attributes
+                |> mergeLifecycles
 
             let childUpdates =
                 List.map (fun ({ Change = change }: View<_, _>) -> change) childViews
@@ -310,23 +331,29 @@ module Impl =
 
             // TODO use HTMLElementImpl methods
             let attributeUpdates =
-                List.filterMap derivedApplication node.Attributes
+                namedAttributes
+                |> List.filterMap derivedApplication
                 |> List.map (fun f -> f htmlImpl.element)
 
             let updates = attributeUpdates @ childUpdates
 
             let change =
                 fun state ->
-                    localState <- state
-                    List.iter (fun change -> change localState) updates
+                    if beforeChange state then
+                        localState <- state
+                        List.iter (fun change -> change localState) updates
+                        afterChange localState
 
             let destroy =
                 fun () ->
+                    beforeDestroy ()
                     parent.Remove(impl)
                     List.iter (fun destroy -> destroy ()) childDestroys
 
             let query =
-                fun (q: 'Q) -> List.iter (fun query -> query q) childQueries
+                fun (q: 'Q) ->
+                    List.iter (fun query -> query q) childQueries
+                    respond q
 
             { Impl = impl
               Change = change

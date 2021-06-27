@@ -3,7 +3,7 @@ import { class_type, record_type, lambda_type, unit_type } from "../Tempo.Demo/.
 import { lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
 import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { makeTrigger, packProperty, HTMLElementImpl_$ctor_4C3D2741, createGroupNode, makeHTMLNodeRender } from "./HtmlImpl.fs.js";
-import { Property$2_$ctor_57011354, HTMLTemplateAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
+import { Property$2_$ctor_57011354, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
 import { some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
 import { empty } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
@@ -75,49 +75,49 @@ export function HTML_Text_77A7E8C8(f) {
 }
 
 export function HTML_Attr_68C4AEB5(name, value) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value)));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value))));
 }
 
 export function HTML_Attr_Z384F8060(name, value) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value)));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value))));
 }
 
 export function HTML_Attr_Z3A5D29FA(name, f) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, f)));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, f))));
 }
 
 export function HTML_Attr_3DF4EB53(name, f) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (arg) => f(arg))));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (arg) => f(arg)))));
 }
 
 export function HTML_Attr_Z55EFCE8F(name, value) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value ? name : (void 0))));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value ? name : (void 0)))));
 }
 
 export function HTML_Attr_Z6A312DE(name, f) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (s) => (f(s) ? name : (void 0)))));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (s) => (f(s) ? name : (void 0))))));
 }
 
 export function HTML_Prop_4A53169E(name, value) {
     const name_1 = name;
-    return new HTMLTemplateAttribute$3(name_1, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_57011354(name_1, new Value$2(0, value)))));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name_1, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_57011354(name_1, new Value$2(0, value))))));
 }
 
 export function HTML_Prop_36180E4D(name, f) {
     const name_1 = name;
-    return new HTMLTemplateAttribute$3(name_1, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_57011354(name_1, new Value$2(1, (arg) => some(f(arg)))))));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name_1, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_57011354(name_1, new Value$2(1, (arg) => some(f(arg))))))));
 }
 
 export function HTML_On_4A53169E(name, action) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger((_arg1) => action)));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger((_arg1) => action))));
 }
 
 export function HTML_On_459CDA74(name, handler) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger((_arg2) => handler())));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger((_arg2) => handler()))));
 }
 
 export function HTML_On_47AABEE2(name, handler) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger(handler)));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger(handler))));
 }
 
 export function HTML_OneOf_Z491B0F3C(f, template1, template2) {

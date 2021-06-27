@@ -2,9 +2,9 @@
 
 TODO:
 - [x] Virtual Lifecycle
-    - [ ] Request/Respond
-- [ ] HTML Lifecycle
-    - [ ] Request/Respond
+    - [x] Request/Respond
+- [x] HTML Lifecycle
+    - [x] Request/Respond
 - [x] Block Changes on Equality
 - [ ] Capture capture/release state
 - [ ] Component
@@ -16,7 +16,6 @@ TODO:
 - [ ] Interpolate State over time
 - [ ] Time Changes
 - [ ] SimpleComponent (State = Action)
-
 
 - [ ] HTML: Unsafe HTML
 - [ ] HTML: Portal

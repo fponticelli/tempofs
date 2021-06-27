@@ -26,29 +26,27 @@ let template : HTMLTemplate<State, Action, unit> =
               "style",
               "background: var(--spectrum-global-color-gray-75); padding: var(--spectrum-global-dimension-size-400);"
           ) ],
-        [
-
-          El(
-              "div",
-              [ Attr("style", "display: flex; justify-content: space-between;") ],
-              [ El(
-                  "sp-action-group",
-                  [ Attr("compact", "compact") ],
-                  [ El("sp-action-button", [ On("click", Increment -10) ], Text "-10")
-                    El("sp-action-button", [ On("click", Increment -1) ], Text "-")
-                    El("sp-action-button", [ On("click", Increment 1) ], Text "+")
-                    El("sp-action-button", [ On("click", Increment 10) ], Text "+10") ]
-                )
-                El(
-                    "sp-number-field",
-                    [ On<_, _, _, Types.HTMLInputElement, _>(
-                        "input",
-                        (fun { Element = el } -> Set(el.value :> obj :?> int))
-                      )
-                      Attr("value", (fun { Counter = c } -> $"{c}")) ]
-                )
-                El("sp-textfield", [ On("change", Increment -1) ])
-                El("sp-action-button", [ On("click", Reset) ], Text "reset") ]
+        [ El(
+            "div",
+            [ Attr("style", "display: flex; justify-content: space-between;") ],
+            [ El(
+                "sp-action-group",
+                [ Attr("compact", "compact") ],
+                [ El("sp-action-button", [ On("click", Increment -10) ], Text "-10")
+                  El("sp-action-button", [ On("click", Increment -1) ], Text "-")
+                  El("sp-action-button", [ On("click", Increment 1) ], Text "+")
+                  El("sp-action-button", [ On("click", Increment 10) ], Text "+10") ]
+              )
+              El(
+                  "sp-number-field",
+                  [ On<_, _, _, Types.HTMLInputElement, _>(
+                      "input",
+                      (fun { Element = el } -> Set(el.value :> obj :?> int))
+                    )
+                    Attr("value", (fun { Counter = c } -> $"{c}")) ]
+              )
+              El("sp-textfield", [ On("change", Increment -1) ])
+              El("sp-action-button", [ On("click", Reset) ], Text "reset") ]
           )
           El(
               "sp-slider",

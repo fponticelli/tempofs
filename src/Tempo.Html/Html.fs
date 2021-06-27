@@ -17,15 +17,18 @@ and HTMLTemplateElement<'S, 'A, 'Q> =
       Attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list
       Children: HTMLTemplate<'S, 'A, 'Q> list }
 
-and HTMLTemplateAttribute<'S, 'A, 'Q> =
+and HTMLNamedAttribute<'S, 'A, 'Q> =
     { Name: string
       Value: HTMLTemplateAttributeValue<'S, 'A, 'Q> }
+
+and HTMLTemplateAttribute<'S, 'A, 'Q> =
+    | HTMLNamedAttribute of HTMLNamedAttribute<'S, 'A, 'Q>
+    | Lifecycle of IHTMLLifecycle<'S, 'Q>
 
 and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
     | StringAttr of Value<'S, string option>
     | Property of IProperty<'S>
     | Trigger of IHTMLTrigger<'S, 'A>
-    | Lifecycle of IHTMLLifecycle<'S, 'Q>
 
 and IProperty<'S> =
     abstract Accept : IPropertyInvoker<'S, 'R> -> 'R

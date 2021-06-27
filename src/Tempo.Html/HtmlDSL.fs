@@ -381,6 +381,16 @@ module DSL =
             ) : HTMLTemplate<'S, 'A, 'Q> =
             lifecycle afterRender beforeChange afterChange beforeDestroy respond template
 
+        static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+            (
+                afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P,
+                beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P),
+                afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P,
+                beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit,
+                respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P
+            ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+            lifecycleAttribute afterRender beforeChange afterChange beforeDestroy respond
+
         static member CompareStates<'S, 'A, 'Q>
             (
                 f: 'S -> 'S -> bool,

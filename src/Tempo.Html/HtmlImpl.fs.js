@@ -4,7 +4,7 @@ import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/S
 import { remove } from "./HtmlTools.fs.js";
 import { partialApply, mapCurriedArgs, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { HTMLLifecycle$4__get_Respond, HTMLLifecycle$4__get_BeforeDestroy, HTMLLifecycle$4__get_AfterChange, HTMLLifecyclePayload$3, HTMLLifecycle$4__get_BeforeChange, HTMLLifecycleInitialPayload$2, HTMLLifecycle$4__get_AfterRender, Property$2__get_Name, Property$2__get_Value, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLLifecycle$4_$ctor_Z3754A3A9, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
+import { HTMLLifecycle$4__get_Respond, HTMLLifecycle$4__get_BeforeDestroy, HTMLLifecycle$4__get_AfterChange, HTMLLifecyclePayload$3, HTMLLifecycle$4__get_BeforeChange, HTMLLifecycleInitialPayload$2, HTMLLifecycle$4__get_AfterRender, Property$2__get_Name, Property$2__get_Value, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLTemplateAttribute$3, HTMLLifecycle$4_$ctor_Z3754A3A9, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
 import { View$2, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
 import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
 
@@ -169,7 +169,7 @@ export class LifecycleImpl$2 extends Record {
 }
 
 export function LifecycleImpl$2$reflection(gen0, gen1) {
-    return record_type("Tempo.Html.Impl.LifecycleImpl`2", [gen0, gen1], LifecycleImpl$2, () => [["BeforeChange", lambda_type(gen0, lambda_type(class_type("Browser.Types.Element"), bool_type))], ["AfterChange", lambda_type(gen0, lambda_type(class_type("Browser.Types.Element"), unit_type))], ["BeforeDestroy", lambda_type(gen0, lambda_type(class_type("Browser.Types.Element"), unit_type))], ["Respond", lambda_type(gen1, lambda_type(gen0, lambda_type(class_type("Browser.Types.Element"), unit_type)))]]);
+    return record_type("Tempo.Html.Impl.LifecycleImpl`2", [gen0, gen1], LifecycleImpl$2, () => [["BeforeChange", lambda_type(gen0, bool_type)], ["AfterChange", lambda_type(gen0, unit_type)], ["BeforeDestroy", lambda_type(unit_type, unit_type)], ["Respond", lambda_type(gen1, unit_type)]]);
 }
 
 export function packHTMLTrigger(trigger) {
@@ -202,6 +202,10 @@ export function unpackHTMLLifecycle(lifecycle, f) {
 
 export function makeLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
     return packHTMLLifecycle(HTMLLifecycle$4_$ctor_Z3754A3A9(afterRender, beforeChange, afterChange, beforeDestroy, respond));
+}
+
+export function lifecycleAttribute(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
+    return new HTMLTemplateAttribute$3(1, makeLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond));
 }
 
 export function applyStringAttribute(name, el, s) {
@@ -265,9 +269,6 @@ export function derivedApplication(_arg1) {
     else if (value.tag === 2) {
         return void 0;
     }
-    else if (value.tag === 3) {
-        return void 0;
-    }
     else if (value.fields[0].tag === 0) {
         return void 0;
     }
@@ -293,9 +294,6 @@ export function applyAttribute(dispatch, el, state, _arg1) {
             applyTrigger(domTrigger, name, el, dispatch, state);
             break;
         }
-        case 3: {
-            break;
-        }
         default: {
             const v = value.fields[0];
             applyStringAttribute(name, el, Value$2_Resolve(v, state()));
@@ -308,21 +306,21 @@ export function extractLifecycle(lc) {
         Invoke(t) {
             return (el) => ((state) => {
                 let payload = HTMLLifecycle$4__get_AfterRender(t)(new HTMLLifecycleInitialPayload$2(state, el));
-                const beforeChange = (state_1, el_1) => {
-                    const patternInput = HTMLLifecycle$4__get_BeforeChange(t)(new HTMLLifecyclePayload$3(state_1, el_1, payload));
+                const beforeChange = (state_1) => {
+                    const patternInput = HTMLLifecycle$4__get_BeforeChange(t)(new HTMLLifecyclePayload$3(state_1, el, payload));
                     const result = patternInput[0];
                     const newPayload = patternInput[1];
                     payload = newPayload;
                     return result;
                 };
-                const afterChange = (state_2, el_2) => {
-                    payload = HTMLLifecycle$4__get_AfterChange(t)(new HTMLLifecyclePayload$3(state_2, el_2, payload));
+                const afterChange = (state_2) => {
+                    payload = HTMLLifecycle$4__get_AfterChange(t)(new HTMLLifecyclePayload$3(state_2, el, payload));
                 };
-                const beforeDestroy = (state_3, el_3) => {
-                    HTMLLifecycle$4__get_BeforeDestroy(t)(new HTMLLifecyclePayload$3(state_3, el_3, payload));
+                const beforeDestroy = () => {
+                    HTMLLifecycle$4__get_BeforeDestroy(t)(new HTMLLifecyclePayload$3(state, el, payload));
                 };
-                const respond = (query, state_4, el_4) => {
-                    payload = HTMLLifecycle$4__get_Respond(t)(query)(new HTMLLifecyclePayload$3(state_4, el_4, payload));
+                const respond = (query) => {
+                    payload = HTMLLifecycle$4__get_Respond(t)(query)(new HTMLLifecyclePayload$3(state, el, payload));
                 };
                 return new LifecycleImpl$2(beforeChange, afterChange, beforeDestroy, respond);
             });
@@ -331,25 +329,25 @@ export function extractLifecycle(lc) {
 }
 
 export function mergeLifecycles(ls) {
-    const merge = (a, b) => (new LifecycleImpl$2((s, el) => {
-        const ra = a.BeforeChange(s, el);
-        const rb = b.BeforeChange(s, el);
+    const merge = (a, b) => (new LifecycleImpl$2((s) => {
+        const ra = a.BeforeChange(s);
+        const rb = b.BeforeChange(s);
         return ra ? true : rb;
-    }, (s_1, el_1) => {
-        a.AfterChange(s_1, el_1);
-        b.AfterChange(s_1, el_1);
-    }, (s_2, el_2) => {
-        a.BeforeDestroy(s_2, el_2);
-        b.BeforeDestroy(s_2, el_2);
-    }, (q, s_3, el_3) => {
-        a.Respond(q, s_3, el_3);
-        b.Respond(q, s_3, el_3);
+    }, (s_1) => {
+        a.AfterChange(s_1);
+        b.AfterChange(s_1);
+    }, () => {
+        a.BeforeDestroy();
+        b.BeforeDestroy();
+    }, (q) => {
+        a.Respond(q);
+        b.Respond(q);
     }));
-    const start = new LifecycleImpl$2((_arg2, _arg1) => true, (_arg4, _arg3) => {
-    }, (_arg6, _arg5) => {
-    }, (_arg9, _arg8, _arg7) => {
+    const start = new LifecycleImpl$2((_arg1) => true, (value) => {
+    }, () => {
+    }, (value_2) => {
     });
-    return fold((acc, curr) => acc, start, ls);
+    return fold(merge, start, ls);
 }
 
 export function createGroupNode(label) {
@@ -373,32 +371,58 @@ export function makeRenderDOMElement(node, make, parent, state, dispatch) {
     const htmlImpl = HTMLElementImpl_$ctor_Z721C83C5(node.Name);
     const impl = htmlImpl;
     const getState = () => localState;
+    const namedAttributes = filterMap((_arg1) => {
+        if (_arg1.tag === 0) {
+            const at = _arg1.fields[0];
+            return at;
+        }
+        else {
+            return void 0;
+        }
+    }, node.Attributes);
     iterate((arg30$0040) => {
         applyAttribute(dispatch, htmlImpl.element, getState, arg30$0040);
-    }, node.Attributes);
+    }, namedAttributes);
     parent.Append(impl);
     const childViews = map((child) => make(child, impl, localState, dispatch), node.Children);
-    const childUpdates = map((_arg1) => {
-        const change = _arg1.Change;
+    const patternInput = mergeLifecycles(filterMap((_arg2) => {
+        if (_arg2.tag === 1) {
+            const lc = _arg2.fields[0];
+            return extractLifecycle(lc)(htmlImpl.element)(state);
+        }
+        else {
+            return void 0;
+        }
+    }, node.Attributes));
+    const respond = patternInput.Respond;
+    const beforeDestroy = patternInput.BeforeDestroy;
+    const beforeChange = patternInput.BeforeChange;
+    const afterChange = patternInput.AfterChange;
+    const childUpdates = map((_arg1_1) => {
+        const change = _arg1_1.Change;
         return change;
     }, childViews);
-    const childDestroys = map((_arg2) => {
-        const destroy = _arg2.Destroy;
+    const childDestroys = map((_arg2_1) => {
+        const destroy = _arg2_1.Destroy;
         return destroy;
     }, childViews);
     const childQueries = map((_arg3) => {
         const query = _arg3.Query;
         return query;
     }, childViews);
-    const attributeUpdates = map(mapCurriedArgs((f) => partialApply(1, f, [htmlImpl.element]), [[0, 2]]), filterMap((arg00$0040) => derivedApplication(arg00$0040), node.Attributes));
+    const attributeUpdates = map(mapCurriedArgs((f_1) => partialApply(1, f_1, [htmlImpl.element]), [[0, 2]]), filterMap((arg00$0040) => derivedApplication(arg00$0040), namedAttributes));
     const updates = append(attributeUpdates, childUpdates);
     const change_2 = (state_1) => {
-        localState = state_1;
-        iterate((change_1) => {
-            change_1(localState);
-        }, updates);
+        if (beforeChange(state_1)) {
+            localState = state_1;
+            iterate((change_1) => {
+                change_1(localState);
+            }, updates);
+            afterChange(localState);
+        }
     };
     const destroy_2 = () => {
+        beforeDestroy();
         parent.Remove(impl);
         iterate((destroy_1) => {
             destroy_1();
@@ -408,6 +432,7 @@ export function makeRenderDOMElement(node, make, parent, state, dispatch) {
         iterate((query_1) => {
             query_1(q);
         }, childQueries);
+        respond(q);
     };
     return new View$2(impl, change_2, destroy_2, query_2);
 }
