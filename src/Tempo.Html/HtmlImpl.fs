@@ -200,11 +200,6 @@ module Impl =
         | Trigger domTrigger -> applyTrigger domTrigger name el dispatch state
         | Lifecycle _ -> // TODO
             ()
-    // unpackHTMLLifecycle
-    //     lc
-    //     { new IHTMLLifecycleInvoker<'S, 'Q, int> with
-    //         override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = failwith "Not implemented by me" }
-    // |> ignore
 
     let extractLifecycle lc =
         unpackHTMLLifecycle

@@ -25,10 +25,7 @@ module Core =
     type Template<'N, 'S, 'A, 'Q> =
         | Node of 'N
         | Fragment of Template<'N, 'S, 'A, 'Q> list
-        // | Map of IMap<'N, 'S, 'A, 'Q>
         | Transform of ITransform<'N, 'S, 'A, 'Q>
-        // | Lifecycle of ILifecycle<'N, 'S, 'A, 'Q>
-        // | Lifecycle2 of (Render<'S, 'A, 'Q> -> Render<'S, 'A, 'Q>) * Template<'N, 'S, 'A, 'Q>
         | OneOf2 of IOneOf2<'N, 'S, 'A, 'Q>
         | Iterator of IIterator<'N, 'S, 'A, 'Q>
 
@@ -45,21 +42,6 @@ module Core =
           Destroy: unit -> unit
           Query: 'Q -> unit }
 
-    // and IMap<'N, 'S, 'A, 'Q> =
-    //     abstract Accept : IMapInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
-
-    // and Map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>(state, action, query, template) =
-    //     member this.MapStateF : 'S1 -> 'S2 = state
-    //     member this.MapActionF : 'A2 -> 'A1 = action
-    //     member this.MapQueryF : 'Q1 -> 'Q2 = query
-    //     member this.Template : Template<'N2, 'S2, 'A2, 'Q2> = template
-    //     with
-    //         interface IMap<'N1, 'S1, 'A1, 'Q1> with
-    //             member this.Accept f = f.Invoke<'N2, 'S2, 'A2, 'Q2> this
-
-    // and IMapInvoker<'N1, 'S1, 'A1, 'Q1, 'R> =
-    //     abstract Invoke<'N2, 'S2, 'A2, 'Q2> : Map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> -> 'R
-
     and ITransform<'N, 'S, 'A, 'Q> =
         abstract Accept : ITransformInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
 
@@ -72,23 +54,6 @@ module Core =
 
     and ITransformInvoker<'N1, 'S1, 'A1, 'Q1, 'R> =
         abstract Invoke<'N2, 'S2, 'A2, 'Q2> : Transform<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> -> 'R
-
-    // and ILifecycle<'N, 'S, 'A, 'Q> =
-    //     abstract Accept : ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
-
-    // and Lifecycle<'N, 'S, 'A, 'Q, 'P>(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) =
-    //     member this.AfterRender : 'S -> 'P = afterRender
-    //     member this.BeforeChange : 'S -> 'P -> bool = beforeChange
-    //     member this.AfterChange : 'S -> 'P -> 'P = afterChange
-    //     member this.BeforeDestroy : 'P -> unit = beforeDestroy
-    //     member this.Respond : 'Q -> 'P -> unit = respond
-    //     member this.Template : Template<'N, 'S, 'A, 'Q> = template
-    //     with
-    //         interface ILifecycle<'N, 'S, 'A, 'Q> with
-    //             member this.Accept f = f.Invoke<'P> this
-
-    // and ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R> =
-    //     abstract Invoke<'P> : Lifecycle<'N, 'S, 'A, 'Q, 'P> -> 'R
 
     and IOneOf2<'N, 'S, 'A, 'Q> =
         abstract Accept : IOneOf2Invoker<'N, 'S, 'A, 'Q, 'R> -> 'R
@@ -123,11 +88,6 @@ module Core =
 
     and MakeNodeRender<'N, 'S, 'A, 'Q> = 'N -> Render<'S, 'A, 'Q>
 
-    // let packMap<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (map: Map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>) =
-    //     map :> IMap<'N1, 'S1, 'A1, 'Q1>
-
-    // let unpackMap (map: IMap<'N, 'S, 'A, 'Q>) (f: IMapInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
-
     let packTransform<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
         (transform: Transform<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>)
         =
@@ -135,10 +95,6 @@ module Core =
 
     let unpackTransform (transform: ITransform<'N, 'S, 'A, 'Q>) (f: ITransformInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R =
         transform.Accept f
-
-    // let packLifecycle<'N, 'S, 'A, 'Q, 'P> (map: Lifecycle<'N, 'S, 'A, 'Q, 'P>) = map :> ILifecycle<'N, 'S, 'A, 'Q>
-
-    // let unpackLifecycle (map: ILifecycle<'N, 'S, 'A, 'Q>) (f: ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
 
     let packOneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q> (oneOf2: OneOf2<'N, 'N1, 'N2, 'S, 'S1, 'S2, 'A, 'Q>) =
         oneOf2 :> IOneOf2<'N, 'S, 'A, 'Q>
@@ -157,20 +113,6 @@ module Core =
         | FirstAndSecond of 'A * 'B
         | SecondAndFirst of 'A * 'B
 
-    // type MakeInstance<'N, 'S, 'A, 'Q> = unit -> MakeRender<'N, 'S, 'A, 'Q>
-
-    // and IMakeInstance<'N, 'S, 'A, 'Q> =
-    //     abstract Accept : IMakeInstanceInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
-
-    // and MakeInstance<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>(make) =
-    //     member this.Make : MakeRender<'N1, 'S1, 'A1, 'Q1> -> MakeRender<'N2, 'S2, 'A2, 'Q2> = make
-    //     with
-    //         interface IMakeInstance<'N1, 'S1, 'A1, 'Q1> with
-    //             member this.Accept f = f.Invoke<'N2, 'S2, 'A2, 'Q2> this
-
-    // and IMakeInstanceInvoker<'N1, 'S1, 'A1, 'Q1, 'R> =
-    //     abstract Invoke<'N2, 'S2, 'A2, 'Q2> : MakeInstance<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> -> 'R
-
     and MakeRender<'N, 'S, 'A, 'Q>
         (
             makeNodeRender: (Template<'N, 'S, 'A, 'Q> -> Render<'S, 'A, 'Q>) -> 'N -> Render<'S, 'A, 'Q>,
@@ -180,35 +122,13 @@ module Core =
             match template with
             | Node n -> makeNodeRender this.Make n
             | Fragment ls -> this.MakeFragmentRender ls
-            // | Map map -> this.MakeMapRender map
             | Transform map -> this.MakeTransformRender map
-            // | Lifecycle lifecycle -> this.MakeLifecycleRender lifecycle
-            // | Lifecycle2 (transform, template) -> this.MakeLifecycle2Render transform template
             | OneOf2 oneOf2 -> this.MakeOneOf2Render oneOf2
             | Iterator iterator -> this.MakeIteratorRender iterator
 
-
-        // member this.MakeRender2<'N2, 'S2, 'A2, 'Q2>(template: Template<'N2, 'S2, 'A2, 'Q2>) : Render<'S2, 'A2, 'Q2> =
-        //     this.Make template
-
         // TODO super cheating!
         member this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>() : MakeRender<'N2, 'S2, 'A2, 'Q2> =
-            // let unpackMakeInstance
-            //     (make: IMakeInstance<'N, 'S, 'A, 'Q>)
-            //     (f: IMakeInstanceInvoker<'N, 'S, 'A, 'Q, 'R>)
-            //     : 'R =
-            //     make.Accept f
-
-            // unpackMakeInstance
-            //     makeInstance
-            //     { new IMakeInstanceInvoker<'N, 'S, 'A, 'Q, (Template<'N2, 'S2, 'A2, 'Q2> -> Render<'S2, 'A2, 'Q2>)> with
-            //         member __.Invoke<'N2, 'S2, 'A2, 'Q2>
-            //             (make: MakeInstance<'N, 'N2, 'S, 'S2, 'A, 'A2, 'Q, 'Q2>)
-            //             : (Template<'N2, 'S2, 'A2, 'Q2> -> Render<'S2, 'A2, 'Q2>) =
-            //             make.Make this }
-            // makeInstance<'N2, 'S2, 'A2, 'Q2> ()
             this :> obj :?> MakeRender<'N2, 'S2, 'A2, 'Q2>
-        // abstract MakeRenderS<'N2, 'S2, 'A2, 'Q2> : unit -> MakeRender<'N2, 'S2, 'A2, 'Q2>
 
         member this.MakeFragmentRender<'S, 'A, 'Q>(templates: Template<'N, 'S, 'A, 'Q> list) =
             let fs = List.map (this.Make) templates
@@ -243,78 +163,6 @@ module Core =
                                 .Make map.Template
 
                         fun impl state dispatch -> (map.Transform render2) impl state dispatch }
-
-        // fun (impl) (state: 'S) (dispatch: Dispatch<'A>) ->
-        //     // let renderNode = map.Transform this.MakeNodeRender
-
-        //     // map.Transform render
-        //     failwith ""
-        // }
-
-
-
-        // member this.MakeMapRender<'N2, 'S2, 'A2, 'Q2>
-        //     (map: IMap<'N, 'S, 'A, 'Q>)
-        //     : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
-        //     unpackMap
-        //         map
-        //         { new IMapInvoker<'N, 'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
-        //             member __.Invoke<'N2, 'S2, 'A2, 'Q2>
-        //                 (map: Map<'N, 'N2, 'S, 'S2, 'A, 'A2, 'Q, 'Q2>)
-        //                 : Render<'S, 'A, 'Q> =
-        //                 let render =
-        //                     (this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>())
-        //                         .Make map.Template
-
-        //                 fun (parent: Impl) (s: 'S) dispatch ->
-        //                     let dispatch2 a = dispatch <| map.MapActionF a
-
-        //                     let view =
-        //                         render parent (map.MapStateF s) dispatch2
-
-        //                     let query = map.MapQueryF >> view.Query
-        //                     let destroy = view.Destroy
-        //                     let change = map.MapStateF >> view.Change
-
-        //                     { Impl = parent
-        //                       Query = query
-        //                       Destroy = destroy
-        //                       Change = change } }
-
-        // member this.MakeLifecycle2Render transform template =
-        //     let render = this.Make template
-        //     transform render
-
-        // member this.MakeLifecycleRender<'P>
-        //     (lifecycle: ILifecycle<'N, 'S, 'A, 'Q>)
-        //     : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
-        //     unpackLifecycle
-        //         lifecycle
-        //         { new ILifecycleInvoker<'N, 'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
-        //             member __.Invoke<'P>(lifecycle: Lifecycle<'N, 'S, 'A, 'Q, 'P>) : Render<'S, 'A, 'Q> =
-        //                 let render = this.Make lifecycle.Template
-
-        //                 fun (impl: Impl) (state: 'S) (dispatch: Dispatch<'A>) ->
-        //                     let view = render impl state dispatch
-        //                     let mutable payload = lifecycle.AfterRender state
-
-        //                     let query q =
-        //                         lifecycle.Respond q payload
-        //                         view.Query q
-
-        //                     let destroy () =
-        //                         lifecycle.BeforeDestroy payload
-        //                         view.Destroy()
-
-        //                     let change state =
-        //                         if not <| lifecycle.BeforeChange state payload then
-        //                             view.Change state
-        //                             payload <- lifecycle.AfterChange state payload
-
-        //                     { Impl = impl
-        //                       Change = change
-        //                       Query = query
-        //                       Destroy = destroy } }
 
         member this.MakeOneOf2Render(oneOf2: IOneOf2<'N, 'S, 'A, 'Q>) : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
             unpackOneOf2
@@ -519,8 +367,3 @@ module Core =
                               beforeDestroy payload
                               view.Destroy() }))
             template
-
-// let packMakeInstance<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
-//     (makeInstance: MakeInstance<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>)
-//     =
-//     makeInstance :> IMakeInstance<'N1, 'S1, 'A1, 'Q1>
