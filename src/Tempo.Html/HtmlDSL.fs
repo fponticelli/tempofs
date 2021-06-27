@@ -377,15 +377,9 @@ module DSL =
                 afterChange: 'S -> 'P -> 'P,
                 beforeDestroy: 'P -> unit,
                 respond: 'Q -> 'P -> 'P,
-                template: HTMLTemplateNode<'S, 'A, 'Q>
+                template: HTMLTemplate<'S, 'A, 'Q>
             ) : HTMLTemplate<'S, 'A, 'Q> =
-            lifecycle
-                afterRender
-                beforeChange
-                afterChange
-                beforeDestroy
-                respond
-                (template :> obj :?> Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>) // TODO not sure why I have to cheat here
+            lifecycle afterRender beforeChange afterChange beforeDestroy respond template
 
         static member CompareStates<'S, 'A, 'Q>
             (
