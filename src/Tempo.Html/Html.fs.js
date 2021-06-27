@@ -49,12 +49,31 @@ export class HTMLTemplateAttributeValue$3 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["StringValue", "TriggerValue", "LifecycleValue"];
+        return ["StringAttr", "Property", "Trigger", "Lifecycle"];
     }
 }
 
 export function HTMLTemplateAttributeValue$3$reflection(gen0, gen1, gen2) {
-    return union_type("Tempo.Html.HTMLTemplateAttributeValue`3", [gen0, gen1, gen2], HTMLTemplateAttributeValue$3, () => [[["Item", Value$2$reflection(gen0, option_type(string_type))]], [["Item", class_type("Tempo.Html.IHTMLTrigger`2", [gen0, gen1])]], [["Item", class_type("Tempo.Html.IHTMLLifecycle`2", [gen0, gen2])]]]);
+    return union_type("Tempo.Html.HTMLTemplateAttributeValue`3", [gen0, gen1, gen2], HTMLTemplateAttributeValue$3, () => [[["Item", Value$2$reflection(gen0, option_type(string_type))]], [["Item", class_type("Tempo.Html.IProperty`1", [gen0])]], [["Item", class_type("Tempo.Html.IHTMLTrigger`2", [gen0, gen1])]], [["Item", class_type("Tempo.Html.IHTMLLifecycle`2", [gen0, gen2])]]]);
+}
+
+export class Property$2 {
+    constructor(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+    Accept(f) {
+        const this$ = this;
+        return f.Invoke(this$);
+    }
+}
+
+export function Property$2$reflection(gen0, gen1) {
+    return class_type("Tempo.Html.Property`2", [gen0, gen1], Property$2);
+}
+
+export function Property$2_$ctor_57011354(name, value) {
+    return new Property$2(name, value);
 }
 
 export class TriggerPayload$3 extends Record {
@@ -133,6 +152,14 @@ export function HTMLLifecycle$4$reflection(gen0, gen1, gen2, gen3) {
 
 export function HTMLLifecycle$4_$ctor_55038AA3(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
     return new HTMLLifecycle$4(afterRender, beforeChange, afterChange, beforeDestroy, respond);
+}
+
+export function Property$2__get_Name(this$) {
+    return this$.name;
+}
+
+export function Property$2__get_Value(this$) {
+    return this$.value;
 }
 
 export function HTMLTrigger$4__get_Handler(this$) {

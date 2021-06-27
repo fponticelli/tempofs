@@ -3,7 +3,7 @@ import { append, map, empty, filter, cons, reverse, collect, iterate, singleton 
 import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
 import { remove } from "./HtmlTools.fs.js";
 import { partialApply, mapCurriedArgs, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { HTMLTemplateNode$3$reflection, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLLifecycle$4_$ctor_55038AA3, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
+import { HTMLTemplateNode$3$reflection, TriggerPayload$3, HTMLTrigger$4__get_Handler, Property$2__get_Name, Property$2__get_Value, HTMLLifecycle$4_$ctor_55038AA3, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
 import { View$2, MakeRender$4__Make_1DCD9633, MakeRender$4$reflection, MakeRender$4, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
 import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
 
@@ -169,6 +169,14 @@ export function makeTrigger(f) {
     return packHTMLTrigger(HTMLTrigger$4_$ctor_75095B8B(f));
 }
 
+export function packProperty(trigger) {
+    return trigger;
+}
+
+export function unpackProperty(trigger, f) {
+    return trigger.Accept(f);
+}
+
 export function packHTMLLifecycle(lifecycle) {
     return lifecycle;
 }
@@ -191,13 +199,45 @@ export function applyStringAttribute(name, el, s) {
     }
 }
 
+export function applyProperty(prop, el, state) {
+    void unpackProperty(prop, {
+        Invoke(prop_1) {
+            const v = Value$2_Resolve(Property$2__get_Value(prop_1), state);
+            const prop_2 = Property$2__get_Name(prop_1);
+            el[prop_2] = v;
+            return 0;
+        },
+    });
+}
+
+export function extractDerivedProperty(prop) {
+    return unpackProperty(prop, {
+        Invoke(prop_1) {
+            const matchValue = Property$2__get_Value(prop_1);
+            if (matchValue.tag === 0) {
+                return void 0;
+            }
+            else {
+                const f = matchValue.fields[0];
+                return (el) => ((state) => {
+                    el[Property$2__get_Name(prop_1)] = f(state);
+                });
+            }
+        },
+    });
+}
+
 export function derivedApplication(_arg1) {
     const value = _arg1.Value;
     const name = _arg1.Name;
     if (value.tag === 1) {
-        return void 0;
+        const prop = value.fields[0];
+        return extractDerivedProperty(prop);
     }
     else if (value.tag === 2) {
+        return void 0;
+    }
+    else if (value.tag === 3) {
         return void 0;
     }
     else if (value.fields[0].tag === 0) {
@@ -216,6 +256,11 @@ export function applyAttribute(dispatch, el, state, _arg1) {
     const name = _arg1.Name;
     switch (value.tag) {
         case 1: {
+            const prop = value.fields[0];
+            applyProperty(prop, el, state());
+            break;
+        }
+        case 2: {
             const domTrigger = value.fields[0];
             void unpackHTMLTrigger(domTrigger, {
                 Invoke(t) {
@@ -229,7 +274,7 @@ export function applyAttribute(dispatch, el, state, _arg1) {
             });
             break;
         }
-        case 2: {
+        case 3: {
             const lc = value.fields[0];
             void unpackHTMLLifecycle(lc, {
                 Invoke(t_1) {

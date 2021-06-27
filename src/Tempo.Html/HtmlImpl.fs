@@ -111,6 +111,16 @@ module Impl =
 
     let makeTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'E, 'EL> -> 'A) = packHTMLTrigger <| HTMLTrigger(f)
 
+    let packProperty (trigger: Property<'S, 'V>) = trigger :> IProperty<'S>
+
+    let unpackProperty (trigger: IProperty<'S>) (f: IPropertyInvoker<'S, 'R>) : 'R = trigger.Accept f
+
+    let inline property<'S, 'A, 'Q, 'V> (name: string) (value: Value<'S, 'V>) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        { Name = name
+          Value =
+              HTMLTemplateAttributeValue.Property
+              <| (packProperty <| Property(name, value)) }
+
     let packHTMLLifecycle (lifecycle: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = lifecycle :> IHTMLLifecycle<'S, 'Q>
 
     let unpackHTMLLifecycle (lifecycle: IHTMLLifecycle<'S, 'Q>) (f: IHTMLLifecycleInvoker<'S, 'Q, 'R>) : 'R = lifecycle.Accept f
@@ -124,21 +134,43 @@ module Impl =
         | Some s -> el.setAttribute (name, s)
         | None -> el.removeAttribute name
 
+    let applyProperty<'S> (prop: IProperty<'S>) (el: HTMLElement) (state) =
+        unpackProperty
+            prop
+            { new IPropertyInvoker<'S, int> with
+                override this.Invoke<'V>(prop: Property<'S, 'V>) =
+                    assign el prop.Name
+                    <| Value.Resolve prop.Value state
+
+                    0 }
+        |> ignore
+
+    let extractDerivedProperty<'S> (prop: IProperty<'S>) =
+        unpackProperty
+            prop
+            { new IPropertyInvoker<'S, (HTMLElement -> 'S -> unit) option> with
+                override this.Invoke<'V>(prop: Property<'S, 'V>) =
+                    match prop.Value with
+                    | Derived f -> Some(fun el state -> assign el prop.Name (f state))
+                    | Literal _ -> None }
+
     let derivedApplication ({ Name = name; Value = value }: HTMLTemplateAttribute<'S, 'A, 'Q>) =
         match value with
-        | StringValue (Derived f) ->
+        | StringAttr (Derived f) ->
             Some
             <| fun el state -> applyStringAttribute name el (f state)
-        | StringValue (Literal _) -> None
-        | TriggerValue _ -> None
-        | LifecycleValue _ -> None
+        | Property prop -> extractDerivedProperty prop // TODO
+        | StringAttr (Literal _) -> None
+        | Trigger _ -> None
+        | Lifecycle _ -> None
 
     let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) ({ Value = value; Name = name }: HTMLTemplateAttribute<'S, 'A, 'Q>) =
         match value with
-        | StringValue v ->
+        | StringAttr v ->
             applyStringAttribute name el
             <| Value.Resolve v (state ())
-        | TriggerValue domTrigger ->
+        | Property prop -> applyProperty prop el (state ())
+        | Trigger domTrigger ->
             unpackHTMLTrigger
                 domTrigger
                 { new IHTMLTriggerInvoker<'S, 'A, int> with
@@ -158,12 +190,11 @@ module Impl =
 
                         0 }
             |> ignore
-        | LifecycleValue lc ->
+        | Lifecycle lc -> // TODO
             unpackHTMLLifecycle
                 lc
                 { new IHTMLLifecycleInvoker<'S, 'Q, int> with
-                    override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) =
-                        failwith "Not implemented by me" }
+                    override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = failwith "Not implemented by me" }
             |> ignore
 
     type MakeHTMLRender<'S, 'A, 'Q>() =
@@ -175,6 +206,9 @@ module Impl =
             | HTMLTemplateText v -> this.MakeRenderDOMText v
 
         override this.CreateGroupNode(label: string) = HTMLGroupImpl(label) :> Impl
+
+        // override this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>() =
+        //     MakeHTMLRender<'S2, 'A2, 'Q2>() :> MakeRender<'N2, 'S2, 'A2, 'Q2>
 
         member this.MakeRenderDOMElement(node: HTMLTemplateElement<'S, 'A, 'Q>) : Render<'S, 'A, 'Q> =
             fun (parent: Impl) (state: 'S) dispatch ->

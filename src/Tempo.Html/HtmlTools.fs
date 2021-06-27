@@ -11,7 +11,7 @@ module Tools =
     let exists<'T> (v: 'T) : bool = jsNative
 
     [<Emit("$0[$1] = $2")>]
-    let assign<'X, 'T> (target: 'X, prop: string, v: 'T) : bool = jsNative
+    let assign<'X, 'T> (target: 'X) (prop: string) (v: 'T) : unit = jsNative
 
     [<Emit("$0[$1] !== null")>]
     let hasProperty<'X> (target: 'X, prop: string) : bool = jsNative
@@ -27,7 +27,7 @@ module Tools =
             let el = n :?> HTMLElement
 
             if exists el && exists el.blur then
-                assign (el, "onblur", null) |> ignore
+                assign el "onblur" null
 
         if exists n
            && exists n.ownerDocument

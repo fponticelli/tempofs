@@ -118,29 +118,49 @@ module DSL =
             f |> Derived |> HTMLTemplateText |> Node
 
         static member Attr<'S, 'A, 'Q>(name: string, value: string option) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-            attribute name (value |> Literal |> StringValue)
+            attribute name (value |> Literal |> StringAttr)
 
         static member Attr<'S, 'A, 'Q>(name: string, value: string) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-            attribute name (value |> Some |> Literal |> StringValue)
+            attribute name (value |> Some |> Literal |> StringAttr)
 
         static member Attr<'S, 'A, 'Q>(name: string, f: 'S -> string option) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-            attribute name (f |> Derived |> StringValue)
+            attribute name (f |> Derived |> StringAttr)
 
         static member Attr<'S, 'A, 'Q>(name: string, f: 'S -> string) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-            attribute name (f >> Some |> Derived |> StringValue)
+            attribute name (f >> Some |> Derived |> StringAttr)
+
+        static member Attr<'S, 'A, 'Q>(name: string, value: bool) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+            attribute
+                name
+                ((if value then (Some "") else None)
+                 |> Literal
+                 |> StringAttr)
+
+        static member Attr<'S, 'A, 'Q>(name: string, f: 'S -> bool) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+            attribute
+                name
+                ((fun s -> if f s then (Some "") else None)
+                 |> Derived
+                 |> StringAttr)
+
+        static member Prop<'S, 'A, 'Q, 'T>(name: string, value: 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+            property name (value |> Literal)
+
+        static member Prop<'S, 'A, 'Q, 'T>(name: string, f: 'S -> 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+            property name (f >> Some |> Derived)
 
         static member On<'S, 'A, 'Q>(name: string, action: 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-            attribute name (makeTrigger (fun _ -> action) |> TriggerValue)
+            attribute name (makeTrigger (fun _ -> action) |> Trigger)
 
         static member On<'S, 'A, 'Q>(name: string, handler: unit -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-            attribute name (makeTrigger (fun _ -> handler ()) |> TriggerValue)
+            attribute name (makeTrigger (fun _ -> handler ()) |> Trigger)
 
         static member On<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
             (
                 name: string,
                 handler: TriggerPayload<'S, 'E, 'EL> -> 'A
             ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-            attribute name (makeTrigger handler |> TriggerValue)
+            attribute name (makeTrigger handler |> Trigger)
 
         static member inline Map<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
             (

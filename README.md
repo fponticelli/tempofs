@@ -3,8 +3,8 @@
 TODO:
 - [ ] Lifecycle
 - [ ] Request/Respond
-- [ ] Virtual Lifecycle
-- [ ] Block Changes on Equality
+- [x] Virtual Lifecycle
+- [x] Block Changes on Equality
 - [ ] Capture capture/release state
 - [ ] Component
 

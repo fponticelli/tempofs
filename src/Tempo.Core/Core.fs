@@ -151,6 +151,7 @@ module Core =
         // TODO super cheating!
         member this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>() : MakeRender<'N2, 'S2, 'A2, 'Q2> =
             this :> obj :?> MakeRender<'N2, 'S2, 'A2, 'Q2>
+        // abstract MakeRenderS<'N2, 'S2, 'A2, 'Q2> : unit -> MakeRender<'N2, 'S2, 'A2, 'Q2>
 
         member this.MakeFragmentRender<'S, 'A, 'Q>(templates: Template<'N, 'S, 'A, 'Q> list) =
             let fs = List.map (this.Make) templates
@@ -191,7 +192,6 @@ module Core =
 
                             let query = map.MapQueryF >> view.Query
                             let destroy = view.Destroy
-
                             let change = map.MapStateF >> view.Change
 
                             { Impl = parent

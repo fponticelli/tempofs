@@ -22,9 +22,23 @@ and HTMLTemplateAttribute<'S, 'A, 'Q> =
       Value: HTMLTemplateAttributeValue<'S, 'A, 'Q> }
 
 and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
-    | StringValue of Value<'S, string option>
-    | TriggerValue of IHTMLTrigger<'S, 'A>
-    | LifecycleValue of IHTMLLifecycle<'S, 'Q>
+    | StringAttr of Value<'S, string option>
+    | Property of IProperty<'S>
+    | Trigger of IHTMLTrigger<'S, 'A>
+    | Lifecycle of IHTMLLifecycle<'S, 'Q>
+
+and IProperty<'S> =
+    abstract Accept : IPropertyInvoker<'S, 'R> -> 'R
+
+and Property<'S, 'V>(name, value) =
+    member this.Name : string = name
+    member this.Value : Value<'S, 'V> = value
+    with
+        interface IProperty<'S> with
+            member this.Accept f = f.Invoke<'V> this
+
+and IPropertyInvoker<'S, 'R> =
+    abstract Invoke<'V> : Property<'S, 'V> -> 'R
 
 and IHTMLTrigger<'S, 'A> =
     abstract Accept : IHTMLTriggerInvoker<'S, 'A, 'R> -> 'R

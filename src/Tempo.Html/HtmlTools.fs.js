@@ -5,7 +5,7 @@ export function remove(n) {
         if ((el != null) ? ((() => {
             el.blur();
         }) != null) : false) {
-            void (el["onblur"] = null);
+            el["onblur"] = null;
         }
     }
     if (((n != null) ? (n.ownerDocument != null) : false) ? (n.parentNode != null) : false) {
