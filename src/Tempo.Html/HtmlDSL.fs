@@ -16,9 +16,11 @@ module DSL =
 
     [<AbstractClass; Sealed>]
     type HTML =
+        static member private MakeRender<'S, 'A, 'Q>() =
+            MakeRender<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>(makeHTMLNodeRender, createGroupNode)
+
         static member MakeProgram<'S, 'A, 'Q>(template: HTMLTemplate<'S, 'A, 'Q>, el: HTMLElement) =
-            let renderInstance =
-                MakeRender(makeHTMLNodeRender, createGroupNode)
+            let renderInstance = HTML.MakeRender()
 
             let f = renderInstance.Make template
             let parent = HTMLElementImpl(el)
@@ -166,54 +168,55 @@ module DSL =
 
         static member inline Map<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
             (
+                impl: Impl -> Impl,
                 state: 'S1 -> 'S2,
-                action: 'A2 -> 'A1,
+                action: 'A2 -> 'A1 option,
                 query: 'Q1 -> 'Q2,
                 template: HTMLTemplate<'S2, 'A2, 'Q2>
             ) : HTMLTemplate<'S1, 'A1, 'Q1> =
-            map state action query template
+            map impl state action query template
 
         static member inline MapState<'S1, 'S2, 'A, 'Q>
             (
                 f: 'S1 -> 'S2,
                 template: HTMLTemplate<'S2, 'A, 'Q>
             ) : HTMLTemplate<'S1, 'A, 'Q> =
-            mapState f template
+            HTML.Map(id, f, Some, id, template)
 
         static member inline MapState<'S1, 'S2, 'A, 'Q>
             (
                 f: 'S1 -> 'S2,
                 templates: HTMLTemplate<'S2, 'A, 'Q> list
             ) : HTMLTemplate<'S1, 'A, 'Q> =
-            mapState f <| Fragment templates
+            HTML.MapState(f, Fragment templates)
 
         static member inline MapAction<'S, 'A1, 'A2, 'Q>
             (
-                f: 'A2 -> 'A1,
+                f: 'A2 -> 'A1 option,
                 template: HTMLTemplate<'S, 'A2, 'Q>
             ) : HTMLTemplate<'S, 'A1, 'Q> =
-            mapAction f template
+            HTML.Map(id, id, f, id, template)
 
         static member inline MapAction<'S, 'A1, 'A2, 'Q>
             (
-                f: 'A2 -> 'A1,
+                f: 'A2 -> 'A1 option,
                 templates: HTMLTemplate<'S, 'A2, 'Q> list
             ) : HTMLTemplate<'S, 'A1, 'Q> =
-            mapAction f <| Fragment templates
+            HTML.MapAction(f, Fragment templates)
 
         static member inline MapQuery<'S, 'A, 'Q1, 'Q2>
             (
                 f: 'Q1 -> 'Q2,
                 template: HTMLTemplate<'S, 'A, 'Q2>
             ) : HTMLTemplate<'S, 'A, 'Q1> =
-            mapQuery f template
+            HTML.Map(id, id, Some, f, template)
 
         static member inline MapQuery<'S, 'A, 'Q1, 'Q2>
             (
                 f: 'Q1 -> 'Q2,
                 templates: HTMLTemplate<'S, 'A, 'Q2> list
             ) : HTMLTemplate<'S, 'A, 'Q1> =
-            mapQuery f <| Fragment templates
+            HTML.MapQuery(f, Fragment templates)
 
         static member OneOf<'S, 'S1, 'S2, 'A, 'Q>
             (
@@ -375,7 +378,7 @@ module DSL =
                 beforeChange: 'S -> 'P -> bool,
                 afterChange: 'S -> 'P -> 'P,
                 beforeDestroy: 'P -> unit,
-                respond: 'Q -> 'P -> unit,
+                respond: 'Q -> 'P -> 'P,
                 template: HTMLTemplateNode<'S, 'A, 'Q>
             ) : HTMLTemplate<'S, 'A, 'Q> =
             lifecycle
@@ -391,7 +394,7 @@ module DSL =
                 f: 'S -> 'S -> bool,
                 template: HTMLTemplate<'S, 'A, 'Q>
             ) : HTMLTemplate<'S, 'A, 'Q> =
-            lifecycle id f (fun state _ -> state) ignore (fun _ _ -> ()) template
+            lifecycle id f (fun state _ -> state) ignore (fun _ p -> p) template
 
         static member inline Filter<'S, 'A, 'Q>
             (

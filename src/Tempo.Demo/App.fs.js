@@ -3,7 +3,7 @@ import { record_type, union_type, int32_type } from "./.fable/fable-library.3.1.
 import { HTML_MakeProgram_Z9447D8C, HTML_Seq_Z7461BB91, HTML_Text, HTML_OneOf_Z2AFE4804, HTML_Text_77A7E8C8, HTML_Attr_Z3A5D29FA, HTML_Attr_3DF4EB53, HTML_On_47AABEE2, HTML_Text_Z721C83C5, HTML_On_4A53169E, HTML_Attr_Z384F8060, HTML_El_Z7374416F } from "../Tempo.Html/HtmlDSL.fs.js";
 import { empty, singleton, ofArray } from "./.fable/fable-library.3.1.10/List.js";
 import { interpolate, toText } from "./.fable/fable-library.3.1.10/String.js";
-import { Template$4, mapState } from "../Tempo.Core/Core.fs.js";
+import { Template$4, map } from "../Tempo.Core/Core.fs.js";
 import { int32ToString } from "./.fable/fable-library.3.1.10/Util.js";
 import { FSharpChoice$2 } from "./.fable/fable-library.3.1.10/Choice.js";
 import { toList } from "./.fable/fable-library.3.1.10/Seq.js";
@@ -63,9 +63,10 @@ export const template = HTML_El_Z7374416F("sp-theme", ofArray([HTML_Attr_Z384F80
 }), HTML_Attr_Z3A5D29FA("indeterminate", (_arg7) => {
     const c_3 = _arg7.Counter | 0;
     return ((c_3 < 0) ? true : (c_3 > 100)) ? "" : (void 0);
-}), HTML_Attr_Z384F8060("size", "large")]), empty()))))))), HTML_El_Z7374416F("div", empty(), ofArray([HTML_Text_Z721C83C5("count: "), mapState((_arg8) => {
+}), HTML_Attr_Z384F8060("size", "large")]), empty()))))))), HTML_El_Z7374416F("div", empty(), ofArray([HTML_Text_Z721C83C5("count: "), map((x) => x, (_arg8) => {
     const counter_1 = _arg8.Counter | 0;
     return counter_1 | 0;
+}, (arg0) => arg0, () => {
 }, new Template$4(1, ofArray([HTML_El_Z7374416F("b", singleton(HTML_Attr_Z384F8060("style", "font-size: 32px;")), singleton(HTML_Text_77A7E8C8((s) => {
     let copyOfStruct = s | 0;
     return int32ToString(copyOfStruct);

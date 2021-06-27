@@ -31,8 +31,12 @@ export function HTML$reflection() {
     return class_type("Tempo.Html.DSL.HTML", void 0, HTML);
 }
 
+function HTML_MakeRender() {
+    return MakeRender$4_$ctor_Z4E96F168(uncurry(5, (make) => ((node) => makeHTMLNodeRender(make, node))), (label) => createGroupNode(label));
+}
+
 export function HTML_MakeProgram_Z9447D8C(template, el) {
-    const renderInstance = MakeRender$4_$ctor_Z4E96F168(uncurry(5, (make) => ((node) => makeHTMLNodeRender(make, node))), (label) => createGroupNode(label));
+    const renderInstance = HTML_MakeRender();
     const f = MakeRender$4__Make_1DCD9633(renderInstance, template);
     const parent = HTMLElementImpl_$ctor_4C3D2741(el);
     let render;
@@ -117,7 +121,7 @@ export function HTML_On_47AABEE2(name, handler) {
 }
 
 export function HTML_OneOf_Z491B0F3C(f, template1, template2) {
-    return new Template$4(6, packOneOf2(OneOf2$8_$ctor_Z4F5F76C(f, template1, template2)));
+    return new Template$4(3, packOneOf2(OneOf2$8_$ctor_Z4F5F76C(f, template1, template2)));
 }
 
 export function HTML_OneOf_Z2AFE4804(f, template1, template2, template3) {
@@ -273,12 +277,11 @@ export function HTML_Unless_4FF1974C(predicate, template) {
 }
 
 export function HTML_Seq_Z7461BB91(f, template) {
-    return new Template$4(7, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
+    return new Template$4(4, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
 }
 
 export function HTML_CompareStates_5C9B84BF(f, template) {
     return lifecycle((x) => x, f, (state, _arg3) => state, (value) => {
-    }, (_arg5, _arg4) => {
-    }, template);
+    }, (_arg4, p) => p, template);
 }
 
