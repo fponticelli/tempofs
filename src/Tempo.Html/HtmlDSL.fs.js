@@ -36,11 +36,8 @@ function HTML_MakeRender() {
 }
 
 export function HTML_MakeProgram_Z9447D8C(template, el) {
-    const renderInstance = HTML_MakeRender();
-    const f = MakeRender$4__Make_1DCD9633(renderInstance, template);
-    const parent = HTMLElementImpl_$ctor_4C3D2741(el);
     let render;
-    const clo1 = f(parent);
+    const clo1 = MakeRender$4__Make_1DCD9633(HTML_MakeRender(), template)(HTMLElementImpl_$ctor_4C3D2741(el));
     render = ((arg10) => {
         const clo2 = clo1(arg10);
         return (arg20) => clo2(arg20);
@@ -129,16 +126,13 @@ export function HTML_OneOf_Z2AFE4804(f, template1, template2, template3) {
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                const c_1 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_1));
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
             }
             case 2: {
-                const c_2 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_2));
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             default: {
-                const c = matchValue.fields[0];
-                return new FSharpChoice$2(0, c);
+                return new FSharpChoice$2(0, matchValue.fields[0]);
             }
         }
     }, template1, HTML_OneOf_Z491B0F3C((x) => x, template2, template3));
@@ -149,20 +143,16 @@ export function HTML_OneOf_Z1F5D2DDE(f, template1, template2, template3, templat
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                const c_1 = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             case 2: {
-                const c_2 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_2));
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
             }
             case 3: {
-                const c_3 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_3));
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             default: {
-                const c = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
             }
         }
     }, HTML_OneOf_Z491B0F3C((x) => x, template1, template2), HTML_OneOf_Z491B0F3C((x_1) => x_1, template3, template4));
@@ -173,24 +163,19 @@ export function HTML_OneOf_7B4F0B5A(f, template1, template2, template3, template
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                const c_1 = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             case 2: {
-                const c_2 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_2));
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
             }
             case 3: {
-                const c_3 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_3));
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             case 4: {
-                const c_4 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(2, c_4));
+                return new FSharpChoice$2(1, new FSharpChoice$2(2, matchValue.fields[0]));
             }
             default: {
-                const c = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
             }
         }
     }, HTML_OneOf_Z491B0F3C((x) => x, template1, template2), HTML_OneOf_Z2AFE4804((x_1) => x_1, template3, template4, template5));
@@ -201,28 +186,22 @@ export function HTML_OneOf_Z35273380(f, template1, template2, template3, templat
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                const c_1 = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             case 2: {
-                const c_2 = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(2, c_2));
+                return new FSharpChoice$2(0, new FSharpChoice$2(2, matchValue.fields[0]));
             }
             case 3: {
-                const c_3 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_3));
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
             }
             case 4: {
-                const c_4 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_4));
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             case 5: {
-                const c_5 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(2, c_5));
+                return new FSharpChoice$2(1, new FSharpChoice$2(2, matchValue.fields[0]));
             }
             default: {
-                const c = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
             }
         }
     }, HTML_OneOf_Z2AFE4804((x) => x, template1, template2, template3), HTML_OneOf_Z2AFE4804((x_1) => x_1, template4, template5, template6));
@@ -233,32 +212,25 @@ export function HTML_OneOf_390DE0B8(f, template1, template2, template3, template
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                const c_1 = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             case 2: {
-                const c_2 = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(2, c_2));
+                return new FSharpChoice$2(0, new FSharpChoice$2(2, matchValue.fields[0]));
             }
             case 3: {
-                const c_3 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_3));
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
             }
             case 4: {
-                const c_4 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_4));
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
             }
             case 5: {
-                const c_5 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(2, c_5));
+                return new FSharpChoice$2(1, new FSharpChoice$2(2, matchValue.fields[0]));
             }
             case 6: {
-                const c_6 = matchValue.fields[0];
-                return new FSharpChoice$2(1, new FSharpChoice$2(3, c_6));
+                return new FSharpChoice$2(1, new FSharpChoice$2(3, matchValue.fields[0]));
             }
             default: {
-                const c = matchValue.fields[0];
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
             }
         }
     }, HTML_OneOf_Z2AFE4804((x) => x, template1, template2, template3), HTML_OneOf_Z1F5D2DDE((x_1) => x_1, template4, template5, template6, template7));

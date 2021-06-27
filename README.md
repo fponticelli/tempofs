@@ -22,5 +22,5 @@ TODO:
 - [ ] HTML: Generate HTML Elements and Attributes
 - [ ] HTML: Generate SVG Elements and Attributes
 
+- [x] Attach alternative Impl
 - [ ] MapNode
-- [ ] Attach alternative Impl
