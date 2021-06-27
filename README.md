@@ -1,9 +1,10 @@
 # TempoF#
 
 TODO:
-- [ ] Lifecycle
-- [ ] Request/Respond
 - [x] Virtual Lifecycle
+    - [ ] Request/Respond
+- [ ] HTML Lifecycle
+    - [ ] Request/Respond
 - [x] Block Changes on Equality
 - [ ] Capture capture/release state
 - [ ] Component

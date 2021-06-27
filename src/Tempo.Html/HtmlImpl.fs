@@ -103,6 +103,12 @@ module Impl =
               children = [] }
 #endif
 
+    type LifecycleImpl<'S, 'Q> =
+        { BeforeChange: 'S -> Element -> bool
+          AfterChange: 'S -> Element -> unit
+          BeforeDestroy: 'S -> Element -> unit
+          Respond: 'Q -> 'S -> Element -> unit }
+
     let inline attribute<'S, 'A, 'Q> name value : HTMLTemplateAttribute<'S, 'A, 'Q> = { Name = name; Value = value }
 
     let packHTMLTrigger (trigger: HTMLTrigger<'S, 'A, 'E, 'EL>) = trigger :> IHTMLTrigger<'S, 'A>
@@ -125,7 +131,7 @@ module Impl =
 
     let unpackHTMLLifecycle (lifecycle: IHTMLLifecycle<'S, 'Q>) (f: IHTMLLifecycleInvoker<'S, 'Q, 'R>) : 'R = lifecycle.Accept f
 
-    let makeLifecycle<'S, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'Q, 'EL> -> 'P, beforeChange: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> (bool * 'P), afterChange: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> 'P, beforeDestroy: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> 'P, respond: HTMLLifecyclePayload<'S, 'Q, 'EL, 'P> -> 'P) =
+    let makeLifecycle<'S, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P, beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P), afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P, beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit, respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) =
         packHTMLLifecycle
         <| HTMLLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond)
 
@@ -133,6 +139,27 @@ module Impl =
         match s with
         | Some s -> el.setAttribute (name, s)
         | None -> el.removeAttribute name
+
+    let applyTrigger domTrigger name el dispatch state =
+        unpackHTMLTrigger
+            domTrigger
+            { new IHTMLTriggerInvoker<'S, 'A, int> with
+                override this.Invoke<'E, 'EL when 'E :> Event and 'EL :> Element>(t: HTMLTrigger<'S, 'A, 'E, 'EL>) =
+                    let el = (el :> Element :?> 'EL)
+
+                    el.addEventListener (
+                        name,
+                        (fun e ->
+                            dispatch
+                            <| t.Handler(
+                                { State = state ()
+                                  Event = (e :?> 'E)
+                                  Element = el }
+                            ))
+                    )
+
+                    0 }
+        |> ignore
 
     let applyProperty<'S> (prop: IProperty<'S>) (el: HTMLElement) (state) =
         unpackProperty
@@ -170,32 +197,89 @@ module Impl =
             applyStringAttribute name el
             <| Value.Resolve v (state ())
         | Property prop -> applyProperty prop el (state ())
-        | Trigger domTrigger ->
-            unpackHTMLTrigger
-                domTrigger
-                { new IHTMLTriggerInvoker<'S, 'A, int> with
-                    override this.Invoke<'E, 'EL when 'E :> Event and 'EL :> Element>(t: HTMLTrigger<'S, 'A, 'E, 'EL>) =
-                        let el = (el :> Element :?> 'EL)
+        | Trigger domTrigger -> applyTrigger domTrigger name el dispatch state
+        | Lifecycle _ -> // TODO
+            ()
+    // unpackHTMLLifecycle
+    //     lc
+    //     { new IHTMLLifecycleInvoker<'S, 'Q, int> with
+    //         override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = failwith "Not implemented by me" }
+    // |> ignore
 
-                        el.addEventListener (
-                            name,
-                            (fun e ->
-                                dispatch
-                                <| t.Handler(
-                                    { State = state ()
-                                      Event = (e :?> 'E)
-                                      Element = el }
-                                ))
-                        )
+    let extractLifecycle lc =
+        unpackHTMLLifecycle
+            lc
+            { new IHTMLLifecycleInvoker<'S, 'Q, Element -> 'S -> LifecycleImpl<'S, 'Q>> with
+                override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) : Element -> 'S -> LifecycleImpl<'S, 'Q> =
+                    fun (el: Element) (state: 'S) ->
+                        let mutable payload : 'P =
+                            t.AfterRender { State = state; Element = el :?> 'EL }
 
-                        0 }
-            |> ignore
-        | Lifecycle lc -> // TODO
-            unpackHTMLLifecycle
-                lc
-                { new IHTMLLifecycleInvoker<'S, 'Q, int> with
-                    override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = failwith "Not implemented by me" }
-            |> ignore
+                        let beforeChange state (el: Element) =
+                            let (result, newPayload) =
+                                t.BeforeChange
+                                    { State = state
+                                      Element = el :?> 'EL
+                                      Payload = payload }
+
+                            payload <- newPayload
+                            result
+
+                        let afterChange state (el: Element) =
+                            payload <-
+                                t.AfterChange
+                                    { State = state
+                                      Element = el :?> 'EL
+                                      Payload = payload }
+
+                        let beforeDestroy state (el: Element) =
+                            t.BeforeDestroy
+                                { State = state
+                                  Element = el :?> 'EL
+                                  Payload = payload }
+
+                        let respond query state (el: Element) =
+                            payload <-
+                                t.Respond
+                                    query
+                                    { State = state
+                                      Element = el :?> 'EL
+                                      Payload = payload }
+
+                        { BeforeChange = beforeChange
+                          AfterChange = afterChange
+                          BeforeDestroy = beforeDestroy
+                          Respond = respond } }
+
+
+
+    let mergeLifecycles ls =
+        let merge a b =
+            { BeforeChange =
+                  fun s el ->
+                      let ra = a.BeforeChange s el
+                      let rb = b.BeforeChange s el
+                      ra || rb
+              AfterChange =
+                  fun s el ->
+                      a.AfterChange s el
+                      b.AfterChange s el
+              BeforeDestroy =
+                  fun s el ->
+                      a.BeforeDestroy s el
+                      b.BeforeDestroy s el
+              Respond =
+                  fun q s el ->
+                      a.Respond q s el
+                      b.Respond q s el }
+
+        let start =
+            { BeforeChange = fun _ _ -> true
+              AfterChange = fun _ _ -> ()
+              BeforeDestroy = fun _ _ -> ()
+              Respond = fun _ _ _ -> () }
+
+        List.fold (fun acc curr -> acc) start ls
 
     type MakeHTMLRender<'S, 'A, 'Q>() =
         inherit MakeRender<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>()
