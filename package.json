@@ -4,7 +4,7 @@
     "description": "Tempo",
     "main": "index.js",
     "scripts": {
-        "postinstall": "dotnet tool restore",
+        "postinstall": "dotnet tool restore && npm i",
         "watch": "dotnet fable src/Tempo.Demo --watch --run webpack serve",
         "prebuild": "npx del-cli ./src/**/*.fs.js ./src/**/.fable **/output",
         "build": "dotnet fable src/Tempo.Demo --run webpack build --mode production",
