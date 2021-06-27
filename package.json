@@ -8,6 +8,7 @@
         "watch": "dotnet fable src/Tempo.Demo --watch --run webpack serve",
         "prebuild": "npx del-cli ./src/**/*.fs.js ./src/**/.fable **/output",
         "build": "dotnet fable src/Tempo.Demo --run webpack build --mode production",
+        "build:proj": "npm run postinstall && npm run build",
         "deploy": "npm run build && gh-pages -d output"
     },
     "repository": "git@github.com:fponticelli/tempofs.git",
