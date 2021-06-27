@@ -281,87 +281,81 @@ module Impl =
 
         List.fold (fun acc curr -> acc) start ls
 
-    type MakeHTMLRender<'S, 'A, 'Q>() =
-        inherit MakeRender<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>()
+    let createGroupNode (label: string) = HTMLGroupImpl(label) :> Impl
 
-        override this.MakeNodeRender(node) =
-            match node with
-            | HTMLTemplateElement el -> this.MakeRenderDOMElement el
-            | HTMLTemplateText v -> this.MakeRenderDOMText v
+    let rec makeHTMLNodeRender<'S, 'A, 'Q> (make: Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q> -> Render<'S, 'A, 'Q>) (node: HTMLTemplateNode<'S, 'A, 'Q>) : Render<'S, 'A, 'Q> =
+        match node with
+        | HTMLTemplateElement el -> makeRenderDOMElement el make
+        | HTMLTemplateText v -> makeRenderDOMText v
 
-        override this.CreateGroupNode(label: string) = HTMLGroupImpl(label) :> Impl
+    and makeRenderDOMElement (node: HTMLTemplateElement<'S, 'A, 'Q>) make : Render<'S, 'A, 'Q> =
+        fun (parent: Impl) (state: 'S) dispatch ->
+            let mutable localState = state
 
-        // override this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>() =
-        //     MakeHTMLRender<'S2, 'A2, 'Q2>() :> MakeRender<'N2, 'S2, 'A2, 'Q2>
+            let htmlImpl = HTMLElementImpl node.Name
+            let impl = htmlImpl :> Impl
+            let getState () = localState
 
-        member this.MakeRenderDOMElement(node: HTMLTemplateElement<'S, 'A, 'Q>) : Render<'S, 'A, 'Q> =
-            fun (parent: Impl) (state: 'S) dispatch ->
-                let mutable localState = state
+            // TODO use HTMLElementImpl methods
+            List.iter (applyAttribute dispatch htmlImpl.element getState) node.Attributes
+            parent.Append impl
 
-                let htmlImpl = HTMLElementImpl node.Name
+            // TODO use HTMLElementImpl methods
+            let childViews =
+                List.map (fun child -> make child impl localState dispatch) node.Children
+
+            let childUpdates =
+                List.map (fun ({ Change = change }: View<_, _>) -> change) childViews
+
+            let childDestroys =
+                List.map (fun ({ Destroy = destroy }: View<_, _>) -> destroy) childViews
+
+            let childQueries =
+                List.map (fun ({ Query = query }: View<_, _>) -> query) childViews
+
+            // TODO use HTMLElementImpl methods
+            let attributeUpdates =
+                List.filterMap derivedApplication node.Attributes
+                |> List.map (fun f -> f htmlImpl.element)
+
+            let updates = attributeUpdates @ childUpdates
+
+            let change =
+                fun state ->
+                    localState <- state
+                    List.iter (fun change -> change localState) updates
+
+            let destroy =
+                fun () ->
+                    parent.Remove(impl)
+                    List.iter (fun destroy -> destroy ()) childDestroys
+
+            let query =
+                fun (q: 'Q) -> List.iter (fun query -> query q) childQueries
+
+            { Impl = impl
+              Change = change
+              Destroy = destroy
+              Query = query }
+
+    and makeRenderDOMText (value: Value<'S, string>) : Render<'S, 'A, 'Q> =
+        fun (parent: Impl) (state: 'S) dispatch ->
+            match value with
+            | Derived f ->
+                let htmlImpl = HTMLTextImpl(f state)
                 let impl = htmlImpl :> Impl
-                let getState () = localState
-
-                // TODO use HTMLElementImpl methods
-                List.iter (applyAttribute dispatch htmlImpl.element getState) node.Attributes
                 parent.Append impl
 
-                // TODO use HTMLElementImpl methods
-                let childViews =
-                    List.map (fun child -> this.Make child impl localState dispatch) node.Children
-
-                let childUpdates =
-                    List.map (fun ({ Change = change }: View<_, _>) -> change) childViews
-
-                let childDestroys =
-                    List.map (fun ({ Destroy = destroy }: View<_, _>) -> destroy) childViews
-
-                let childQueries =
-                    List.map (fun ({ Query = query }: View<_, _>) -> query) childViews
-
-                // TODO use HTMLElementImpl methods
-                let attributeUpdates =
-                    List.filterMap derivedApplication node.Attributes
-                    |> List.map (fun f -> f htmlImpl.element)
-
-                let updates = attributeUpdates @ childUpdates
-
-                let change =
-                    fun state ->
-                        localState <- state
-                        List.iter (fun change -> change localState) updates
-
-                let destroy =
-                    fun () ->
-                        parent.Remove(impl)
-                        List.iter (fun destroy -> destroy ()) childDestroys
-
-                let query =
-                    fun (q: 'Q) -> List.iter (fun query -> query q) childQueries
+                { Impl = impl
+                  Change = fun state -> htmlImpl.text.nodeValue <- f state // TODO use HTMLTextImpl methods
+                  Destroy = fun () -> parent.Remove impl
+                  Query = ignore }
+            | Literal s ->
+                let htmlImpl = HTMLTextImpl s
+                let impl = htmlImpl :> Impl
+                parent.Append impl
 
                 { Impl = impl
-                  Change = change
-                  Destroy = destroy
-                  Query = query }
-
-        member this.MakeRenderDOMText(value: Value<'S, string>) : Render<'S, 'A, 'Q> =
-            fun (parent: Impl) (state: 'S) dispatch ->
-                match value with
-                | Derived f ->
-                    let htmlImpl = HTMLTextImpl(f state)
-                    let impl = htmlImpl :> Impl
-                    parent.Append impl
-
-                    { Impl = impl
-                      Change = fun state -> htmlImpl.text.nodeValue <- f state // TODO use HTMLTextImpl methods
-                      Destroy = fun () -> parent.Remove impl
-                      Query = ignore }
-                | Literal s ->
-                    let htmlImpl = HTMLTextImpl s
-                    let impl = htmlImpl :> Impl
-                    parent.Append impl
-
-                    { Impl = impl
-                      Change = ignore
-                      Destroy = fun () -> parent.Remove impl
-                      Query = ignore }
+                  Change = ignore
+                  Destroy = fun () -> parent.Remove impl
+                  Query = ignore }

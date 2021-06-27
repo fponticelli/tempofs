@@ -17,7 +17,9 @@ module DSL =
     [<AbstractClass; Sealed>]
     type HTML =
         static member MakeProgram<'S, 'A, 'Q>(template: HTMLTemplate<'S, 'A, 'Q>, el: HTMLElement) =
-            let renderInstance = MakeHTMLRender()
+            let renderInstance =
+                MakeRender(makeHTMLNodeRender, createGroupNode)
+
             let f = renderInstance.Make template
             let parent = HTMLElementImpl(el)
 
@@ -132,14 +134,14 @@ module DSL =
         static member Attr<'S, 'A, 'Q>(name: string, value: bool) : HTMLTemplateAttribute<'S, 'A, 'Q> =
             attribute
                 name
-                ((if value then (Some "") else None)
+                ((if value then (Some name) else None)
                  |> Literal
                  |> StringAttr)
 
         static member Attr<'S, 'A, 'Q>(name: string, f: 'S -> bool) : HTMLTemplateAttribute<'S, 'A, 'Q> =
             attribute
                 name
-                ((fun s -> if f s then (Some "") else None)
+                ((fun s -> if f s then (Some name) else None)
                  |> Derived
                  |> StringAttr)
 

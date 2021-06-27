@@ -1,7 +1,8 @@
 import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { class_type, record_type, lambda_type, unit_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { makeTrigger, packProperty, HTMLElementImpl_$ctor_4C3D2741, MakeHTMLRender$3_$ctor } from "./HtmlImpl.fs.js";
-import { lifecycle, Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633 } from "../Tempo.Core/Core.fs.js";
+import { lifecycle, Iterator$6_$ctor_4854B10D, packIterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
+import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { makeTrigger, packProperty, HTMLElementImpl_$ctor_4C3D2741, createGroupNode, makeHTMLNodeRender } from "./HtmlImpl.fs.js";
 import { Property$2_$ctor_57011354, HTMLTemplateAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
 import { some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
@@ -31,7 +32,7 @@ export function HTML$reflection() {
 }
 
 export function HTML_MakeProgram_Z9447D8C(template, el) {
-    const renderInstance = MakeHTMLRender$3_$ctor();
+    const renderInstance = MakeRender$4_$ctor_Z4E96F168(uncurry(5, (make) => ((node) => makeHTMLNodeRender(make, node))), (label) => createGroupNode(label));
     const f = MakeRender$4__Make_1DCD9633(renderInstance, template);
     const parent = HTMLElementImpl_$ctor_4C3D2741(el);
     let render;
@@ -86,11 +87,11 @@ export function HTML_Attr_3DF4EB53(name, f) {
 }
 
 export function HTML_Attr_Z55EFCE8F(name, value) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value ? "" : (void 0))));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value ? name : (void 0))));
 }
 
 export function HTML_Attr_Z6A312DE(name, f) {
-    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (s) => (f(s) ? "" : (void 0)))));
+    return new HTMLTemplateAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (s) => (f(s) ? name : (void 0)))));
 }
 
 export function HTML_Prop_4A53169E(name, value) {
@@ -116,7 +117,7 @@ export function HTML_On_47AABEE2(name, handler) {
 }
 
 export function HTML_OneOf_Z491B0F3C(f, template1, template2) {
-    return new Template$4(4, packOneOf2(OneOf2$8_$ctor_Z4F5F76C(f, template1, template2)));
+    return new Template$4(6, packOneOf2(OneOf2$8_$ctor_Z4F5F76C(f, template1, template2)));
 }
 
 export function HTML_OneOf_Z2AFE4804(f, template1, template2, template3) {
@@ -272,7 +273,7 @@ export function HTML_Unless_4FF1974C(predicate, template) {
 }
 
 export function HTML_Seq_Z7461BB91(f, template) {
-    return new Template$4(5, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
+    return new Template$4(7, packIterator(Iterator$6_$ctor_4854B10D(f, template)));
 }
 
 export function HTML_CompareStates_5C9B84BF(f, template) {

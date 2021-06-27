@@ -1,6 +1,6 @@
 import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { comparePrimitives, min as min_1, mapCurriedArgs, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { comparePrimitives, min as min_1, partialApply, mapCurriedArgs, uncurry, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { append, take, skip, zip, length, iterate, map as map_3 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
 
 export class Value$2 extends Union {
@@ -59,12 +59,12 @@ export class Template$4 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["Node", "Fragment", "Map", "Lifecycle", "OneOf2", "Iterator"];
+        return ["Node", "Fragment", "Map", "Map2", "Lifecycle", "Lifecycle2", "OneOf2", "Iterator"];
     }
 }
 
 export function Template$4$reflection(gen0, gen1, gen2, gen3) {
-    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.IMap`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.ILifecycle`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IIterator`4", [gen0, gen1, gen2, gen3])]]]);
+    return union_type("Tempo.Core.Template`4", [gen0, gen1, gen2, gen3], Template$4, () => [[["Item", gen0]], [["Item", list_type(Template$4$reflection(gen0, gen1, gen2, gen3))]], [["Item", class_type("Tempo.Core.IMap`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IMap2`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.ILifecycle`4", [gen0, gen1, gen2, gen3])]], [["Item1", lambda_type(lambda_type(class_type("Tempo.Core.Impl"), lambda_type(gen1, lambda_type(lambda_type(gen2, unit_type), View$2$reflection(gen1, gen3)))), lambda_type(class_type("Tempo.Core.Impl"), lambda_type(gen1, lambda_type(lambda_type(gen2, unit_type), View$2$reflection(gen1, gen3)))))], ["Item2", Template$4$reflection(gen0, gen1, gen2, gen3)]], [["Item", class_type("Tempo.Core.IOneOf2`4", [gen0, gen1, gen2, gen3])]], [["Item", class_type("Tempo.Core.IIterator`4", [gen0, gen1, gen2, gen3])]]]);
 }
 
 export class ComponentView$3 extends Record {
@@ -115,6 +115,25 @@ export function Map$8$reflection(gen0, gen1, gen2, gen3, gen4, gen5, gen6, gen7)
 
 export function Map$8_$ctor_755F4A4(state, action, query, template) {
     return new Map$8(state, action, query, template);
+}
+
+export class Map2$8 {
+    constructor(transform, template) {
+        this.transform = transform;
+        this.template = template;
+    }
+    Accept(f) {
+        const this$ = this;
+        return f.Invoke(this$);
+    }
+}
+
+export function Map2$8$reflection(gen0, gen1, gen2, gen3, gen4, gen5, gen6, gen7) {
+    return class_type("Tempo.Core.Map2`8", [gen0, gen1, gen2, gen3, gen4, gen5, gen6, gen7], Map2$8);
+}
+
+export function Map2$8_$ctor_Z78AE5A3C(transform, template) {
+    return new Map2$8(transform, template);
 }
 
 export class Lifecycle$5 {
@@ -195,6 +214,14 @@ export function Map$8__get_Template(this$) {
     return this$.template;
 }
 
+export function Map2$8__get_Transform(this$) {
+    return curry(5, this$.transform);
+}
+
+export function Map2$8__get_Template(this$) {
+    return this$.template;
+}
+
 export function Lifecycle$5__get_AfterRender(this$) {
     return this$.afterRender;
 }
@@ -247,6 +274,14 @@ export function unpackMap(map_1, f) {
     return map_1.Accept(f);
 }
 
+export function packMap2(map_1) {
+    return map_1;
+}
+
+export function unpackMap2(map_1, f) {
+    return map_1.Accept(f);
+}
+
 export function packLifecycle(map_1) {
     return map_1;
 }
@@ -287,7 +322,9 @@ export function ChoiceAssignament$2$reflection(gen0, gen1) {
 }
 
 export class MakeRender$4 {
-    constructor() {
+    constructor(makeNodeRender, createGroupNode) {
+        this.makeNodeRender = makeNodeRender;
+        this.createGroupNode = createGroupNode;
     }
 }
 
@@ -295,8 +332,16 @@ export function MakeRender$4$reflection(gen0, gen1, gen2, gen3) {
     return class_type("Tempo.Core.MakeRender`4", [gen0, gen1, gen2, gen3], MakeRender$4);
 }
 
-export function MakeRender$4_$ctor() {
-    return new MakeRender$4();
+export function MakeRender$4_$ctor_Z4E96F168(makeNodeRender, createGroupNode) {
+    return new MakeRender$4(makeNodeRender, createGroupNode);
+}
+
+export function MakeRender$4__get_MakeNodeRender(this$) {
+    return curry(5, this$.makeNodeRender);
+}
+
+export function MakeRender$4__get_CreateGroupNode(this$) {
+    return this$.createGroupNode;
 }
 
 export function MakeRender$4__Make_1DCD9633(this$, template) {
@@ -310,20 +355,29 @@ export function MakeRender$4__Make_1DCD9633(this$, template) {
             return MakeRender$4__MakeMapRender_Z4770FAEA(this$, map_1);
         }
         case 3: {
+            const map_2 = template.fields[0];
+            return MakeRender$4__MakeMap2Render_ZAEE489C(this$, map_2);
+        }
+        case 4: {
             const lifecycle_1 = template.fields[0];
             return MakeRender$4__MakeLifecycleRender_Z6106CFA4(this$, lifecycle_1);
         }
-        case 4: {
+        case 5: {
+            const transform = template.fields[0];
+            const template_1 = template.fields[1];
+            return MakeRender$4__MakeLifecycle2Render(this$, transform, template_1);
+        }
+        case 6: {
             const oneOf2 = template.fields[0];
             return MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2);
         }
-        case 5: {
+        case 7: {
             const iterator = template.fields[0];
             return MakeRender$4__MakeIteratorRender_40023148(this$, iterator);
         }
         default: {
             const n = template.fields[0];
-            return this$["Tempo.Core.MakeRender`4.MakeNodeRender2B595"](n);
+            return MakeRender$4__get_MakeNodeRender(this$)(uncurry(4, (arg00) => MakeRender$4__Make_1DCD9633(this$, arg00)))(n);
         }
     }
 }
@@ -335,7 +389,7 @@ export function MakeRender$4__MakeRenderS(this$) {
 export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
     const fs = map_3((arg00) => MakeRender$4__Make_1DCD9633(this$, arg00), templates);
     return (parent) => ((s) => ((dispatch) => {
-        const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("Fragment");
+        const group = MakeRender$4__get_CreateGroupNode(this$)("Fragment");
         parent.Append(group);
         const views = map_3(mapCurriedArgs((render) => render(group, s, dispatch), [[0, 3]]), fs);
         return new View$2(group, (s_1) => {
@@ -353,6 +407,14 @@ export function MakeRender$4__MakeFragmentRender_7D0C1B99(this$, templates) {
             }, views);
         });
     }));
+}
+
+export function MakeRender$4__MakeMap2Render_ZAEE489C(this$, map_1) {
+    return unpackMap2(map_1, {
+        Invoke(map_2) {
+            throw (new Error(""));
+        },
+    });
 }
 
 export function MakeRender$4__MakeMapRender_Z4770FAEA(this$, map_1) {
@@ -375,6 +437,11 @@ export function MakeRender$4__MakeMapRender_Z4770FAEA(this$, map_1) {
             }));
         },
     });
+}
+
+export function MakeRender$4__MakeLifecycle2Render(this$, transform, template) {
+    const render = MakeRender$4__Make_1DCD9633(this$, template);
+    return partialApply(3, transform, [uncurry(3, render)]);
 }
 
 export function MakeRender$4__MakeLifecycleRender_Z6106CFA4(this$, lifecycle_1) {
@@ -410,7 +477,7 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
             const render1 = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), OneOf2$8__get_Template1(oneOf2_1));
             const render2 = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), OneOf2$8__get_Template2(oneOf2_1));
             return (parent) => ((s) => ((dispatch) => {
-                const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("OneOf2");
+                const group = MakeRender$4__get_CreateGroupNode(this$)("OneOf2");
                 parent.Append(group);
                 let assignament;
                 const matchValue = OneOf2$8__get_MapF(oneOf2_1)(s);
@@ -558,7 +625,7 @@ export function MakeRender$4__MakeIteratorRender_40023148(this$, iterator) {
         Invoke(iterator_1) {
             const render = MakeRender$4__Make_1DCD9633(MakeRender$4__MakeRenderS(this$), Iterator$6__get_Template(iterator_1));
             return (parent) => ((s) => ((dispatch) => {
-                const group = this$["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"]("Iterator");
+                const group = MakeRender$4__get_CreateGroupNode(this$)("Iterator");
                 parent.Append(group);
                 const ls = Iterator$6__get_MapF(iterator_1)(s);
                 let views = map_3((state) => render(group)(state)(dispatch), ls);
@@ -610,6 +677,6 @@ export function mapQuery(f, template) {
 }
 
 export function lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {
-    return new Template$4(3, packLifecycle(Lifecycle$5_$ctor_85C1E3B(afterRender, beforeChange, afterChange, beforeDestroy, respond, template)));
+    return new Template$4(4, packLifecycle(Lifecycle$5_$ctor_85C1E3B(afterRender, beforeChange, afterChange, beforeDestroy, respond, template)));
 }
 

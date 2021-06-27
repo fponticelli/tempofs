@@ -4,8 +4,8 @@ import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/S
 import { remove } from "./HtmlTools.fs.js";
 import { partialApply, mapCurriedArgs, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { HTMLTemplateNode$3$reflection, HTMLLifecycle$4__get_Respond, HTMLLifecycle$4__get_BeforeDestroy, HTMLLifecycle$4__get_AfterChange, HTMLLifecyclePayload$3, HTMLLifecycle$4__get_BeforeChange, HTMLLifecycleInitialPayload$2, HTMLLifecycle$4__get_AfterRender, Property$2__get_Name, Property$2__get_Value, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLLifecycle$4_$ctor_Z3754A3A9, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
-import { View$2, MakeRender$4__Make_1DCD9633, MakeRender$4$reflection, MakeRender$4, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
+import { HTMLLifecycle$4__get_Respond, HTMLLifecycle$4__get_BeforeDestroy, HTMLLifecycle$4__get_AfterChange, HTMLLifecyclePayload$3, HTMLLifecycle$4__get_BeforeChange, HTMLLifecycleInitialPayload$2, HTMLLifecycle$4__get_AfterRender, Property$2__get_Name, Property$2__get_Value, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLLifecycle$4_$ctor_Z3754A3A9, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
+import { View$2, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
 import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
 
 export class HTMLImpl {
@@ -352,105 +352,89 @@ export function mergeLifecycles(ls) {
     return fold((acc, curr) => acc, start, ls);
 }
 
-export class MakeHTMLRender$3 extends MakeRender$4 {
-    constructor() {
-        super();
+export function createGroupNode(label) {
+    return HTMLGroupImpl_$ctor_Z721C83C5(label);
+}
+
+export function makeHTMLNodeRender(make, node) {
+    if (node.tag === 1) {
+        const v = node.fields[0];
+        return (parent_1) => ((state_1) => ((dispatch_1) => makeRenderDOMText(v, parent_1, state_1, dispatch_1)));
     }
-    ["Tempo.Core.MakeRender`4.MakeNodeRender2B595"](node) {
-        const this$ = this;
-        if (node.tag === 1) {
-            const v = node.fields[0];
-            return MakeHTMLRender$3__MakeRenderDOMText_Z320284C0(this$, v);
-        }
-        else {
-            const el = node.fields[0];
-            return MakeHTMLRender$3__MakeRenderDOMElement_3B41954E(this$, el);
-        }
-    }
-    ["Tempo.Core.MakeRender`4.CreateGroupNodeZ721C83C5"](label) {
-        return HTMLGroupImpl_$ctor_Z721C83C5(label);
+    else {
+        const el = node.fields[0];
+        const make_1 = make;
+        return (parent) => ((state) => ((dispatch) => makeRenderDOMElement(el, make_1, parent, state, dispatch)));
     }
 }
 
-export function MakeHTMLRender$3$reflection(gen0, gen1, gen2) {
-    return class_type("Tempo.Html.Impl.MakeHTMLRender`3", [gen0, gen1, gen2], MakeHTMLRender$3, MakeRender$4$reflection(HTMLTemplateNode$3$reflection(gen0, gen1, gen2), gen0, gen1, gen2));
+export function makeRenderDOMElement(node, make, parent, state, dispatch) {
+    let localState = state;
+    const htmlImpl = HTMLElementImpl_$ctor_Z721C83C5(node.Name);
+    const impl = htmlImpl;
+    const getState = () => localState;
+    iterate((arg30$0040) => {
+        applyAttribute(dispatch, htmlImpl.element, getState, arg30$0040);
+    }, node.Attributes);
+    parent.Append(impl);
+    const childViews = map((child) => make(child, impl, localState, dispatch), node.Children);
+    const childUpdates = map((_arg1) => {
+        const change = _arg1.Change;
+        return change;
+    }, childViews);
+    const childDestroys = map((_arg2) => {
+        const destroy = _arg2.Destroy;
+        return destroy;
+    }, childViews);
+    const childQueries = map((_arg3) => {
+        const query = _arg3.Query;
+        return query;
+    }, childViews);
+    const attributeUpdates = map(mapCurriedArgs((f) => partialApply(1, f, [htmlImpl.element]), [[0, 2]]), filterMap((arg00$0040) => derivedApplication(arg00$0040), node.Attributes));
+    const updates = append(attributeUpdates, childUpdates);
+    const change_2 = (state_1) => {
+        localState = state_1;
+        iterate((change_1) => {
+            change_1(localState);
+        }, updates);
+    };
+    const destroy_2 = () => {
+        parent.Remove(impl);
+        iterate((destroy_1) => {
+            destroy_1();
+        }, childDestroys);
+    };
+    const query_2 = (q) => {
+        iterate((query_1) => {
+            query_1(q);
+        }, childQueries);
+    };
+    return new View$2(impl, change_2, destroy_2, query_2);
 }
 
-export function MakeHTMLRender$3_$ctor() {
-    return new MakeHTMLRender$3();
-}
-
-export function MakeHTMLRender$3__MakeRenderDOMElement_3B41954E(this$, node) {
-    return (parent) => ((state) => ((dispatch) => {
-        let localState = state;
-        const htmlImpl = HTMLElementImpl_$ctor_Z721C83C5(node.Name);
+export function makeRenderDOMText(value, parent, state, dispatch) {
+    if (value.tag === 0) {
+        const s = value.fields[0];
+        const htmlImpl_1 = HTMLTextImpl_$ctor_Z721C83C5(s);
+        const impl_1 = htmlImpl_1;
+        parent.Append(impl_1);
+        return new View$2(impl_1, (value_2) => {
+        }, () => {
+            parent.Remove(impl_1);
+        }, (value_3) => {
+        });
+    }
+    else {
+        const f = value.fields[0];
+        const htmlImpl = HTMLTextImpl_$ctor_Z721C83C5(f(state));
         const impl = htmlImpl;
-        const getState = () => localState;
-        iterate((arg30$0040) => {
-            applyAttribute(dispatch, htmlImpl.element, getState, arg30$0040);
-        }, node.Attributes);
         parent.Append(impl);
-        const childViews = map((child) => MakeRender$4__Make_1DCD9633(this$, child)(impl)(localState)(dispatch), node.Children);
-        const childUpdates = map((_arg1) => {
-            const change = _arg1.Change;
-            return change;
-        }, childViews);
-        const childDestroys = map((_arg2) => {
-            const destroy = _arg2.Destroy;
-            return destroy;
-        }, childViews);
-        const childQueries = map((_arg3) => {
-            const query = _arg3.Query;
-            return query;
-        }, childViews);
-        const attributeUpdates = map(mapCurriedArgs((f) => partialApply(1, f, [htmlImpl.element]), [[0, 2]]), filterMap((arg00$0040) => derivedApplication(arg00$0040), node.Attributes));
-        const updates = append(attributeUpdates, childUpdates);
-        const change_2 = (state_1) => {
-            localState = state_1;
-            iterate((change_1) => {
-                change_1(localState);
-            }, updates);
-        };
-        const destroy_2 = () => {
+        return new View$2(impl, (state_1) => {
+            htmlImpl.text.nodeValue = f(state_1);
+        }, () => {
             parent.Remove(impl);
-            iterate((destroy_1) => {
-                destroy_1();
-            }, childDestroys);
-        };
-        const query_2 = (q) => {
-            iterate((query_1) => {
-                query_1(q);
-            }, childQueries);
-        };
-        return new View$2(impl, change_2, destroy_2, query_2);
-    }));
-}
-
-export function MakeHTMLRender$3__MakeRenderDOMText_Z320284C0(this$, value) {
-    return (parent) => ((state) => ((dispatch) => {
-        if (value.tag === 0) {
-            const s = value.fields[0];
-            const htmlImpl_1 = HTMLTextImpl_$ctor_Z721C83C5(s);
-            const impl_1 = htmlImpl_1;
-            parent.Append(impl_1);
-            return new View$2(impl_1, (value_2) => {
-            }, () => {
-                parent.Remove(impl_1);
-            }, (value_3) => {
-            });
-        }
-        else {
-            const f = value.fields[0];
-            const htmlImpl = HTMLTextImpl_$ctor_Z721C83C5(f(state));
-            const impl = htmlImpl;
-            parent.Append(impl);
-            return new View$2(impl, (state_1) => {
-                htmlImpl.text.nodeValue = f(state_1);
-            }, () => {
-                parent.Remove(impl);
-            }, (value_1) => {
-            });
-        }
-    }));
+        }, (value_1) => {
+        });
+    }
 }
 

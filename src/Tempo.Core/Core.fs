@@ -26,7 +26,9 @@ module Core =
         | Node of 'N
         | Fragment of Template<'N, 'S, 'A, 'Q> list
         | Map of IMap<'N, 'S, 'A, 'Q>
+        | Map2 of IMap2<'N, 'S, 'A, 'Q>
         | Lifecycle of ILifecycle<'N, 'S, 'A, 'Q>
+        | Lifecycle2 of (Render<'S, 'A, 'Q> -> Render<'S, 'A, 'Q>) * Template<'N, 'S, 'A, 'Q>
         | OneOf2 of IOneOf2<'N, 'S, 'A, 'Q>
         | Iterator of IIterator<'N, 'S, 'A, 'Q>
 
@@ -57,6 +59,19 @@ module Core =
 
     and IMapInvoker<'N1, 'S1, 'A1, 'Q1, 'R> =
         abstract Invoke<'N2, 'S2, 'A2, 'Q2> : Map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> -> 'R
+
+    and IMap2<'N, 'S, 'A, 'Q> =
+        abstract Accept : IMap2Invoker<'N, 'S, 'A, 'Q, 'R> -> 'R
+
+    and Map2<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>(transform, template) =
+        member this.Transform : MakeNodeRender<'N1, 'S1, 'A1, 'Q1> -> MakeNodeRender<'N2, 'S2, 'A2, 'Q2> = transform
+        member this.Template : Template<'N2, 'S2, 'A2, 'Q2> = template
+        with
+            interface IMap2<'N1, 'S1, 'A1, 'Q1> with
+                member this.Accept f = f.Invoke<'N2, 'S2, 'A2, 'Q2> this
+
+    and IMap2Invoker<'N1, 'S1, 'A1, 'Q1, 'R> =
+        abstract Invoke<'N2, 'S2, 'A2, 'Q2> : Map2<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> -> 'R
 
     and ILifecycle<'N, 'S, 'A, 'Q> =
         abstract Accept : ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
@@ -113,6 +128,11 @@ module Core =
 
     let unpackMap (map: IMap<'N, 'S, 'A, 'Q>) (f: IMapInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
 
+    let packMap2<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (map: Map2<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>) =
+        map :> IMap2<'N1, 'S1, 'A1, 'Q1>
+
+    let unpackMap2 (map: IMap2<'N, 'S, 'A, 'Q>) (f: IMap2Invoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
+
     let packLifecycle<'N, 'S, 'A, 'Q, 'P> (map: Lifecycle<'N, 'S, 'A, 'Q, 'P>) = map :> ILifecycle<'N, 'S, 'A, 'Q>
 
     let unpackLifecycle (map: ILifecycle<'N, 'S, 'A, 'Q>) (f: ILifecycleInvoker<'N, 'S, 'A, 'Q, 'R>) : 'R = map.Accept f
@@ -134,19 +154,24 @@ module Core =
         | FirstAndSecond of 'A * 'B
         | SecondAndFirst of 'A * 'B
 
-    [<AbstractClass>]
-    type MakeRender<'N, 'S, 'A, 'Q>() =
+    type MakeRender<'N, 'S, 'A, 'Q>(makeNodeRender, createGroupNode) =
+        member this.MakeNodeRender : (Template<'N, 'S, 'A, 'Q> -> Render<'S, 'A, 'Q>)
+            -> 'N
+            -> (Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q>) =
+            makeNodeRender
+
+        member this.CreateGroupNode : string -> Impl = createGroupNode
+
         member this.Make(template: Template<'N, 'S, 'A, 'Q>) : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
             match template with
-            | Node n -> this.MakeNodeRender n
+            | Node n -> this.MakeNodeRender this.Make n
             | Fragment ls -> this.MakeFragmentRender ls
             | Map map -> this.MakeMapRender map
+            | Map2 map -> this.MakeMap2Render map
             | Lifecycle lifecycle -> this.MakeLifecycleRender lifecycle
+            | Lifecycle2 (transform, template) -> this.MakeLifecycle2Render transform template
             | OneOf2 oneOf2 -> this.MakeOneOf2Render oneOf2
             | Iterator iterator -> this.MakeIteratorRender iterator
-
-        abstract MakeNodeRender : 'N -> (Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q>)
-        abstract CreateGroupNode : string -> Impl
 
         // TODO super cheating!
         member this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>() : MakeRender<'N2, 'S2, 'A2, 'Q2> =
@@ -170,6 +195,25 @@ module Core =
                           parent.Remove(group) // TODO this tries to remove nodes in the iterator twice
                           List.iter (fun i -> i.Destroy()) views
                   Query = fun q -> List.iter (fun i -> i.Query q) views }
+
+        member this.MakeMap2Render<'N2, 'S2, 'A2, 'Q2>
+            (map: IMap2<'N, 'S, 'A, 'Q>)
+            : Impl -> 'S -> Dispatch<'A> -> View<'S, 'Q> =
+            unpackMap2
+                map
+                { new IMap2Invoker<'N, 'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
+                    member __.Invoke<'N2, 'S2, 'A2, 'Q2>
+                        (map: Map2<'N, 'N2, 'S, 'S2, 'A, 'A2, 'Q, 'Q2>)
+                        : Render<'S, 'A, 'Q> =
+                        // let maker =
+                        //     (this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>())
+
+                        // let renderNode = map.Transform this.MakeNodeRender
+
+                        // map.Transform render
+                        failwith "" }
+
+
 
         member this.MakeMapRender<'N2, 'S2, 'A2, 'Q2>
             (map: IMap<'N, 'S, 'A, 'Q>)
@@ -198,6 +242,10 @@ module Core =
                               Query = query
                               Destroy = destroy
                               Change = change } }
+
+        member this.MakeLifecycle2Render transform template =
+            let render = this.Make template
+            transform render
 
         member this.MakeLifecycleRender<'P>
             (lifecycle: ILifecycle<'N, 'S, 'A, 'Q>)
