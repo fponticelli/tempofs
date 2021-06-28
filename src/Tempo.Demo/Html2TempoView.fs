@@ -6,17 +6,20 @@ open Tempo.Html
 open type Tempo.Html.DSL.HTML
 
 module View =
-    type Action = | Unknwon
-    type State = { Value: unit }
-    type Query = unit
-    let update (state: State) (action: Action) = state
+    type Html2TempoAction = | Unknwon
+    type Html2TempoState = { Value: unit }
+    type Html2TempoQuery = unit
+    let update (state: Html2TempoState) (action: Html2TempoAction) = state
 
-    let init () : State =
-        a () |> ignore
-        { Value = () }
-
-    let template : HTMLTemplate<State, Action, Query> =
+    let template : HTMLTemplate<Html2TempoState, Html2TempoAction, Html2TempoQuery> =
         DIV(
-            [ DIV([ Text "Panel 1" ])
-              DIV([ Text "Panel 2" ]) ]
+            [ cls "flex h-screen" ],
+            [ DIV([ cls "flex-auto" ], [ Text "Panel 1" ])
+              DIV(
+                  [ cls "flex-auto" ],
+                  [ MapState(
+                        (fun (s: Html2TempoState) -> { Value = "hello" }: MonacoState),
+                        MapAction((fun _ -> None), MonacoEditor())
+                    ) ]
+              ) ]
         )

@@ -1,7 +1,7 @@
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const path = require("path");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 var babelOptions = {
@@ -26,6 +26,10 @@ var commonPlugins = [
     })
 ];
 
+var monaco = {
+    languages: ['html', 'fsharp']
+}
+
 module.exports = (env, options) => {
 
     // If no mode has been defined, default to `development`
@@ -40,15 +44,10 @@ module.exports = (env, options) => {
         mode: options.mode,
         entry: {
             demo: [
-                "@babel/polyfill",
+                // "@babel/polyfill",
                 './src/Tempo.Demo/App.fs.js',
-                './src/Tempo.Demo/scss/main.scss'
-            ],
-            'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-            'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
-            'css.worker': 'monaco-editor/esm/vs/language/css/css.worker',
-            'html.worker': 'monaco-editor/esm/vs/language/html/html.worker',
-            'ts.worker': 'monaco-editor/esm/vs/language/typescript/ts.worker'
+                './src/Tempo.Demo/css/main.css'
+            ]
         },
         output: {
             path: path.join(__dirname, './output'),
@@ -56,16 +55,15 @@ module.exports = (env, options) => {
         },
         plugins: isProduction ?
             commonPlugins.concat([
-                new MiniCssExtractPlugin({
-                    filename: 'style.css'
-                }),
                 new CopyWebpackPlugin({
                     patterns: [
                         { from: './static' }
                     ]
-                })
+                }),
+                new MonacoWebpackPlugin(monaco)
             ])
             : commonPlugins.concat([
+                new MonacoWebpackPlugin(),
                 new webpack.HotModuleReplacementPlugin(),
             ]),
         devServer: {
@@ -86,19 +84,8 @@ module.exports = (env, options) => {
                     },
                 },
                 {
-                    test: /\.(sass|scss|css)$/,
-                    use: [
-                        isProduction
-                            ? MiniCssExtractPlugin.loader
-                            : 'style-loader',
-                        'css-loader',
-                        'sass-loader',
-                        'postcss-loader'
-                    ],
-                },
-                {
                     test: /\.css$/,
-                    use: ['style-loader', 'css-loader']
+                    use: ['style-loader', 'css-loader', 'postcss-loader']
                 },
                 {
                     test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*$|$)/,

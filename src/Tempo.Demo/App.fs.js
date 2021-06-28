@@ -1,4 +1,4 @@
-import { init, update, template as template_1 } from "./Html2TempoView.fs.js";
+import { Html2TempoState, update, template as template_1 } from "./Html2TempoView.fs.js";
 import { interpolate, toText } from "./.fable/fable-library.3.1.10/String.js";
 import { some } from "./.fable/fable-library.3.1.10/Option.js";
 import { HTML_MakeProgram_Z9447D8C } from "../Tempo.Html/HtmlDSL.fs.js";
@@ -16,5 +16,5 @@ export const render = HTML_MakeProgram_Z9447D8C(template, document.body);
 
 export const view = render((state, action) => update(state, action))((arg00$0040) => {
     middleware(arg00$0040);
-})(init());
+})(new Html2TempoState(void 0));
 

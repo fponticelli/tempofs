@@ -18,7 +18,7 @@ open Tempo.Demo.Html2Tempo.View
 // let makeState v = { Counter = v }
 // let state = { Counter = 0 }
 
-let template : HTMLTemplate<State, Action, unit> = template
+let template : HTMLTemplate<Html2TempoState, Html2TempoAction, Html2TempoQuery> = template
 // El(
 //     "sp-theme",
 //     [ Attr("scale", "smallest")
@@ -134,4 +134,5 @@ let middleware
 let render =
     HTML.MakeProgram(template, document.body)
 
-let view = render update middleware (init ())
+let view =
+    render update middleware ({ Value = () })
