@@ -65,6 +65,10 @@ export function HTMLElementImpl_$ctor_Z721C83C5(name) {
     return HTMLElementImpl_$ctor_4C3D2741(document.createElement(name));
 }
 
+export function HTMLElementImpl_$ctor_Z384F8060(ns, name) {
+    return HTMLElementImpl_$ctor_4C3D2741(document.createElementNS(ns, name));
+}
+
 export class HTMLTextImpl {
     constructor(text) {
         this.text = text;
@@ -321,18 +325,24 @@ export function createGroupNode(label) {
 }
 
 export function makeHTMLNodeRender(make, node) {
-    if (node.tag === 1) {
-        return (parent_1) => ((state_1) => ((dispatch_1) => makeRenderDOMText(node.fields[0], parent_1, state_1, dispatch_1)));
-    }
-    else {
-        const make_1 = make;
-        return (parent) => ((state) => ((dispatch) => makeRenderDOMElement(node.fields[0], make_1, parent, state, dispatch)));
+    switch (node.tag) {
+        case 1: {
+            const make_2 = make;
+            return (parent_1) => ((state_1) => ((dispatch_1) => makeRenderDOMElement(void 0, node.fields[0], make_2, parent_1, state_1, dispatch_1)));
+        }
+        case 2: {
+            return (parent_2) => ((state_2) => ((dispatch_2) => makeRenderDOMText(node.fields[0], parent_2, state_2, dispatch_2)));
+        }
+        default: {
+            const make_1 = make;
+            return (parent) => ((state) => ((dispatch) => makeRenderDOMElement(node.fields[0], node.fields[1], make_1, parent, state, dispatch)));
+        }
     }
 }
 
-export function makeRenderDOMElement(node, make, parent, state, dispatch) {
+export function makeRenderDOMElement(ns, node, make, parent, state, dispatch) {
     let localState = state;
-    const htmlImpl = HTMLElementImpl_$ctor_Z721C83C5(node.Name);
+    const htmlImpl = (ns == null) ? HTMLElementImpl_$ctor_Z721C83C5(node.Name) : HTMLElementImpl_$ctor_Z384F8060(ns, node.Name);
     const impl = htmlImpl;
     const namedAttributes = filterMap((_arg1) => ((_arg1.tag === 0) ? _arg1.fields[0] : (void 0)), node.Attributes);
     iterate((arg30$0040) => {

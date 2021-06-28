@@ -10,12 +10,12 @@ export class HTMLTemplateNode$3 extends Union {
         this.fields = fields;
     }
     cases() {
-        return ["HTMLTemplateElement", "HTMLTemplateText"];
+        return ["HTMLTemplateElementNS", "HTMLTemplateElement", "HTMLTemplateText"];
     }
 }
 
 export function HTMLTemplateNode$3$reflection(gen0, gen1, gen2) {
-    return union_type("Tempo.Html.HTMLTemplateNode`3", [gen0, gen1, gen2], HTMLTemplateNode$3, () => [[["Item", HTMLTemplateElement$3$reflection(gen0, gen1, gen2)]], [["Item", Value$2$reflection(gen0, string_type)]]]);
+    return union_type("Tempo.Html.HTMLTemplateNode`3", [gen0, gen1, gen2], HTMLTemplateNode$3, () => [[["Item1", string_type], ["Item2", HTMLTemplateElement$3$reflection(gen0, gen1, gen2)]], [["Item", HTMLTemplateElement$3$reflection(gen0, gen1, gen2)]], [["Item", Value$2$reflection(gen0, string_type)]]]);
 }
 
 export class HTMLTemplateElement$3 extends Record {

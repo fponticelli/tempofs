@@ -51,6 +51,21 @@ module DSL =
                   Destroy = view.Destroy
                   Query = view.Query }: ComponentView<'S, 'A, 'Q>
 
+        static member NSEl<'S, 'A, 'Q>
+            (
+                ns: string,
+                name: string,
+                attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list,
+                children: HTMLTemplate<'S, 'A, 'Q> list
+            ) : HTMLTemplate<'S, 'A, 'Q> =
+            Node
+            <| HTMLTemplateElementNS(
+                ns,
+                { Name = name
+                  Attributes = attributes
+                  Children = children }
+            )
+
         static member El<'S, 'A, 'Q>
             (
                 name: string,
@@ -411,3 +426,69 @@ module DSL =
                 template: HTMLTemplate<'S, 'A, 'Q>
             ) : HTMLTemplate<'S, 'A, 'Q> =
             HTML.CompareStates((=), template)
+
+        static member inline cls(text: string) = HTML.Attr("class", text)
+        static member inline cls(f: 'S -> string) = HTML.Attr("class", f)
+
+        static member inline aria(name: string, text: string) = HTML.Attr($"aria-{name}", text)
+        static member inline aria(name: string, f: 'S -> string) = HTML.Attr($"aria-{name}", f)
+
+        static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.El("div", attributes, children)
+
+        static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = HTML.DIV(attributes, [])
+
+        static member inline DIV(children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.DIV([], children)
+        static member inline DIV(child: HTMLTemplate<'S, 'A, 'Q>) = HTML.DIV([], [ child ])
+
+        static member inline DIV() = HTML.DIV([], [])
+
+        static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = HTML.DIV(attributes, [ child ])
+
+        static member inline BUTTON(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.El("button", attributes, children)
+
+        static member inline BUTTON(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = HTML.BUTTON(attributes, [])
+
+        static member inline BUTTON(children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.BUTTON([], children)
+
+        static member inline BUTTON() = HTML.BUTTON([], [])
+
+        static member inline BUTTON(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = HTML.BUTTON(attributes, [ child ])
+        static member inline BUTTON(child: HTMLTemplate<'S, 'A, 'Q>) = HTML.BUTTON([], [ child ])
+
+        static member inline IMG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = HTML.El("img", attributes, [])
+
+        static member inline IMG() = HTML.IMG([])
+
+        static member inline SPAN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.El("span", attributes, children)
+
+        static member inline SPAN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = HTML.SPAN(attributes, [])
+
+        static member inline SPAN(children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.SPAN([], children)
+        static member inline SPAN(child: HTMLTemplate<'S, 'A, 'Q>) = HTML.SPAN([], [ child ])
+
+        static member inline SPAN() = HTML.SPAN([], [])
+
+        static member inline SPAN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = HTML.SPAN(attributes, [ child ])
+
+        static member inline SVG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) =
+            HTML.NSEl("http://www.w3.org/2000/svg", "svg", attributes, children)
+
+        static member inline SVG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = HTML.SVG(attributes, [])
+
+        static member inline SVG(children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.SVG([], children)
+        static member inline SVG(child: HTMLTemplate<'S, 'A, 'Q>) = HTML.SVG([], [ child ])
+
+        static member inline SVG() = HTML.SVG([], [])
+
+        static member inline SVG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = HTML.SVG(attributes, [ child ])
+
+        static member inline PATH(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) =
+            HTML.NSEl("http://www.w3.org/2000/svg", "path", attributes, children)
+
+        static member inline PATH(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = HTML.PATH(attributes, [])
+
+        static member inline PATH(children: HTMLTemplate<'S, 'A, 'Q> list) = HTML.PATH([], children)
+
+        static member inline PATH() = HTML.PATH([], [])
+
+        static member inline PATH(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = HTML.PATH(attributes, [ child ])

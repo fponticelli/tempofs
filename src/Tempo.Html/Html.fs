@@ -9,6 +9,7 @@ open Browser.Types
 type HTMLTemplate<'S, 'A, 'Q> = Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>
 
 and HTMLTemplateNode<'S, 'A, 'Q> =
+    | HTMLTemplateElementNS of string * HTMLTemplateElement<'S, 'A, 'Q>
     | HTMLTemplateElement of HTMLTemplateElement<'S, 'A, 'Q>
     | HTMLTemplateText of Value<'S, string>
 

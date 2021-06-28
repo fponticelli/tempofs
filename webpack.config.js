@@ -40,10 +40,15 @@ module.exports = (env, options) => {
         mode: options.mode,
         entry: {
             demo: [
-                // "@babel/polyfill",
+                "@babel/polyfill",
                 './src/Tempo.Demo/App.fs.js',
                 './src/Tempo.Demo/scss/main.scss'
-            ]
+            ],
+            'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
+            'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
+            'css.worker': 'monaco-editor/esm/vs/language/css/css.worker',
+            'html.worker': 'monaco-editor/esm/vs/language/html/html.worker',
+            'ts.worker': 'monaco-editor/esm/vs/language/typescript/ts.worker'
         },
         output: {
             path: path.join(__dirname, './output'),
@@ -88,6 +93,7 @@ module.exports = (env, options) => {
                             : 'style-loader',
                         'css-loader',
                         'sass-loader',
+                        'postcss-loader'
                     ],
                 },
                 {

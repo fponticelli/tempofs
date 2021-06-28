@@ -1,12 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Version>0.1.0</Version>
     <Authors>Franco Ponticelli</Authors>
-    <Company></Company>
+    <Company>
+    </Company>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="MonacoEditor.fs" />
+    <Compile Include="Html2TempoView.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -55,20 +55,24 @@ export function HTML_MakeProgram_Z9447D8C(template, el) {
     }));
 }
 
+export function HTML_NSEl_7639458A(ns, name, attributes, children) {
+    return new Template$4(0, new HTMLTemplateNode$3(0, ns, new HTMLTemplateElement$3(name, attributes, children)));
+}
+
 export function HTML_El_Z7374416F(name, attributes, children) {
-    return new Template$4(0, new HTMLTemplateNode$3(0, new HTMLTemplateElement$3(name, attributes, children)));
+    return new Template$4(0, new HTMLTemplateNode$3(1, new HTMLTemplateElement$3(name, attributes, children)));
 }
 
 export function HTML_Text() {
-    return new Template$4(0, new HTMLTemplateNode$3(1, new Value$2(1, (x) => x)));
+    return new Template$4(0, new HTMLTemplateNode$3(2, new Value$2(1, (x) => x)));
 }
 
 export function HTML_Text_Z721C83C5(value) {
-    return new Template$4(0, new HTMLTemplateNode$3(1, new Value$2(0, value)));
+    return new Template$4(0, new HTMLTemplateNode$3(2, new Value$2(0, value)));
 }
 
 export function HTML_Text_77A7E8C8(f) {
-    return new Template$4(0, new HTMLTemplateNode$3(1, new Value$2(1, f)));
+    return new Template$4(0, new HTMLTemplateNode$3(2, new Value$2(1, f)));
 }
 
 export function HTML_Attr_68C4AEB5(name, value) {

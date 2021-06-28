@@ -36,6 +36,7 @@ module Impl =
 
         new(el: HTMLElement) = { element = el }
         new(name: string) = HTMLElementImpl(document.createElement name)
+        new(ns: string, name: string) = HTMLElementImpl((document.createElementNS (ns, name)) :?> HTMLElement)
 
     type HTMLTextImpl =
         val text: Text
@@ -283,14 +284,19 @@ module Impl =
 
     let rec makeHTMLNodeRender<'S, 'A, 'Q> (make: Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q> -> Render<'S, 'A, 'Q>) (node: HTMLTemplateNode<'S, 'A, 'Q>) : Render<'S, 'A, 'Q> =
         match node with
-        | HTMLTemplateElement el -> makeRenderDOMElement el make
+        | HTMLTemplateElementNS (ns, el) -> makeRenderDOMElement (Some ns) el make
+        | HTMLTemplateElement el -> makeRenderDOMElement (None) el make
         | HTMLTemplateText v -> makeRenderDOMText v
 
-    and makeRenderDOMElement (node: HTMLTemplateElement<'S, 'A, 'Q>) make : Render<'S, 'A, 'Q> =
+    and makeRenderDOMElement ns (node: HTMLTemplateElement<'S, 'A, 'Q>) make : Render<'S, 'A, 'Q> =
         fun (parent: Impl) (state: 'S) dispatch ->
             let mutable localState = state
 
-            let htmlImpl = HTMLElementImpl node.Name
+            let htmlImpl =
+                match ns with
+                | Some ns -> HTMLElementImpl(ns, node.Name)
+                | None -> HTMLElementImpl node.Name
+
             let impl = htmlImpl :> Impl
             let getState () = localState
 
