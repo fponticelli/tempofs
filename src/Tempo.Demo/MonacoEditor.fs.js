@@ -1,9 +1,8 @@
 import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
-import { tuple_type, class_type, lambda_type, unit_type, record_type, string_type, union_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { HTML_El_Z7374416F } from "../Tempo.Html/HtmlDSL.fs.js";
+import { class_type, record_type, string_type, union_type } from "./.fable/fable-library.3.1.10/Reflection.js";
+import { empty } from "./.fable/fable-library.3.1.10/List.js";
 import { lifecycleAttribute } from "../Tempo.Html/HtmlImpl.fs.js";
 import * as monaco$002Deditor from "monaco-editor";
-import { empty, singleton } from "./.fable/fable-library.3.1.10/List.js";
 
 export class MonacoAction extends Union {
     constructor(tag, ...fields) {
@@ -31,38 +30,22 @@ export function MonacoState$reflection() {
     return record_type("Tempo.Demo.Utils.Monaco.MonacoState", [], MonacoState, () => [["Value", string_type]]);
 }
 
-export class MonacoEditorOptions extends Record {
-    constructor(value, language) {
-        super();
-        this.value = value;
-        this.language = language;
-    }
-}
-
-export function MonacoEditorOptions$reflection() {
-    return record_type("Tempo.Demo.Utils.Monaco.MonacoEditorOptions", [], MonacoEditorOptions, () => [["value", string_type], ["language", string_type]]);
-}
-
-export class MonacoEditorInstance extends Record {
-    constructor(update) {
-        super();
-        this.update = update;
+export class MonacoEditorInstance {
+    constructor() {
     }
 }
 
 export function MonacoEditorInstance$reflection() {
-    return record_type("Tempo.Demo.Utils.Monaco.MonacoEditorInstance", [], MonacoEditorInstance, () => [["update", lambda_type(string_type, unit_type)]]);
+    return class_type("Tempo.Demo.Utils.Monaco.MonacoEditorInstance", void 0, MonacoEditorInstance);
 }
 
-export class MonacoEditorClass extends Record {
-    constructor(create) {
-        super();
-        this.create = create;
+export class MonacoEditorClass {
+    constructor() {
     }
 }
 
 export function MonacoEditorClass$reflection() {
-    return record_type("Tempo.Demo.Utils.Monaco.MonacoEditorClass", [], MonacoEditorClass, () => [["create", lambda_type(tuple_type(class_type("Browser.Types.HTMLElement"), MonacoEditorOptions$reflection()), MonacoEditorInstance$reflection())]]);
+    return class_type("Tempo.Demo.Utils.Monaco.MonacoEditorClass", void 0, MonacoEditorClass);
 }
 
 export class MonacoModule extends Record {
@@ -76,22 +59,33 @@ export function MonacoModule$reflection() {
     return record_type("Tempo.Demo.Utils.Monaco.MonacoModule", [], MonacoModule, () => [["editor", MonacoEditorClass$reflection()]]);
 }
 
-export function MonacoEditor() {
-    return HTML_El_Z7374416F("div", singleton(lifecycleAttribute((_arg1) => {
+export function delay(f) {
+    return new Promise(((resolve, reject) => {
+        void window.setTimeout((_arg1) => {
+            resolve(f());
+        }, 0, empty());
+    }));
+}
+
+export function MonacoEditorAttribute(mapToOptions) {
+    return lifecycleAttribute((_arg1) => {
         const state = _arg1.State;
         const element = _arg1.Element;
-        const editor = monaco$002Deditor.editor.create([element, new MonacoEditorOptions(state.Value, "fsharp")]);
-        return editor;
+        return delay(() => {
+            const editor = monaco$002Deditor.editor.create(element, mapToOptions(state));
+            return editor;
+        });
     }, (_arg2) => {
-        const editor_1 = _arg2.Payload;
-        return [true, editor_1];
+        const promiseEditor = _arg2.Payload;
+        return [true, promiseEditor];
     }, (_arg3) => {
-        const editor_2 = _arg3.Payload;
-        return editor_2;
-    }, (value) => {
-    }, (q, _arg4) => {
-        const editor_3 = _arg4.Payload;
-        return editor_3;
-    })), empty());
+        const promiseEditor_1 = _arg3.Payload;
+        return promiseEditor_1;
+    }, (_arg4) => {
+        const promiseEditor_2 = _arg4.Payload;
+    }, (q, _arg5) => {
+        const promiseEditor_3 = _arg5.Payload;
+        return promiseEditor_3;
+    });
 }
 

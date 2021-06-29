@@ -2,3 +2,8 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 @import url("https://rsms.me/inter/inter.css");
+
+body, html {
+    height: 100%;
+    overflow: hidden;
+}

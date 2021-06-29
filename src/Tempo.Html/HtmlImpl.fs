@@ -210,6 +210,8 @@ module Impl =
             lc
             { new IHTMLLifecycleInvoker<'S, 'Q, Element -> 'S -> LifecycleImpl<'S, 'Q>> with
                 override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) : Element -> 'S -> LifecycleImpl<'S, 'Q> =
+                    console.log ("unpacked")
+
                     fun (el: Element) (state: 'S) ->
                         let mutable payload : 'P =
                             t.AfterRender { State = state; Element = el :?> 'EL }

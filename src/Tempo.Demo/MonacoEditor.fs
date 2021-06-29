@@ -1,44 +1,63 @@
 namespace Tempo.Demo.Utils
 
 open Fable.Core
+open Fable.Core.JS
 open Fable.Core.JsInterop
 open Browser.Dom
 open Browser.Types
 open Tempo.Html
+
+open Tempo.Html.Impl
 
 open type Tempo.Html.DSL.HTML
 
 module Monaco =
     type MonacoAction = | Unknwon
     type MonacoState = { Value: string }
+    type MonacoQuery = unit
 
-    type MonacoEditorOptions = { value: string; language: string }
+    type MonacoEditorOptions = {| value: string; language: string |}
 
-    type MonacoEditorInstance = { update: (string -> unit) }
+    [<AbstractClass>]
+    type MonacoEditorInstance =
+        class
+        end
 
+
+    [<AbstractClass>]
     type MonacoEditorClass =
-        { create: ((HTMLElement * MonacoEditorOptions) -> MonacoEditorInstance) }
+        // [<CompiledName("create")>]
+        // abstract create : HTMLElement * MonacoEditorOptions -> MonacoEditorInstance
+        [<Emit("$0.create($1, $2)")>]
+        member this.create(element: HTMLElement, options: MonacoEditorOptions) : MonacoEditorInstance = jsNative
 
     type MonacoModule = { editor: MonacoEditorClass }
+
+    let delay<'T> (f: unit -> 'T) : Promise<'T> =
+        Constructors.Promise.Create
+            (fun resolve reject ->
+                (window.setTimeout ((fun _ -> resolve <| f ()), 0, [])
+                 |> ignore))
 
     [<Import("*", from = "monaco-editor")>]
     let monaco : MonacoModule = jsNative
 
-    let MonacoEditor () : HTMLTemplate<MonacoState, MonacoAction, _> =
-        DIV(
-            [ Lifecycle(
-                  (fun { Element = element; State = state } ->
-                      let editor =
-                          monaco.editor.create (
-                              element,
-                              { value = state.Value
-                                language = "fsharp" }
-                          )
+    let MonacoEditorAttribute<'S, 'A, 'Q>
+        (mapToOptions: 'S -> MonacoEditorOptions)
+        : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        lifecycleAttribute<'S, 'A, 'Q, _, Promise<MonacoEditorInstance>>
+            (fun { Element = element; State = state } ->
+                // TODO remove delay
+                delay
+                    (fun () ->
 
-                      editor), // afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P,
-                  (fun { Payload = editor } -> (true, editor)), // beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P),
-                  (fun { Payload = editor } -> editor), // afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P,
-                  ignore, // beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit,
-                  (fun q { Payload = editor } -> editor) // respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P
-              ) ]
-        )
+                        let editor =
+                            monaco.editor.create (element, mapToOptions state)
+
+                        editor))
+
+            (fun { Payload = promiseEditor } -> (true, promiseEditor))
+
+            (fun { Payload = promiseEditor } -> promiseEditor)
+            (fun { Payload = promiseEditor } -> ())
+            (fun q { Payload = promiseEditor } -> promiseEditor)

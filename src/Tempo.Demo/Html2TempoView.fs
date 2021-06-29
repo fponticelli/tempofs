@@ -13,13 +13,21 @@ module View =
 
     let template : HTMLTemplate<Html2TempoState, Html2TempoAction, Html2TempoQuery> =
         DIV(
-            [ cls "flex h-screen" ],
-            [ DIV([ cls "flex-auto" ], [ Text "Panel 1" ])
+            [ cls "flex h-full" ],
+            [ DIV(
+                [ cls "flex-auto h-full w-6/12"
+                  MonacoEditorAttribute(
+                      (fun s ->
+                          {| value = "<a>Link</a>"
+                             language = "html" |})
+                  ) ]
+              )
               DIV(
-                  [ cls "flex-auto" ],
-                  [ MapState(
-                        (fun (s: Html2TempoState) -> { Value = "hello" }: MonacoState),
-                        MapAction((fun _ -> None), MonacoEditor())
+                  [ cls "flex-auto h-full w-6/12"
+                    MonacoEditorAttribute(
+                        (fun s ->
+                            {| value = "let a = 2"
+                               language = "fsharp" |})
                     ) ]
               ) ]
         )
