@@ -1,5 +1,5 @@
 import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { option_type, class_type, record_type, list_type, union_type, string_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { lambda_type, unit_type, option_type, class_type, record_type, list_type, union_type, string_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { Template$4$reflection, Value$2$reflection } from "../Tempo.Core/Core.fs.js";
 import { curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 
@@ -55,7 +55,7 @@ export class HTMLTemplateAttribute$3 extends Union {
 }
 
 export function HTMLTemplateAttribute$3$reflection(gen0, gen1, gen2) {
-    return union_type("Tempo.Html.HTMLTemplateAttribute`3", [gen0, gen1, gen2], HTMLTemplateAttribute$3, () => [[["Item", HTMLNamedAttribute$3$reflection(gen0, gen1, gen2)]], [["Item", class_type("Tempo.Html.IHTMLLifecycle`2", [gen0, gen2])]]]);
+    return union_type("Tempo.Html.HTMLTemplateAttribute`3", [gen0, gen1, gen2], HTMLTemplateAttribute$3, () => [[["Item", HTMLNamedAttribute$3$reflection(gen0, gen1, gen2)]], [["Item", class_type("Tempo.Html.IHTMLLifecycle`3", [gen0, gen1, gen2])]]]);
 }
 
 export class HTMLTemplateAttributeValue$3 extends Union {
@@ -123,32 +123,34 @@ export function HTMLTrigger$4_$ctor_75095B8B(handler) {
     return new HTMLTrigger$4(handler);
 }
 
-export class HTMLLifecycleInitialPayload$2 extends Record {
-    constructor(State, Element$) {
+export class HTMLLifecycleInitialPayload$3 extends Record {
+    constructor(State, Element$, Dispatch) {
         super();
         this.State = State;
         this.Element = Element$;
+        this.Dispatch = Dispatch;
     }
 }
 
-export function HTMLLifecycleInitialPayload$2$reflection(gen0, gen1) {
-    return record_type("Tempo.Html.HTMLLifecycleInitialPayload`2", [gen0, gen1], HTMLLifecycleInitialPayload$2, () => [["State", gen0], ["Element", gen1]]);
+export function HTMLLifecycleInitialPayload$3$reflection(gen0, gen1, gen2) {
+    return record_type("Tempo.Html.HTMLLifecycleInitialPayload`3", [gen0, gen1, gen2], HTMLLifecycleInitialPayload$3, () => [["State", gen0], ["Element", gen2], ["Dispatch", lambda_type(gen1, unit_type)]]);
 }
 
-export class HTMLLifecyclePayload$3 extends Record {
-    constructor(State, Element$, Payload) {
+export class HTMLLifecyclePayload$4 extends Record {
+    constructor(State, Element$, Payload, Dispatch) {
         super();
         this.State = State;
         this.Element = Element$;
         this.Payload = Payload;
+        this.Dispatch = Dispatch;
     }
 }
 
-export function HTMLLifecyclePayload$3$reflection(gen0, gen1, gen2) {
-    return record_type("Tempo.Html.HTMLLifecyclePayload`3", [gen0, gen1, gen2], HTMLLifecyclePayload$3, () => [["State", gen0], ["Element", gen1], ["Payload", gen2]]);
+export function HTMLLifecyclePayload$4$reflection(gen0, gen1, gen2, gen3) {
+    return record_type("Tempo.Html.HTMLLifecyclePayload`4", [gen0, gen1, gen2, gen3], HTMLLifecyclePayload$4, () => [["State", gen0], ["Element", gen2], ["Payload", gen3], ["Dispatch", lambda_type(gen1, unit_type)]]);
 }
 
-export class HTMLLifecycle$4 {
+export class HTMLLifecycle$5 {
     constructor(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
         this.afterRender = afterRender;
         this.beforeChange = beforeChange;
@@ -162,12 +164,12 @@ export class HTMLLifecycle$4 {
     }
 }
 
-export function HTMLLifecycle$4$reflection(gen0, gen1, gen2, gen3) {
-    return class_type("Tempo.Html.HTMLLifecycle`4", [gen0, gen1, gen2, gen3], HTMLLifecycle$4);
+export function HTMLLifecycle$5$reflection(gen0, gen1, gen2, gen3, gen4) {
+    return class_type("Tempo.Html.HTMLLifecycle`5", [gen0, gen1, gen2, gen3, gen4], HTMLLifecycle$5);
 }
 
-export function HTMLLifecycle$4_$ctor_Z3754A3A9(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
-    return new HTMLLifecycle$4(afterRender, beforeChange, afterChange, beforeDestroy, respond);
+export function HTMLLifecycle$5_$ctor_17DF349(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
+    return new HTMLLifecycle$5(afterRender, beforeChange, afterChange, beforeDestroy, respond);
 }
 
 export function Property$2__get_Name(this$) {
@@ -182,23 +184,23 @@ export function HTMLTrigger$4__get_Handler(this$) {
     return this$.handler;
 }
 
-export function HTMLLifecycle$4__get_AfterRender(this$) {
+export function HTMLLifecycle$5__get_AfterRender(this$) {
     return this$.afterRender;
 }
 
-export function HTMLLifecycle$4__get_BeforeChange(this$) {
+export function HTMLLifecycle$5__get_BeforeChange(this$) {
     return this$.beforeChange;
 }
 
-export function HTMLLifecycle$4__get_AfterChange(this$) {
+export function HTMLLifecycle$5__get_AfterChange(this$) {
     return this$.afterChange;
 }
 
-export function HTMLLifecycle$4__get_BeforeDestroy(this$) {
+export function HTMLLifecycle$5__get_BeforeDestroy(this$) {
     return this$.beforeDestroy;
 }
 
-export function HTMLLifecycle$4__get_Respond(this$) {
+export function HTMLLifecycle$5__get_Respond(this$) {
     return curry(2, this$.respond);
 }
 

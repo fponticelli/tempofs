@@ -3,7 +3,7 @@
 @import "tailwindcss/utilities";
 @import url("https://rsms.me/inter/inter.css");
 
-body, html {
+body, html, #tempofs-demo-app {
     height: 100%;
     overflow: hidden;
 }

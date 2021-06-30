@@ -1,27 +1,36 @@
 namespace Tempo.Demo.Utils
 
 open Fable.Core
-open Fable.Core.JS
-open Fable.Core.JsInterop
-open Browser.Dom
 open Browser.Types
 open Tempo.Html
-
 open Tempo.Html.Impl
 
-open type Tempo.Html.DSL.HTML
-
 module Monaco =
-    type MonacoAction = | Unknwon
-    type MonacoState = { Value: string }
-    type MonacoQuery = unit
+    type MonacoEditorOptions =
+        {| value: string
+           language: string
+           wordWrap: string |}
 
-    type MonacoEditorOptions = {| value: string; language: string |}
+    type MonacoEvent =
+        | OnPaste
+        | OnChange
 
     [<AbstractClass>]
     type MonacoEditorInstance =
-        class
-        end
+        [<Emit("$0.onDidPaste($1)")>]
+        member this.onDidPaste(listener: unit -> unit) : unit = jsNative
+
+        [<Emit("$0.onDidChangeModelContent($1)")>]
+        member this.onDidChangeModelContent(listener: unit -> unit) : unit = jsNative
+
+        [<Emit("$0.getValue()")>]
+        member this.getValue() : string = jsNative
+
+        [<Emit("$0.setValue($1)")>]
+        member this.setValue(value: string) : unit = jsNative
+
+        [<Emit("$0.dispose()")>]
+        member this.dispose() : unit = jsNative
 
 
     [<AbstractClass>]
@@ -33,31 +42,40 @@ module Monaco =
 
     type MonacoModule = { editor: MonacoEditorClass }
 
-    let delay<'T> (f: unit -> 'T) : Promise<'T> =
-        Constructors.Promise.Create
-            (fun resolve reject ->
-                (window.setTimeout ((fun _ -> resolve <| f ()), 0, [])
-                 |> ignore))
-
     [<Import("*", from = "monaco-editor")>]
     let monaco : MonacoModule = jsNative
 
     let MonacoEditorAttribute<'S, 'A, 'Q>
-        (mapToOptions: 'S -> MonacoEditorOptions)
-        : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        lifecycleAttribute<'S, 'A, 'Q, _, Promise<MonacoEditorInstance>>
-            (fun { Element = element; State = state } ->
-                // TODO remove delay
-                delay
+        (
+            mapToOptions: 'S -> MonacoEditorOptions,
+            mapAction: MonacoEvent -> 'A option,
+            respond: 'Q -> MonacoEditorInstance -> unit
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        lifecycleAttribute<'S, 'A, 'Q, _, MonacoEditorInstance>
+            (fun { Element = element
+                   State = state
+                   Dispatch = dispatch } ->
+                let editor =
+                    monaco.editor.create (element, mapToOptions state)
+
+                editor.onDidChangeModelContent
                     (fun () ->
+                        match mapAction OnChange with
+                        | Some a -> dispatch a
+                        | None -> ())
 
-                        let editor =
-                            monaco.editor.create (element, mapToOptions state)
+                editor.onDidPaste
+                    (fun () ->
+                        match mapAction OnPaste with
+                        | Some a -> dispatch a
+                        | None -> ())
 
-                        editor))
+                editor)
 
-            (fun { Payload = promiseEditor } -> (true, promiseEditor))
+            (fun { Payload = editor } -> (true, editor))
 
-            (fun { Payload = promiseEditor } -> promiseEditor)
-            (fun { Payload = promiseEditor } -> ())
-            (fun q { Payload = promiseEditor } -> promiseEditor)
+            (fun { Payload = editor } -> editor)
+            (fun { Payload = editor } -> editor.dispose ())
+            (fun q { Payload = editor } ->
+                respond q editor
+                editor)

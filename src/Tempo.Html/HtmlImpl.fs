@@ -104,10 +104,11 @@ module Impl =
               children = [] }
 #endif
 
-    type LifecycleImpl<'S, 'Q> =
+    type LifecycleImpl<'S, 'A, 'Q> =
         { BeforeChange: 'S -> bool
           AfterChange: 'S -> unit
           BeforeDestroy: unit -> unit
+          Dispatch: 'A -> unit
           Respond: 'Q -> unit }
 
     let inline attribute<'S, 'A, 'Q> name value : HTMLTemplateAttribute<'S, 'A, 'Q> =
@@ -130,17 +131,17 @@ module Impl =
                   HTMLTemplateAttributeValue.Property
                   <| (packProperty <| Property(name, value)) }
 
-    let packHTMLLifecycle (lifecycle: HTMLLifecycle<'S, 'Q, 'EL, 'P>) = lifecycle :> IHTMLLifecycle<'S, 'Q>
+    let packHTMLLifecycle (lifecycle: HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P>) = lifecycle :> IHTMLLifecycle<'S, 'A, 'Q>
 
-    let unpackHTMLLifecycle (lifecycle: IHTMLLifecycle<'S, 'Q>) (f: IHTMLLifecycleInvoker<'S, 'Q, 'R>) : 'R = lifecycle.Accept f
+    let unpackHTMLLifecycle (lifecycle: IHTMLLifecycle<'S, 'A, 'Q>) (f: IHTMLLifecycleInvoker<'S, 'A, 'Q, 'R>) : 'R = lifecycle.Accept f
 
     // TODO this should be optimizable and wrapped in Transform without the need for special treatment
-    let makeLifecycle<'S, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) =
+    let makeLifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) =
         packHTMLLifecycle
         <| HTMLLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond)
 
-    let lifecycleAttribute<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P) =
-        HTMLTemplateAttribute<'S, 'A, 'Q>.Lifecycle (makeLifecycle<'S, 'Q, 'EL, 'P> afterRender beforeChange afterChange beforeDestroy respond)
+    let lifecycleAttribute<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) =
+        HTMLTemplateAttribute<'S, 'A, 'Q>.Lifecycle (makeLifecycle<'S, 'A, 'Q, 'EL, 'P> afterRender beforeChange afterChange beforeDestroy respond)
 
     let applyStringAttribute (name: string) (el: HTMLElement) (s: string option) =
         match s with
@@ -205,22 +206,24 @@ module Impl =
         | Property prop -> applyProperty prop el (state ())
         | Trigger domTrigger -> applyTrigger domTrigger name el dispatch state
 
-    let extractLifecycle<'S, 'Q> (lc: IHTMLLifecycle<'S, 'Q>) =
+    let extractLifecycle<'S, 'A, 'Q> (lc: IHTMLLifecycle<'S, 'A, 'Q>) (dispatch: Dispatch<'A>) =
         unpackHTMLLifecycle
             lc
-            { new IHTMLLifecycleInvoker<'S, 'Q, Element -> 'S -> LifecycleImpl<'S, 'Q>> with
-                override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'Q, 'EL, 'P>) : Element -> 'S -> LifecycleImpl<'S, 'Q> =
-                    console.log ("unpacked")
-
+            { new IHTMLLifecycleInvoker<'S, 'A, 'Q, Element -> 'S -> LifecycleImpl<'S, 'A, 'Q>> with
+                override this.Invoke<'EL, 'P when 'EL :> Element>(t: HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P>) : Element -> 'S -> LifecycleImpl<'S, 'A, 'Q> =
                     fun (el: Element) (state: 'S) ->
                         let mutable payload : 'P =
-                            t.AfterRender { State = state; Element = el :?> 'EL }
+                            t.AfterRender
+                                { State = state
+                                  Element = el :?> 'EL
+                                  Dispatch = dispatch }
 
                         let beforeChange state =
                             let (result, newPayload) =
                                 t.BeforeChange
                                     { State = state
                                       Element = el :?> 'EL
+                                      Dispatch = dispatch
                                       Payload = payload }
 
                             payload <- newPayload
@@ -231,13 +234,15 @@ module Impl =
                                 t.AfterChange
                                     { State = state
                                       Element = el :?> 'EL
-                                      Payload = payload }
+                                      Payload = payload
+                                      Dispatch = dispatch }
 
                         let beforeDestroy () =
                             t.BeforeDestroy
                                 { State = state
                                   Element = el :?> 'EL
-                                  Payload = payload }
+                                  Payload = payload
+                                  Dispatch = dispatch }
 
                         let respond query =
                             payload <-
@@ -245,16 +250,18 @@ module Impl =
                                     query
                                     { State = state
                                       Element = el :?> 'EL
-                                      Payload = payload }
+                                      Payload = payload
+                                      Dispatch = dispatch }
 
                         { BeforeChange = beforeChange
                           AfterChange = afterChange
                           BeforeDestroy = beforeDestroy
-                          Respond = respond } }
+                          Respond = respond
+                          Dispatch = dispatch } }
 
 
 
-    let mergeLifecycles (ls: LifecycleImpl<'S, 'Q> list) =
+    let mergeLifecycles (ls: LifecycleImpl<'S, 'A, 'Q> list) =
         let merge a b =
             { BeforeChange =
                   fun s ->
@@ -272,13 +279,18 @@ module Impl =
               Respond =
                   fun q ->
                       a.Respond q
-                      b.Respond q }
+                      b.Respond q
+              Dispatch =
+                  fun v ->
+                      a.Dispatch v
+                      b.Dispatch v }
 
         let start =
             { BeforeChange = fun _ -> true
               AfterChange = ignore
               BeforeDestroy = ignore
-              Respond = ignore }
+              Respond = ignore
+              Dispatch = ignore }
 
         List.fold merge start ls
 
@@ -323,7 +335,9 @@ module Impl =
                   Respond = respond } =
                 List.filterMap
                     (function
-                    | Lifecycle lc -> extractLifecycle lc htmlImpl.element state |> Some
+                    | Lifecycle lc ->
+                        extractLifecycle lc dispatch htmlImpl.element state
+                        |> Some
                     | _ -> None)
                     node.Attributes
                 |> mergeLifecycles

@@ -4,9 +4,8 @@ import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/S
 import { remove } from "./HtmlTools.fs.js";
 import { partialApply, mapCurriedArgs, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { HTMLLifecycle$4__get_Respond, HTMLLifecycle$4__get_BeforeDestroy, HTMLLifecycle$4__get_AfterChange, HTMLLifecyclePayload$3, HTMLLifecycle$4__get_BeforeChange, HTMLLifecycleInitialPayload$2, HTMLLifecycle$4__get_AfterRender, Property$2__get_Name, Property$2__get_Value, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLTemplateAttribute$3, HTMLLifecycle$4_$ctor_Z3754A3A9, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
+import { HTMLLifecycle$5__get_Respond, HTMLLifecycle$5__get_BeforeDestroy, HTMLLifecycle$5__get_AfterChange, HTMLLifecyclePayload$4, HTMLLifecycle$5__get_BeforeChange, HTMLLifecycleInitialPayload$3, HTMLLifecycle$5__get_AfterRender, Property$2__get_Name, Property$2__get_Value, TriggerPayload$3, HTMLTrigger$4__get_Handler, HTMLTemplateAttribute$3, HTMLLifecycle$5_$ctor_17DF349, HTMLTrigger$4_$ctor_75095B8B } from "./Html.fs.js";
 import { View$2, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
-import { some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
 
 export class HTMLImpl {
@@ -163,18 +162,19 @@ export function HTMLGroupImpl_$ctor_Z721C83C5(label) {
     return new HTMLGroupImpl(document.createComment(toText(interpolate("%P(): %P()", [label, counter]))), empty());
 }
 
-export class LifecycleImpl$2 extends Record {
-    constructor(BeforeChange, AfterChange, BeforeDestroy, Respond) {
+export class LifecycleImpl$3 extends Record {
+    constructor(BeforeChange, AfterChange, BeforeDestroy, Dispatch, Respond) {
         super();
         this.BeforeChange = BeforeChange;
         this.AfterChange = AfterChange;
         this.BeforeDestroy = BeforeDestroy;
+        this.Dispatch = Dispatch;
         this.Respond = Respond;
     }
 }
 
-export function LifecycleImpl$2$reflection(gen0, gen1) {
-    return record_type("Tempo.Html.Impl.LifecycleImpl`2", [gen0, gen1], LifecycleImpl$2, () => [["BeforeChange", lambda_type(gen0, bool_type)], ["AfterChange", lambda_type(gen0, unit_type)], ["BeforeDestroy", lambda_type(unit_type, unit_type)], ["Respond", lambda_type(gen1, unit_type)]]);
+export function LifecycleImpl$3$reflection(gen0, gen1, gen2) {
+    return record_type("Tempo.Html.Impl.LifecycleImpl`3", [gen0, gen1, gen2], LifecycleImpl$3, () => [["BeforeChange", lambda_type(gen0, bool_type)], ["AfterChange", lambda_type(gen0, unit_type)], ["BeforeDestroy", lambda_type(unit_type, unit_type)], ["Dispatch", lambda_type(gen1, unit_type)], ["Respond", lambda_type(gen2, unit_type)]]);
 }
 
 export function packHTMLTrigger(trigger) {
@@ -206,7 +206,7 @@ export function unpackHTMLLifecycle(lifecycle, f) {
 }
 
 export function makeLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
-    return packHTMLLifecycle(HTMLLifecycle$4_$ctor_Z3754A3A9(afterRender, beforeChange, afterChange, beforeDestroy, respond));
+    return packHTMLLifecycle(HTMLLifecycle$5_$ctor_17DF349(afterRender, beforeChange, afterChange, beforeDestroy, respond));
 }
 
 export function lifecycleAttribute(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
@@ -306,51 +306,59 @@ export function applyAttribute(dispatch, el, state, _arg1) {
     }
 }
 
-export function extractLifecycle(lc) {
+export function extractLifecycle(lc, dispatch) {
     return unpackHTMLLifecycle(lc, {
         Invoke(t) {
-            console.log(some("unpacked"));
             return (el) => ((state) => {
-                let payload = HTMLLifecycle$4__get_AfterRender(t)(new HTMLLifecycleInitialPayload$2(state, el));
+                let payload = HTMLLifecycle$5__get_AfterRender(t)(new HTMLLifecycleInitialPayload$3(state, el, dispatch));
                 const beforeChange = (state_1) => {
-                    const patternInput = HTMLLifecycle$4__get_BeforeChange(t)(new HTMLLifecyclePayload$3(state_1, el, payload));
+                    const patternInput = HTMLLifecycle$5__get_BeforeChange(t)(new HTMLLifecyclePayload$4(state_1, el, payload, dispatch));
                     const result = patternInput[0];
                     const newPayload = patternInput[1];
                     payload = newPayload;
                     return result;
                 };
                 const afterChange = (state_2) => {
-                    payload = HTMLLifecycle$4__get_AfterChange(t)(new HTMLLifecyclePayload$3(state_2, el, payload));
+                    payload = HTMLLifecycle$5__get_AfterChange(t)(new HTMLLifecyclePayload$4(state_2, el, payload, dispatch));
                 };
                 const beforeDestroy = () => {
-                    HTMLLifecycle$4__get_BeforeDestroy(t)(new HTMLLifecyclePayload$3(state, el, payload));
+                    HTMLLifecycle$5__get_BeforeDestroy(t)(new HTMLLifecyclePayload$4(state, el, payload, dispatch));
                 };
                 const respond = (query) => {
-                    payload = HTMLLifecycle$4__get_Respond(t)(query)(new HTMLLifecyclePayload$3(state, el, payload));
+                    payload = HTMLLifecycle$5__get_Respond(t)(query)(new HTMLLifecyclePayload$4(state, el, payload, dispatch));
                 };
-                return new LifecycleImpl$2(beforeChange, afterChange, beforeDestroy, respond);
+                return new LifecycleImpl$3(beforeChange, afterChange, beforeDestroy, dispatch, respond);
             });
         },
     });
 }
 
 export function mergeLifecycles(ls) {
-    const merge = (a, b) => (new LifecycleImpl$2((s) => {
+    const merge = (a, b) => (new LifecycleImpl$3((s) => {
         const ra = a.BeforeChange(s);
         const rb = b.BeforeChange(s);
-        return ra ? true : rb;
+        if (ra) {
+            return true;
+        }
+        else {
+            return rb;
+        }
     }, (s_1) => {
         a.AfterChange(s_1);
         b.AfterChange(s_1);
     }, () => {
         a.BeforeDestroy();
         b.BeforeDestroy();
+    }, (v) => {
+        a.Dispatch(v);
+        b.Dispatch(v);
     }, (q) => {
         a.Respond(q);
         b.Respond(q);
     }));
-    const start = new LifecycleImpl$2((_arg1) => true, (value) => {
+    const start = new LifecycleImpl$3((_arg1) => true, (value) => {
     }, () => {
+    }, (value_3) => {
     }, (value_2) => {
     });
     return fold(merge, start, ls);
@@ -409,7 +417,7 @@ export function makeRenderDOMElement(ns, node, make, parent, state, dispatch) {
     const patternInput = mergeLifecycles(filterMap((_arg2) => {
         if (_arg2.tag === 1) {
             const lc = _arg2.fields[0];
-            return extractLifecycle(lc)(htmlImpl.element)(state);
+            return extractLifecycle(lc, dispatch)(htmlImpl.element)(state);
         }
         else {
             return void 0;

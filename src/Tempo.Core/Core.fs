@@ -41,6 +41,17 @@ module Core =
           Destroy: unit -> unit
           Query: 'Q -> unit }
 
+    and Update<'S, 'A> = 'S -> 'A -> 'S
+
+    and MiddlewarePayload<'S, 'A, 'Q> =
+        { Current: 'S
+          Previous: 'S
+          Action: 'A
+          Dispatch: 'A -> unit
+          Query: 'Q -> unit }
+
+    and Middleware<'S, 'A, 'Q> = MiddlewarePayload<'S, 'A, 'Q> -> unit
+
     and ITransform<'N, 'S, 'A, 'Q> =
         abstract Accept : ITransformInvoker<'N, 'S, 'A, 'Q, 'R> -> 'R
 
@@ -126,7 +137,7 @@ module Core =
                       fun () ->
                           parent.Remove(group) // TODO this tries to remove nodes in the iterator twice
                           List.iter (fun i -> i.Destroy()) views
-                  Query = fun q -> List.iter (fun i -> i.Query q) views }
+                  Query = fun q -> List.iter (fun (i: View<'S, 'Q>) -> i.Query q) views }
 
         member this.MakeTransformRender<'N2, 'S2, 'A2, 'Q2>
             (transform: ITransform<'N, 'S, 'A, 'Q>)
@@ -267,6 +278,35 @@ module Core =
     let inline mapQuery<'N1, 'N2, 'S, 'A, 'Q1, 'Q2> (f: 'Q1 -> 'Q2) (template: Template<'N2, 'S, 'A, 'Q2>) =
         map<'N1, 'N2, 'S, 'S, 'A, 'A, 'Q1, 'Q2> id id Some f template
 
+    let inline mapSA<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q>
+        (mapState: 'S1 -> 'S2)
+        (mapAction: 'A2 -> 'A1 option)
+        (template: Template<'N2, 'S2, 'A2, 'Q>)
+        =
+        map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q, 'Q> id mapState mapAction id template
+
+    let inline mapSAQ<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
+        (mapState: 'S1 -> 'S2)
+        (mapAction: 'A2 -> 'A1 option)
+        (mapQuery: 'Q1 -> 'Q2)
+        (template: Template<'N2, 'S2, 'A2, 'Q2>)
+        =
+        map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> id mapState mapAction mapQuery template
+
+    let inline mapSQ<'N1, 'N2, 'S1, 'S2, 'A, 'Q1, 'Q2>
+        (mapState: 'S1 -> 'S2)
+        (mapQuery: 'Q1 -> 'Q2)
+        (template: Template<'N2, 'S2, 'A, 'Q2>)
+        =
+        map<'N1, 'N2, 'S1, 'S2, 'A, 'A, 'Q1, 'Q2> id mapState Some mapQuery template
+
+    let inline mapAQ<'N1, 'N2, 'S, 'A1, 'A2, 'Q1, 'Q2>
+        (mapAction: 'A2 -> 'A1 option)
+        (mapQuery: 'Q1 -> 'Q2)
+        (template: Template<'N2, 'S, 'A2, 'Q2>)
+        =
+        map<'N1, 'N2, 'S, 'S, 'A1, 'A2, 'Q1, 'Q2> id id mapAction mapQuery template
+
     let lifecycle<'N, 'S, 'A, 'Q, 'P>
         (afterRender: 'S -> 'P)
         (beforeChange: 'S -> 'P -> bool)
@@ -313,7 +353,7 @@ module Core =
                         List.map (fun state -> render group state dispatch) ls
 
                     let query =
-                        fun q -> List.iter (fun view -> view.Query q) views
+                        fun q -> List.iter (fun (view: View<'S2, 'Q>) -> view.Query q) views
 
                     let change =
                         fun (s: 'S1) ->
@@ -343,4 +383,35 @@ module Core =
                       Query = query
                       Destroy = destroy
                       Change = change })
+            template
+
+    let comp<'N, 'S, 'A, 'Q>
+        (update: Update<'S, 'A>)
+        (middleware: Middleware<'S, 'A, 'Q>)
+        (template: Template<'N, 'S, 'A, 'Q>)
+        : Template<'N, 'S, 'A, 'Q> =
+        transform<'N, 'N, 'S, 'S, 'A, 'A, 'Q, 'Q>
+            (fun render ->
+                (fun impl state dispatch ->
+                    let mutable localState = state
+
+                    let rec dispatch a =
+                        let curr = update localState a
+                        view.Change curr
+
+                        middleware
+                            { Current = curr
+                              Previous = localState
+                              Action = a
+                              Dispatch = dispatch
+                              Query = view.Query }
+
+                        localState <- curr
+
+                    and view = render impl localState dispatch
+
+                    { Impl = impl
+                      Change = fun s -> view.Change s
+                      Query = fun q -> view.Query q
+                      Destroy = fun () -> view.Destroy() }))
             template

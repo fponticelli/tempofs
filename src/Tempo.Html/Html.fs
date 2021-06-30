@@ -24,7 +24,7 @@ and HTMLNamedAttribute<'S, 'A, 'Q> =
 
 and HTMLTemplateAttribute<'S, 'A, 'Q> =
     | HTMLNamedAttribute of HTMLNamedAttribute<'S, 'A, 'Q>
-    | Lifecycle of IHTMLLifecycle<'S, 'Q>
+    | Lifecycle of IHTMLLifecycle<'S, 'A, 'Q>
 
 and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
     | StringAttr of Value<'S, string option>
@@ -59,25 +59,36 @@ and IHTMLTriggerInvoker<'S, 'A, 'R> =
     abstract Invoke<'E, 'EL when 'E :> Event and 'EL :> Element> : HTMLTrigger<'S, 'A, 'E, 'EL> -> 'R
 
 
-and IHTMLLifecycle<'S, 'Q> =
-    abstract Accept : IHTMLLifecycleInvoker<'S, 'Q, 'R> -> 'R
+and IHTMLLifecycle<'S, 'A, 'Q> =
+    abstract Accept : IHTMLLifecycleInvoker<'S, 'A, 'Q, 'R> -> 'R
 
-and HTMLLifecycleInitialPayload<'S, 'EL when 'EL :> Element> = { State: 'S; Element: 'EL }
-
-and HTMLLifecyclePayload<'S, 'EL, 'P when 'EL :> Element> =
+and HTMLLifecycleInitialPayload<'S, 'A, 'EL when 'EL :> Element> =
     { State: 'S
       Element: 'EL
-      Payload: 'P }
+      Dispatch: 'A -> unit }
 
-and HTMLLifecycle<'S, 'Q, 'EL, 'P when 'EL :> Element>(afterRender, beforeChange, afterChange, beforeDestroy, respond) =
-    member this.AfterRender : HTMLLifecycleInitialPayload<'S, 'EL> -> 'P = afterRender
-    member this.BeforeChange : HTMLLifecyclePayload<'S, 'EL, 'P> -> (bool * 'P) = beforeChange
-    member this.AfterChange : HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P = afterChange
-    member this.BeforeDestroy : HTMLLifecyclePayload<'S, 'EL, 'P> -> unit = beforeDestroy
-    member this.Respond : 'Q -> HTMLLifecyclePayload<'S, 'EL, 'P> -> 'P = respond
+and HTMLLifecyclePayload<'S, 'A, 'EL, 'P when 'EL :> Element> =
+    { State: 'S
+      Element: 'EL
+      Payload: 'P
+      Dispatch: 'A -> unit }
+
+and HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+    (
+        afterRender,
+        beforeChange,
+        afterChange,
+        beforeDestroy,
+        respond
+    ) =
+    member this.AfterRender : HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P = afterRender
+    member this.BeforeChange : HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P) = beforeChange
+    member this.AfterChange : HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P = afterChange
+    member this.BeforeDestroy : HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit = beforeDestroy
+    member this.Respond : 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P = respond
     with
-        interface IHTMLLifecycle<'S, 'Q> with
+        interface IHTMLLifecycle<'S, 'A, 'Q> with
             member this.Accept f = f.Invoke<'EL, 'P> this
 
-and IHTMLLifecycleInvoker<'S, 'Q, 'R> =
-    abstract Invoke<'EL, 'P when 'EL :> Element> : HTMLLifecycle<'S, 'Q, 'EL, 'P> -> 'R
+and IHTMLLifecycleInvoker<'S, 'A, 'Q, 'R> =
+    abstract Invoke<'EL, 'P when 'EL :> Element> : HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P> -> 'R

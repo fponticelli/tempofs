@@ -4,9 +4,7 @@ open Browser
 open Tempo.Core
 open Tempo.Html
 
-open Tempo.Html.DSL
-
-open type Tempo.Html.DSL.HTML
+open type Tempo.Html.DSL
 open Tempo.Demo.Html2Tempo.View
 
 // type Action =
@@ -18,7 +16,7 @@ open Tempo.Demo.Html2Tempo.View
 // let makeState v = { Counter = v }
 // let state = { Counter = 0 }
 
-let template : HTMLTemplate<Html2TempoState, Html2TempoAction, Html2TempoQuery> = template
+let template : HTMLTemplate<Html2TempoState, Html2TempoAction, Html2TempoQuery> = comp
 // El(
 //     "sp-theme",
 //     [ Attr("scale", "smallest")
@@ -127,12 +125,11 @@ let template : HTMLTemplate<Html2TempoState, Html2TempoAction, Html2TempoQuery> 
 let middleware
     ({ Current = current
        Previous = prev
-       Action = action }: MiddlewarePayload<_, _>)
+       Action = action }: MiddlewarePayload<_, _, _>)
     =
     console.log $"Action: {action}, State: {current}, Previous {prev}"
 
 let render =
-    HTML.MakeProgram(template, document.body)
+    MakeProgramOnContentLoaded(template, "#tempofs-demo-app", ignore)
 
-let view =
-    render update middleware ({ Value = () })
+render update middleware ()
