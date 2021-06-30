@@ -6,7 +6,7 @@
     "scripts": {
         "postinstall": "dotnet tool restore && npm i",
         "watch": "dotnet fable src/Tempo.Demo --watch --run webpack serve",
-        "prebuild": "npx del-cli ./src/**/*.fs.js ./src/**/.fable **/output",
+        "prebuild": "npx del-cli **/output && dotnet fable clean --yes",
         "build": "dotnet fable src/Tempo.Demo --run webpack build --mode production",
         "pack": "npm run prebuild && dotnet build -c Release && dotnet pack -c Release --output nupkgs",
         "deploy": "npm run build && gh-pages -d output"
@@ -17,7 +17,6 @@
     "dependencies": {
         "@babel/polyfill": "^7.8.7",
         "core-js": "^3.12.1",
-        "htmlparser2": "^6.1.0",
         "monaco-editor": "^0.25.2"
     },
     "devDependencies": {

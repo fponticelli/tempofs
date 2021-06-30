@@ -43,20 +43,16 @@ export const timerId = createAtom(void 0);
 
 export function middleware(_arg1) {
     const query = _arg1.Query;
-    const prev = _arg1.Previous;
-    const current = _arg1.Current;
-    const action = _arg1.Action;
     const transformRoundtrip = () => {
         query(new Html2TempoQuery(0, (arg_1) => {
             query(new Html2TempoQuery(1, transformHtml(arg_1)));
         }));
     };
-    if (action.tag === 1) {
+    if (_arg1.Action.tag === 1) {
         if (timerId() == null) {
         }
         else {
-            const id = timerId();
-            window.clearTimeout(id);
+            window.clearTimeout(timerId());
         }
         timerId(window.setTimeout((_arg1_1) => {
             timerId(void 0, true);
@@ -78,8 +74,7 @@ export const template = DSL_El_Z7374416F("div", singleton(DSL_Attr_Z384F8060("cl
     if (request.tag === 1) {
     }
     else {
-        const f = request.fields[0];
-        f(editor.getValue());
+        request.fields[0](editor.getValue());
     }
 })]), empty()), DSL_El_Z7374416F("div", ofArray([DSL_Attr_Z384F8060("class", "flex-auto h-full w-6/12"), MonacoEditorAttribute(() => ({
     language: "fsharp",
@@ -87,8 +82,7 @@ export const template = DSL_El_Z7374416F("div", singleton(DSL_Attr_Z384F8060("cl
     wordWrap: "on",
 }), (e) => (void 0), (request_1, editor_1) => {
     if (request_1.tag === 1) {
-        const content = request_1.fields[0];
-        editor_1.setValue(content);
+        editor_1.setValue(request_1.fields[0]);
     }
 })]), empty())]));
 

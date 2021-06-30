@@ -1,8 +1,8 @@
 import { join, substring, interpolate, toText, replace } from "./.fable/fable-library.3.1.10/String.js";
 import { tryFind, ofList } from "./.fable/fable-library.3.1.10/Map.js";
 import { append, empty, head, length, singleton, ofArray } from "./.fable/fable-library.3.1.10/List.js";
-import { map } from "./.fable/fable-library.3.1.10/Array.js";
 import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
+import { map } from "./.fable/fable-library.3.1.10/Array.js";
 import { map as map_2, defaultArg, some } from "./.fable/fable-library.3.1.10/Option.js";
 import { map as map_1, delay, toList } from "./.fable/fable-library.3.1.10/Seq.js";
 import { rangeDouble } from "./.fable/fable-library.3.1.10/Range.js";
@@ -35,8 +35,7 @@ export function makeAttribute(name, value) {
             return toText(interpolate("Attr(%P(), %P())", [quote(name), quote(value)]));
         }
         else {
-            const f = func;
-            return f(value);
+            return func(value);
         }
     }
 }
@@ -55,8 +54,7 @@ export function renderDOMBody(body) {
 }
 
 export function renderDOMElementChildren(el) {
-    const children = map((node) => renderDOMNode(node), Array.from(el.childNodes));
-    return filterMap((x) => x, ofArray(children));
+    return filterMap((x) => x, ofArray(map((node) => renderDOMNode(node), Array.from(el.childNodes))));
 }
 
 export function renderDOMNode(node) {
@@ -85,15 +83,12 @@ export function renderDOMElement(element) {
         func_1 = "El";
     }
     else {
-        const v = func;
-        func_1 = v;
+        func_1 = func;
     }
     const count = element.attributes.length | 0;
     const attributes = toList(delay(() => map_1((index) => {
         const att = element.attributes.item(index);
-        const name_1 = att.name;
-        const value = att.value;
-        return makeAttribute(name_1, value);
+        return makeAttribute(att.name, att.value);
     }, rangeDouble(0, 1, count - 1))));
     if (length(attributes) > 0) {
         args = append(args, singleton(("[" + join("; ", attributes)) + "]"));
@@ -106,8 +101,7 @@ export function renderDOMElement(element) {
         return toText(interpolate("%P()(%P())", [func_1, head(args)]));
     }
     else {
-        const args_1 = join(", ", args);
-        return toText(interpolate("%P()(%P())", [func_1, args_1]));
+        return toText(interpolate("%P()(%P())", [func_1, join(", ", args)]));
     }
 }
 
@@ -126,8 +120,6 @@ export function renderDOMComment(comment) {
 }
 
 export function transformHtml(content) {
-    const dom = makeDOM(content);
-    const maybe = renderDOMBody(dom.body);
-    return defaultArg(map_2((s) => replace(s, " *);", " *)"), maybe), "");
+    return defaultArg(map_2((s) => replace(s, " *);", " *)"), renderDOMBody(makeDOM(content).body)), "");
 }
 

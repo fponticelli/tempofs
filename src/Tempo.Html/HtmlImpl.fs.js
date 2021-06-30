@@ -32,11 +32,9 @@ export class HTMLElementImpl {
     Append(child) {
         const this$ = this;
         if (child["GetNodes"] !== null) {
-            const child_1 = child;
-            const nodes = child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             iterate((arg) => {
                 void this$.element.appendChild(arg);
-            }, nodes);
+            }, (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
         }
         else {
             throw (new Error(toText(interpolate("HTMLElementImpl doesn\u0027t know how to append a child of type %P()", [child]))));
@@ -44,11 +42,9 @@ export class HTMLElementImpl {
     }
     Remove(child) {
         if (child["GetNodes"] !== null) {
-            const child_1 = child;
-            const ls = child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             iterate((n) => {
                 remove(n);
-            }, ls);
+            }, (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
         }
         else {
             throw (new Error(toText(interpolate("HTMLElementImpl doesn\u0027t know how to remove a child of type %P()", [child]))));
@@ -113,8 +109,7 @@ export class HTMLGroupImpl {
         const this$ = this;
         return cons(this$.ref, collect((child) => {
             if (child["GetNodes"] !== null) {
-                const child_1 = child;
-                return child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
+                return (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             }
             else {
                 throw (new Error(toText(interpolate("Group contains a foreign element %P()", [child]))));
@@ -125,12 +120,10 @@ export class HTMLGroupImpl {
         const this$ = this;
         this$.children = cons(child, this$.children);
         if (child["GetNodes"] !== null) {
-            const child_1 = child;
-            const nodes = child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             const parent = this$.ref.parentNode;
             iterate((node) => {
                 void parent.insertBefore(node, this$.ref);
-            }, nodes);
+            }, (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
         }
         else {
             throw (new Error(toText(interpolate("HTMLGroupImpl doesn\u0027t know how to append a child of type %P()", [child]))));
@@ -141,10 +134,9 @@ export class HTMLGroupImpl {
         if (child["GetNodes"] !== null) {
             const htmlChild = child;
             this$.children = filter((c) => (!equals(c, child)), this$.children);
-            const ls = htmlChild["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             iterate((n) => {
                 remove(n);
-            }, ls);
+            }, htmlChild["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
         }
         else {
             throw (new Error(toText(interpolate("HTMLGroupImpl doesn\u0027t know how to append a child of type %P()", [child]))));
@@ -157,9 +149,8 @@ export function HTMLGroupImpl$reflection() {
 }
 
 export function HTMLGroupImpl_$ctor_Z721C83C5(label) {
-    counter = (counter + 1);
     HTMLImpl_$ctor();
-    return new HTMLGroupImpl(document.createComment(toText(interpolate("%P(): %P()", [label, counter]))), empty());
+    return new HTMLGroupImpl(document.createTextNode(""), empty());
 }
 
 export class LifecycleImpl$3 extends Record {
@@ -218,8 +209,7 @@ export function applyStringAttribute(name, el, s) {
         el.removeAttribute(name);
     }
     else {
-        const s_1 = s;
-        el.setAttribute(name, s_1);
+        el.setAttribute(name, s);
     }
 }
 
@@ -251,25 +241,17 @@ export function extractDerivedProperty(prop) {
     return unpackProperty(prop, {
         Invoke(prop_1) {
             const matchValue = Property$2__get_Value(prop_1);
-            if (matchValue.tag === 0) {
-                return void 0;
-            }
-            else {
-                const f = matchValue.fields[0];
-                return (el) => ((state) => {
-                    el[Property$2__get_Name(prop_1)] = f(state);
-                });
-            }
+            return (matchValue.tag === 0) ? (void 0) : ((el) => ((state) => {
+                el[Property$2__get_Name(prop_1)] = matchValue.fields[0](state);
+            }));
         },
     });
 }
 
 export function derivedApplication(_arg1) {
     const value = _arg1.Value;
-    const name = _arg1.Name;
     if (value.tag === 1) {
-        const prop = value.fields[0];
-        return extractDerivedProperty(prop);
+        return extractDerivedProperty(value.fields[0]);
     }
     else if (value.tag === 2) {
         return void 0;
@@ -278,9 +260,8 @@ export function derivedApplication(_arg1) {
         return void 0;
     }
     else {
-        const f = value.fields[0].fields[0];
         return (el) => ((state) => {
-            applyStringAttribute(name, el, f(state));
+            applyStringAttribute(_arg1.Name, el, value.fields[0].fields[0](state));
         });
     }
 }
@@ -290,18 +271,15 @@ export function applyAttribute(dispatch, el, state, _arg1) {
     const name = _arg1.Name;
     switch (value.tag) {
         case 1: {
-            const prop = value.fields[0];
-            applyProperty(prop, el, state());
+            applyProperty(value.fields[0], el, state());
             break;
         }
         case 2: {
-            const domTrigger = value.fields[0];
-            applyTrigger(domTrigger, name, el, dispatch, state);
+            applyTrigger(value.fields[0], name, el, dispatch, state);
             break;
         }
         default: {
-            const v = value.fields[0];
-            applyStringAttribute(name, el, Value$2_Resolve(v, state()));
+            applyStringAttribute(name, el, Value$2_Resolve(value.fields[0], state()));
         }
     }
 }
@@ -311,37 +289,29 @@ export function extractLifecycle(lc, dispatch) {
         Invoke(t) {
             return (el) => ((state) => {
                 let payload = HTMLLifecycle$5__get_AfterRender(t)(new HTMLLifecycleInitialPayload$3(state, el, dispatch));
-                const beforeChange = (state_1) => {
+                return new LifecycleImpl$3((state_1) => {
                     const patternInput = HTMLLifecycle$5__get_BeforeChange(t)(new HTMLLifecyclePayload$4(state_1, el, payload, dispatch));
-                    const result = patternInput[0];
-                    const newPayload = patternInput[1];
-                    payload = newPayload;
-                    return result;
-                };
-                const afterChange = (state_2) => {
+                    payload = patternInput[1];
+                    return patternInput[0];
+                }, (state_2) => {
                     payload = HTMLLifecycle$5__get_AfterChange(t)(new HTMLLifecyclePayload$4(state_2, el, payload, dispatch));
-                };
-                const beforeDestroy = () => {
+                }, () => {
                     HTMLLifecycle$5__get_BeforeDestroy(t)(new HTMLLifecyclePayload$4(state, el, payload, dispatch));
-                };
-                const respond = (query) => {
+                }, dispatch, (query) => {
                     payload = HTMLLifecycle$5__get_Respond(t)(query)(new HTMLLifecyclePayload$4(state, el, payload, dispatch));
-                };
-                return new LifecycleImpl$3(beforeChange, afterChange, beforeDestroy, dispatch, respond);
+                });
             });
         },
     });
 }
 
 export function mergeLifecycles(ls) {
-    const merge = (a, b) => (new LifecycleImpl$3((s) => {
-        const ra = a.BeforeChange(s);
-        const rb = b.BeforeChange(s);
-        if (ra) {
+    return fold((a, b) => (new LifecycleImpl$3((s) => {
+        if (a.BeforeChange(s)) {
             return true;
         }
         else {
-            return rb;
+            return b.BeforeChange(s);
         }
     }, (s_1) => {
         a.AfterChange(s_1);
@@ -355,13 +325,11 @@ export function mergeLifecycles(ls) {
     }, (q) => {
         a.Respond(q);
         b.Respond(q);
-    }));
-    const start = new LifecycleImpl$3((_arg1) => true, (value) => {
+    })), new LifecycleImpl$3((_arg1) => true, (value) => {
     }, () => {
     }, (value_3) => {
     }, (value_2) => {
-    });
-    return fold(merge, start, ls);
+    }), ls);
 }
 
 export function createGroupNode(label) {
@@ -371,106 +339,59 @@ export function createGroupNode(label) {
 export function makeHTMLNodeRender(make, node) {
     switch (node.tag) {
         case 1: {
-            const el_1 = node.fields[0];
             const make_2 = make;
-            return (parent_1) => ((state_1) => ((dispatch_1) => makeRenderDOMElement(void 0, el_1, make_2, parent_1, state_1, dispatch_1)));
+            return (parent_1) => ((state_1) => ((dispatch_1) => makeRenderDOMElement(void 0, node.fields[0], make_2, parent_1, state_1, dispatch_1)));
         }
         case 2: {
-            const v = node.fields[0];
-            return (parent_2) => ((state_2) => ((dispatch_2) => makeRenderDOMText(v, parent_2, state_2, dispatch_2)));
+            return (parent_2) => ((state_2) => ((dispatch_2) => makeRenderDOMText(node.fields[0], parent_2, state_2, dispatch_2)));
         }
         default: {
-            const ns = node.fields[0];
-            const el = node.fields[1];
             const make_1 = make;
-            return (parent) => ((state) => ((dispatch) => makeRenderDOMElement(ns, el, make_1, parent, state, dispatch)));
+            return (parent) => ((state) => ((dispatch) => makeRenderDOMElement(node.fields[0], node.fields[1], make_1, parent, state, dispatch)));
         }
     }
 }
 
 export function makeRenderDOMElement(ns, node, make, parent, state, dispatch) {
     let localState = state;
-    let htmlImpl;
-    if (ns == null) {
-        htmlImpl = HTMLElementImpl_$ctor_Z721C83C5(node.Name);
-    }
-    else {
-        const ns_1 = ns;
-        htmlImpl = HTMLElementImpl_$ctor_Z384F8060(ns_1, node.Name);
-    }
+    const htmlImpl = (ns == null) ? HTMLElementImpl_$ctor_Z721C83C5(node.Name) : HTMLElementImpl_$ctor_Z384F8060(ns, node.Name);
     const impl = htmlImpl;
-    const getState = () => localState;
-    const namedAttributes = filterMap((_arg1) => {
-        if (_arg1.tag === 0) {
-            const at = _arg1.fields[0];
-            return at;
-        }
-        else {
-            return void 0;
-        }
-    }, node.Attributes);
+    const namedAttributes = filterMap((_arg1) => ((_arg1.tag === 0) ? _arg1.fields[0] : (void 0)), node.Attributes);
     iterate((arg30$0040) => {
-        applyAttribute(dispatch, htmlImpl.element, getState, arg30$0040);
+        applyAttribute(dispatch, htmlImpl.element, () => localState, arg30$0040);
     }, namedAttributes);
     parent.Append(impl);
     const childViews = map((child) => make(child, impl, localState, dispatch), node.Children);
-    const patternInput = mergeLifecycles(filterMap((_arg2) => {
-        if (_arg2.tag === 1) {
-            const lc = _arg2.fields[0];
-            return extractLifecycle(lc, dispatch)(htmlImpl.element)(state);
-        }
-        else {
-            return void 0;
-        }
-    }, node.Attributes));
-    const respond = patternInput.Respond;
-    const beforeDestroy = patternInput.BeforeDestroy;
-    const beforeChange = patternInput.BeforeChange;
-    const afterChange = patternInput.AfterChange;
-    const childUpdates = map((_arg1_1) => {
-        const change = _arg1_1.Change;
-        return change;
-    }, childViews);
-    const childDestroys = map((_arg2_1) => {
-        const destroy = _arg2_1.Destroy;
-        return destroy;
-    }, childViews);
-    const childQueries = map((_arg3) => {
-        const query = _arg3.Query;
-        return query;
-    }, childViews);
-    const attributeUpdates = map(mapCurriedArgs((f_1) => partialApply(1, f_1, [htmlImpl.element]), [[0, 2]]), filterMap((arg00$0040) => derivedApplication(arg00$0040), namedAttributes));
-    const updates = append(attributeUpdates, childUpdates);
-    const change_2 = (state_1) => {
-        if (beforeChange(state_1)) {
+    const patternInput = mergeLifecycles(filterMap((_arg2) => ((_arg2.tag === 1) ? extractLifecycle(_arg2.fields[0], dispatch)(htmlImpl.element)(state) : (void 0)), node.Attributes));
+    const childUpdates = map((_arg1_1) => _arg1_1.Change, childViews);
+    const childDestroys = map((_arg2_1) => _arg2_1.Destroy, childViews);
+    const childQueries = map((_arg3) => _arg3.Query, childViews);
+    const updates = append(map(mapCurriedArgs((f_1) => partialApply(1, f_1, [htmlImpl.element]), [[0, 2]]), filterMap((arg00$0040) => derivedApplication(arg00$0040), namedAttributes)), childUpdates);
+    return new View$2(impl, (state_1) => {
+        if (patternInput.BeforeChange(state_1)) {
             localState = state_1;
             iterate((change_1) => {
                 change_1(localState);
             }, updates);
-            afterChange(localState);
+            patternInput.AfterChange(localState);
         }
-    };
-    const destroy_2 = () => {
-        beforeDestroy();
+    }, () => {
+        patternInput.BeforeDestroy();
         parent.Remove(impl);
         iterate((destroy_1) => {
             destroy_1();
         }, childDestroys);
-    };
-    const query_2 = (q) => {
+    }, (q) => {
         iterate((query_1) => {
             query_1(q);
         }, childQueries);
-        respond(q);
-    };
-    return new View$2(impl, change_2, destroy_2, query_2);
+        patternInput.Respond(q);
+    });
 }
 
 export function makeRenderDOMText(value, parent, state, dispatch) {
     if (value.tag === 0) {
-        const s = value.fields[0];
-        const htmlImpl_1 = HTMLTextImpl_$ctor_Z721C83C5(s);
-        const impl_1 = htmlImpl_1;
+        const impl_1 = HTMLTextImpl_$ctor_Z721C83C5(value.fields[0]);
         parent.Append(impl_1);
         return new View$2(impl_1, (value_2) => {
         }, () => {

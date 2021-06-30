@@ -50,17 +50,14 @@ export function MonacoModule$reflection() {
 
 export function MonacoEditorAttribute(mapToOptions, mapAction, respond) {
     return lifecycleAttribute((_arg1) => {
-        const state = _arg1.State;
-        const element = _arg1.Element;
         const dispatch = _arg1.Dispatch;
-        const editor = monaco$002Deditor.editor.create(element, mapToOptions(state));
+        const editor = monaco$002Deditor.editor.create(_arg1.Element, mapToOptions(_arg1.State));
         editor.onDidChangeModelContent((() => {
             const matchValue = mapAction(new MonacoEvent(1));
             if (matchValue == null) {
             }
             else {
-                const a = value(matchValue);
-                dispatch(a);
+                dispatch(value(matchValue));
             }
         }));
         editor.onDidPaste((() => {
@@ -68,20 +65,12 @@ export function MonacoEditorAttribute(mapToOptions, mapAction, respond) {
             if (matchValue_1 == null) {
             }
             else {
-                const a_1 = value(matchValue_1);
-                dispatch(a_1);
+                dispatch(value(matchValue_1));
             }
         }));
         return editor;
-    }, (_arg2) => {
-        const editor_1 = _arg2.Payload;
-        return [true, editor_1];
-    }, (_arg3) => {
-        const editor_2 = _arg3.Payload;
-        return editor_2;
-    }, (_arg4) => {
-        const editor_3 = _arg4.Payload;
-        editor_3.dispose();
+    }, (_arg2) => [true, _arg2.Payload], (_arg3) => _arg3.Payload, (_arg4) => {
+        _arg4.Payload.dispose();
     }, (q, _arg5) => {
         const editor_4 = _arg5.Payload;
         respond(q, editor_4);
