@@ -1,6 +1,6 @@
-import { join, interpolate, toText, replace } from "./.fable/fable-library.3.1.10/String.js";
+import { join, substring, interpolate, toText, replace } from "./.fable/fable-library.3.1.10/String.js";
 import { tryFind, ofList } from "./.fable/fable-library.3.1.10/Map.js";
-import { append, empty, ofArray, head, length, singleton } from "./.fable/fable-library.3.1.10/List.js";
+import { append, empty, head, length, singleton, ofArray } from "./.fable/fable-library.3.1.10/List.js";
 import { map } from "./.fable/fable-library.3.1.10/Array.js";
 import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
 import { map as map_2, defaultArg, some } from "./.fable/fable-library.3.1.10/Option.js";
@@ -21,9 +21,25 @@ export function quote(value) {
     return toText(interpolate("\"%P()\"", [value]));
 }
 
-export const knownElements = ofList(singleton(["div", "DIV"]));
+export const knownElements = ofList(ofArray([["div", "DIV"], ["button", "BUTTON"], ["img", "IMG"], ["span", "SPAN"], ["svg", "SVG"], ["path", "PATH"]]));
 
 export const knownAttributes = ofList(singleton(["class", (value) => toText(interpolate("cls %P()", [quote(value)]))]));
+
+export function makeAttribute(name, value) {
+    if (name.indexOf("aria-") === 0) {
+        return toText(interpolate("aria (%P(), %P())", [quote(substring(name, 5)), quote(value)]));
+    }
+    else {
+        const func = tryFind(name, knownAttributes);
+        if (func == null) {
+            return toText(interpolate("Attr(%P(), %P())", [quote(name), quote(value)]));
+        }
+        else {
+            const f = func;
+            return f(value);
+        }
+    }
+}
 
 export function renderDOMBody(body) {
     const children = renderDOMElementChildren(body);
@@ -77,14 +93,7 @@ export function renderDOMElement(element) {
         const att = element.attributes.item(index);
         const name_1 = att.name;
         const value = att.value;
-        const func_2 = tryFind(name_1, knownAttributes);
-        if (func_2 == null) {
-            return toText(interpolate("Attr(%P(), %P())", [quote(name_1), quote(value)]));
-        }
-        else {
-            const f = func_2;
-            return f(value);
-        }
+        return makeAttribute(name_1, value);
     }, rangeDouble(0, 1, count - 1))));
     if (length(attributes) > 0) {
         args = append(args, singleton(("[" + join("; ", attributes)) + "]"));

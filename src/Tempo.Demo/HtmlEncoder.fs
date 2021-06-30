@@ -17,11 +17,29 @@ module HtmlParser =
 
     let quote (value: string) = $"\"{value}\""
 
-    let knownElements = [ "div", "DIV" ] |> Map.ofList
+    let knownElements =
+        [ "div", "DIV"
+          "button", "BUTTON"
+          "img", "IMG"
+          "span", "SPAN"
+          "svg", "SVG"
+          "path", "PATH" ]
+        |> Map.ofList
 
     let knownAttributes =
         [ "class", (fun value -> $"cls {quote value}") ]
         |> Map.ofList
+
+    let makeAttribute (name: string) value =
+        if name.StartsWith "aria-" then
+            $"aria ({quote <| name.Substring 5}, {quote value})"
+        else
+            let func = Map.tryFind name knownAttributes
+
+            match func with
+            | Some f -> f value
+            | None -> $"Attr({quote name}, {quote value})"
+
 
     let rec renderDOMBody (body: Element) : string option =
         let children = renderDOMElementChildren body
@@ -73,11 +91,7 @@ module HtmlParser =
                   let att = element.attributes.item (float index)
                   let name = att.name
                   let value = att.value
-                  let func = Map.tryFind name knownAttributes
-
-                  match func with
-                  | Some f -> f value
-                  | None -> $"Attr({quote name}, {quote value})" ]
+                  makeAttribute name value ]
 
         if attributes.Length > 0 then
             args <-

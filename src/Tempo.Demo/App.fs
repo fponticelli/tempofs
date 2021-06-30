@@ -127,7 +127,7 @@ let middleware
        Previous = prev
        Action = action }: MiddlewarePayload<_, _, _>)
     =
-    console.log $"Action: {action}, State: {current}, Previous {prev}"
+    ()
 
 let render =
     MakeProgramOnContentLoaded(template, "#tempofs-demo-app", ignore)

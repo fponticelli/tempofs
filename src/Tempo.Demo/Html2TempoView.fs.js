@@ -1,9 +1,7 @@
 import { Union } from "./.fable/fable-library.3.1.10/Types.js";
 import { lambda_type, unit_type, string_type, union_type } from "./.fable/fable-library.3.1.10/Reflection.js";
 import { createAtom } from "./.fable/fable-library.3.1.10/Util.js";
-import { transformHtml } from "./HtmlParser.fs.js";
-import { interpolate, toText } from "./.fable/fable-library.3.1.10/String.js";
-import { some } from "./.fable/fable-library.3.1.10/Option.js";
+import { transformHtml } from "./HtmlEncoder.fs.js";
 import { DSL_Component_Z228F47D0, DSL_Attr_Z384F8060, DSL_El_Z7374416F } from "../Tempo.Html/HtmlDSL.fs.js";
 import { empty, ofArray, singleton } from "./.fable/fable-library.3.1.10/List.js";
 import { MonacoEditorAttribute } from "./MonacoEditor.fs.js";
@@ -68,7 +66,6 @@ export function middleware(_arg1) {
     else {
         transformRoundtrip();
     }
-    console.log(some(toText(interpolate("Html2TempoQuery Action: %P(), State: %P(), Previous %P()", [action, current, prev]))));
 }
 
 export const sample = "\u003cdiv class=\"relative w-screen max-w-md\"\u003e\n    \u003cdiv class=\"h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll\"\u003e\n        \u003cdiv class=\"px-4 sm:px-6\"\u003e\n        \u003ch2 class=\"text-lg font-medium text-gray-900\" id=\"slide-over-title\"\u003e\n            Panel title\n        \u003c/h2\u003e\n        \u003c/div\u003e\n        \u003cdiv class=\"mt-6 relative flex-1 px-4 sm:px-6\"\u003e\n            \u003c!-- Replace with your content --\u003e\n            \u003cdiv class=\"absolute inset-0 px-4 sm:px-6\"\u003e\n                \u003cdiv class=\"h-full border-2 border-dashed border-gray-200\" aria-hidden=\"true\"\u003e\u003c/div\u003e\n            \u003c/div\u003e\n            \u003c!-- /End replace --\u003e\n        \u003c/div\u003e\n    \u003c/div\u003e\n\u003c/div\u003e\n    ";
@@ -91,7 +88,6 @@ export const template = DSL_El_Z7374416F("div", singleton(DSL_Attr_Z384F8060("cl
 }), (e) => (void 0), (request_1, editor_1) => {
     if (request_1.tag === 1) {
         const content = request_1.fields[0];
-        console.log(some(content));
         editor_1.setValue(content);
     }
 })]), empty())]));

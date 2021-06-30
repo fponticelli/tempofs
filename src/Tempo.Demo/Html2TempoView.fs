@@ -48,8 +48,6 @@ module View =
                     200
                 )
 
-        console.log $"Html2TempoQuery Action: {action}, State: {current}, Previous {prev}"
-
     let sample =
         """<div class="relative w-screen max-w-md">
     <div class="h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll">
@@ -99,9 +97,7 @@ module View =
                         (fun request editor ->
                             match request with
                             | GetHtml _ -> ()
-                            | SetGenerated content ->
-                                console.log content
-                                editor.setValue content)
+                            | SetGenerated content -> editor.setValue content)
                     ) ]
               ) ]
         )
