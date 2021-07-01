@@ -1,26 +1,24 @@
 # TempoF#
 
 TODO:
+- [x] Capture capture/release state
+- [x] HTML: Unsafe HTML
+
 - [x] Virtual Lifecycle
     - [x] Request/Respond
 - [x] HTML Lifecycle
     - [x] Request/Respond
 - [x] Block Changes on Equality
-- [ ] Capture capture/release state
-- [ ] Component
+- [x] Component
 
 - [x] MapAction
 - [x] MapQuery
-- [ ] Adapter???
-- [ ] Lazy???
 - [ ] Interpolate State over time
 - [ ] Time Changes
 - [ ] SimpleComponent (State = Action)
 
-- [ ] HTML: Unsafe HTML
-- [ ] HTML: Portal
+- [x] HTML: Portal
 - [ ] HTML: Generate HTML Elements and Attributes
 - [ ] HTML: Generate SVG Elements and Attributes
 
 - [x] Attach alternative Impl
-- [ ] MapNode

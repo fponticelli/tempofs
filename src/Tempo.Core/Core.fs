@@ -317,6 +317,48 @@ module Core =
         =
         map<'N1, 'N2, 'S, 'S, 'A1, 'A2, 'Q1, 'Q2> id id mapAction mapQuery template
 
+    let makeCapture<'N1, 'N2, 'S1, 'S2, 'S3, 'A1, 'A2, 'Q1, 'Q2>
+        ()
+        : (Template<'N1, 'S1, 'A1, 'Q1> -> Template<'N1, 'S1, 'A1, 'Q1>) * (('S1 -> 'S2 -> 'S3) * Template<'N2, 'S3, 'A2, 'Q2> -> Template<'N2, 'S2, 'A2, 'Q2>) =
+        let mutable localState = None
+
+        let catch (template1: Template<'N1, 'S1, 'A1, 'Q1>) : Template<'N1, 'S1, 'A1, 'Q1> =
+            transform<'N1, 'N1, 'S1, 'S1, 'A1, 'A1, 'Q1, 'Q1>
+                (fun render ->
+                    (fun impl state dispatch ->
+                        localState <- Some state
+                        let view = render impl state dispatch
+
+                        { view with
+                              Change =
+                                  fun s ->
+                                      localState <- Some s
+                                      view.Change s
+                              Destroy =
+                                  fun () ->
+                                      localState <- None
+                                      view.Destroy() }))
+                template1
+
+        let release (merge: 'S1 -> 'S2 -> 'S3, template3: Template<'N2, 'S3, 'A2, 'Q2>) : Template<'N2, 'S2, 'A2, 'Q2> =
+            mapState
+                (fun s2 ->
+                    let s1 = Option.get localState
+                    merge s1 s2)
+                template3
+
+        (hold, release)
+    // let (hold, release) = makeCapture()
+    // DIV([], [
+    //     hold(
+    //         DIV([], [
+    //             mapState(
+    //                 fun s -> $"{s}"
+    //                 release(merge, DIV([], []))
+    //             )
+    //         ]))
+    // ])
+
     let lifecycle<'N, 'S, 'A, 'Q, 'P>
         (afterRender: 'S -> 'P)
         (beforeChange: 'S -> 'P -> bool)

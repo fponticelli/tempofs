@@ -464,6 +464,21 @@ type DSL =
         ) : HTMLTemplate<'S, 'A, 'Q> =
         comp update middleware template
 
+    static member Portal<'S, 'A, 'Q>(selector: string, template: HTMLTemplate<'S, 'A, 'Q>) : HTMLTemplate<'S, 'A, 'Q> =
+        transform
+            (fun render2 ->
+                fun impl state dispatch ->
+                    // TODO this will fail at runtime if parent doesn't exist
+                    let parent = document.querySelector selector
+                    let parent = HTMLElementImpl(parent) :> Impl
+
+                    // render in source parent to not break the flow
+                    let view = render2 impl state dispatch
+                    // attach to physical parent
+                    parent.Append view.Impl
+                    view)
+            template
+
     static member inline cls(text: string) = DSL.Attr("class", text)
     static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
     static member inline cls(whenTrue: string, whenFalse: string) = DSL.Attr("class", whenTrue, whenFalse)
@@ -477,6 +492,22 @@ type DSL =
 
     static member inline aria(name: string, whenTrue: string, whenFalse: string) =
         DSL.Attr($"aria-{name}", whenTrue, whenFalse)
+
+    static member inline innerHTML<'S, 'A, 'Q>(html: string) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        lifecycleAttribute (fun { Element = el } -> el.innerHTML <- html) (fun _ -> (true, ())) ignore ignore (fun _ _ -> ())
+
+    static member inline innerHTML<'S, 'A, 'Q>(f: 'S -> string) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        lifecycleAttribute
+            (fun { Element = el; State = state } ->
+                let html = f state
+                el.innerHTML <- html
+                html)
+            (fun { Payload = old } -> (true, old))
+            (fun { Payload = old } -> old)
+            ignore
+            (fun _ { Payload = old } -> old)
+
+    static member inline innerHTML<'A, 'Q>(html: string -> string) : HTMLTemplateAttribute<string, 'A, 'Q> = DSL.innerHTML<string, 'A, 'Q> id
 
     static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("div", attributes, children)
 
