@@ -40,8 +40,8 @@ export function makeAttribute(name, value) {
     }
 }
 
-export function renderDOMBody(body) {
-    const children = renderDOMElementChildren(body);
+export function renderDOMBody(filterComments, body) {
+    const children = renderDOMElementChildren(filterComments, body);
     if (length(children) === 0) {
         return void 0;
     }
@@ -53,19 +53,24 @@ export function renderDOMBody(body) {
     }
 }
 
-export function renderDOMElementChildren(el) {
-    return filterMap((x) => x, ofArray(map((node) => renderDOMNode(node), Array.from(el.childNodes))));
+export function renderDOMElementChildren(filterComments, el) {
+    return filterMap((x) => x, ofArray(map((node) => renderDOMNode(filterComments, node), Array.from(el.childNodes))));
 }
 
-export function renderDOMNode(node) {
+export function renderDOMNode(filterComments, node) {
     if (node.nodeType === 1) {
-        return renderDOMElement(node);
+        return renderDOMElement(filterComments, node);
     }
     else if (node.nodeType === 3) {
         return renderDOMText(node);
     }
     else if (node.nodeType === 8) {
-        return renderDOMComment(node);
+        if (filterComments) {
+            return void 0;
+        }
+        else {
+            return renderDOMComment(node);
+        }
     }
     else {
         console.error(some(toText(interpolate("unknown node type: %P()", [node]))));
@@ -73,7 +78,7 @@ export function renderDOMNode(node) {
     }
 }
 
-export function renderDOMElement(element) {
+export function renderDOMElement(filterComments, element) {
     let args = empty();
     const name = element.tagName.toLocaleLowerCase();
     const func = tryFind(name, knownElements);
@@ -93,7 +98,7 @@ export function renderDOMElement(element) {
     if (length(attributes) > 0) {
         args = append(args, singleton(("[" + join("; ", attributes)) + "]"));
     }
-    const children = renderDOMElementChildren(element);
+    const children = renderDOMElementChildren(filterComments, element);
     if (length(children) > 0) {
         args = append(args, singleton(("[" + join("; ", children)) + "]"));
     }
@@ -119,7 +124,7 @@ export function renderDOMComment(comment) {
     return ("(* " + comment.textContent) + " *)";
 }
 
-export function transformHtml(content) {
-    return defaultArg(map_2((s) => replace(s, " *);", " *)"), renderDOMBody(makeDOM(content).body)), "");
+export function transformHtml(filterComments, content) {
+    return defaultArg(map_2((s) => replace(s, " *);", " *)"), renderDOMBody(filterComments, makeDOM(content).body)), "");
 }
 

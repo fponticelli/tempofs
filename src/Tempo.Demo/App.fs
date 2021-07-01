@@ -132,4 +132,4 @@ let middleware
 let render =
     MakeProgramOnContentLoaded(template, "#tempofs-demo-app", ignore)
 
-render update middleware ()
+render update middleware { FilterComments = true }

@@ -1,7 +1,7 @@
 import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { append, take, skip, zip, length, iterate, map as map_2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 
 export class Value$2 extends Union {
@@ -47,6 +47,28 @@ export function Value$2_Map(m, v) {
     else {
         return new Value$2(0, m(v.fields[0]));
     }
+}
+
+export function Value$2_Combine_Z4D48493B(f, va, vb) {
+    const matchValue = [va, vb];
+    if (matchValue[0].tag === 1) {
+        if (matchValue[1].tag === 0) {
+            return new Value$2(1, (s_2) => f(matchValue[0].fields[0](s_2), matchValue[1].fields[0]));
+        }
+        else {
+            return new Value$2(1, (s) => f(matchValue[0].fields[0](s), matchValue[1].fields[0](s)));
+        }
+    }
+    else if (matchValue[1].tag === 1) {
+        return new Value$2(1, (s_1) => f(matchValue[0].fields[0], matchValue[1].fields[0](s_1)));
+    }
+    else {
+        return new Value$2(0, f(matchValue[0].fields[0], matchValue[1].fields[0]));
+    }
+}
+
+export function Value$2_Sequence_Z2F3F07FB(ls) {
+    return new Value$2(1, (s) => map_2((v) => Value$2_Resolve(v, s), ls));
 }
 
 export class Template$4 extends Union {

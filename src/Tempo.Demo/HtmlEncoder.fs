@@ -41,8 +41,9 @@ module HtmlParser =
             | None -> $"Attr({quote name}, {quote value})"
 
 
-    let rec renderDOMBody (body: Element) : string option =
-        let children = renderDOMElementChildren body
+    let rec renderDOMBody (filterComments: bool) (body: Element) : string option =
+        let children =
+            renderDOMElementChildren filterComments body
 
         if children.Length = 0 then
             None
@@ -52,25 +53,28 @@ module HtmlParser =
             Some
             <| "Fragment [" + (String.concat "; " children) + "]"
 
-    and renderDOMElementChildren (el: Element) : string list =
+    and renderDOMElementChildren filterComments (el: Element) : string list =
         let children =
             (JS.Constructors.Array.from (el.childNodes))
-            |> Array.map renderDOMNode
+            |> Array.map (renderDOMNode filterComments)
 
         Array.toList children |> List.filterMap id
 
-    and renderDOMNode (node: Node) : string option =
+    and renderDOMNode filterComments (node: Node) : string option =
         if node.nodeType = 1.0 then
-            renderDOMElement (node :?> Element)
+            renderDOMElement filterComments (node :?> Element)
         else if node.nodeType = 3.0 then
             renderDOMText (node :?> Text)
         else if node.nodeType = 8.0 then
-            renderDOMComment (node :?> Comment)
+            if filterComments then
+                None
+            else
+                renderDOMComment (node :?> Comment)
         else
             console.error $"unknown node type: {node}"
             None
 
-    and renderDOMElement (element: Element) : string option =
+    and renderDOMElement filterComments (element: Element) : string option =
         let mutable args = []
 
         let name = element.tagName.ToLower()
@@ -98,7 +102,8 @@ module HtmlParser =
                 args
                 @ [ "[" + (String.concat "; " attributes) + "]" ]
 
-        let children = renderDOMElementChildren element
+        let children =
+            renderDOMElementChildren filterComments element
 
         if children.Length > 0 then
             args <-
@@ -122,9 +127,9 @@ module HtmlParser =
     and renderDOMComment (comment: Comment) : string option =
         Some <| "(* " + (comment.textContent) + " *)"
 
-    let transformHtml content =
+    let transformHtml filterComments content =
         let dom = makeDOM content
-        let maybe = renderDOMBody dom.body
+        let maybe = renderDOMBody filterComments dom.body
         // dirty cleanup
         Option.map (fun (s: string) -> s.Replace(" *);", " *)")) maybe
         |> Option.defaultValue ""

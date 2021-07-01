@@ -34,8 +34,7 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
 and IProperty<'S> =
     abstract Accept : IPropertyInvoker<'S, 'R> -> 'R
 
-and Property<'S, 'V>(name, value) =
-    member this.Name : string = name
+and Property<'S, 'V>(value) =
     member this.Value : Value<'S, 'V> = value
     with
         interface IProperty<'S> with

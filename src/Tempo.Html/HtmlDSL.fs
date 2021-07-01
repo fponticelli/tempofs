@@ -173,17 +173,19 @@ type DSL =
              |> Derived
              |> StringAttr)
 
+    static member Attr<'A, 'Q>
+        (
+            name: string,
+            whenTrue: string,
+            whenFalse: string
+        ) : HTMLTemplateAttribute<bool, 'A, 'Q> =
+        DSL.Attr(name, (fun b -> if b then whenTrue else whenFalse))
+
     static member Prop<'S, 'A, 'Q, 'T>(name: string, value: 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         property name (value |> Literal)
 
     static member Prop<'S, 'A, 'Q, 'T>(name: string, f: 'S -> 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         property name (f >> Some |> Derived)
-
-    static member On<'S, 'A, 'Q>(name: string, action: 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        attribute name (makeTrigger (fun _ -> action) |> Trigger)
-
-    static member On<'S, 'A, 'Q>(name: string, handler: unit -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        attribute name (makeTrigger (fun _ -> handler ()) |> Trigger)
 
     static member On<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
         (
@@ -191,6 +193,22 @@ type DSL =
             handler: TriggerPayload<'S, 'E, 'EL> -> 'A
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         attribute name (makeTrigger handler |> Trigger)
+
+    static member inline On<'S, 'A, 'Q>(name: string, action: 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, _, _>(name, (fun _ -> action))
+
+    static member inline On<'S, 'A, 'Q>(name: string, handler: unit -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, _, _>(name, (fun _ -> handler ()))
+
+    static member inline On<'S, 'A, 'Q>(name: string, handler: 'S -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, _, _>(name, (fun { State = s } -> handler s))
+
+    static member inline On<'S, 'A, 'Q, 'E when 'E :> Event>
+        (
+            name: string,
+            handler: 'E -> 'A
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, _, 'E>(name, (fun { Event = e } -> handler e))
 
     static member inline Map<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
         (
@@ -448,9 +466,17 @@ type DSL =
 
     static member inline cls(text: string) = DSL.Attr("class", text)
     static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
+    static member inline cls(whenTrue: string, whenFalse: string) = DSL.Attr("class", whenTrue, whenFalse)
+
+    static member inline id(text: string) = DSL.Attr("id", text)
+    static member inline id(f: 'S -> string) = DSL.Attr("id", f)
+    static member inline id(whenTrue: string, whenFalse: string) = DSL.Attr("id", whenTrue, whenFalse)
 
     static member inline aria(name: string, text: string) = DSL.Attr($"aria-{name}", text)
     static member inline aria(name: string, f: 'S -> string) = DSL.Attr($"aria-{name}", f)
+
+    static member inline aria(name: string, whenTrue: string, whenFalse: string) =
+        DSL.Attr($"aria-{name}", whenTrue, whenFalse)
 
     static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("div", attributes, children)
 

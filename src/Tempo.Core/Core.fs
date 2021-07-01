@@ -18,6 +18,16 @@ module Core =
             | Literal v -> Literal <| m v
             | Derived f -> Derived(f >> m)
 
+        static member Combine<'S, 'A, 'B, 'C>(f: 'A -> 'B -> 'C, va: Value<'S, 'A>, vb: Value<'S, 'B>) : Value<'S, 'C> =
+            match (va, vb) with
+            | (Literal a, Literal b) -> Literal <| f a b
+            | (Derived fa, Derived fb) -> Derived <| fun s -> f (fa s) (fb s)
+            | (Literal a, Derived fb) -> Derived <| fun s -> f a (fb s)
+            | (Derived fa, Literal b) -> Derived <| fun s -> f (fa s) b
+
+        static member Sequence<'S, 'V>(ls: List<Value<'S, 'V>>) : Value<'S, List<'V>> =
+            Derived(fun s -> List.map (fun v -> Value.Resolve v s) ls)
+
     type Impl =
         abstract Append : Impl -> unit
         abstract Remove : Impl -> unit

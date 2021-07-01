@@ -13,9 +13,33 @@ module Impl =
         abstract GetNodes : unit -> Node list
 
     type HTMLElementImpl =
-        val element: HTMLElement
+        val element: Element
         inherit HTMLImpl
         override this.GetNodes() = [ this.element :> Node ]
+
+        member this.SetAttribute(name: string, value: string option) =
+            match value with
+            | Some s -> this.element.setAttribute (name, s)
+            | None -> this.element.removeAttribute ()
+
+        member this.SetProperty<'T>(name: string, value: 'T) : unit = assign this.element name value
+
+        member this.SetHandler<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element>
+            (name: string)
+            (getState: unit -> 'S)
+            (dispatch: 'A -> unit)
+            (trigger: HTMLTrigger<_, _, 'E, 'EL>)
+            =
+            this.element.addEventListener (
+                name,
+                (fun e ->
+                    dispatch
+                    <| trigger.Handler(
+                        { State = getState ()
+                          Event = (e :?> 'E)
+                          Element = this.element :?> 'EL }
+                    ))
+            )
 
         interface Impl with
             override this.Append(child: Impl) =
@@ -34,9 +58,9 @@ module Impl =
                 else
                     failwith $"HTMLElementImpl doesn't know how to remove a child of type {child}"
 
-        new(el: HTMLElement) = { element = el }
+        new(el: Element) = { element = el }
         new(name: string) = HTMLElementImpl(document.createElement name)
-        new(ns: string, name: string) = HTMLElementImpl((document.createElementNS (ns, name)) :?> HTMLElement)
+        new(ns: string, name: string) = HTMLElementImpl(document.createElementNS (ns, name))
 
     type HTMLTextImpl =
         val text: Text
@@ -91,7 +115,7 @@ module Impl =
                     let ls = htmlChild.GetNodes()
                     List.iter remove ls
                 else
-                    failwith $"HTMLGroupImpl doesn't know how to append a child of type {child}"
+                    failwith $"HTMLGroupImpl doesn't know how to remove a child of type {child}"
 
         new(label: string) =
 #if DEBUG
@@ -129,7 +153,7 @@ module Impl =
             { Name = name
               Value =
                   HTMLTemplateAttributeValue.Property
-                  <| (packProperty <| Property(name, value)) }
+                  <| (packProperty <| Property(value)) }
 
     let packHTMLLifecycle (lifecycle: HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P>) = lifecycle :> IHTMLLifecycle<'S, 'A, 'Q>
 
@@ -143,68 +167,33 @@ module Impl =
     let lifecycleAttribute<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) =
         HTMLTemplateAttribute<'S, 'A, 'Q>.Lifecycle (makeLifecycle<'S, 'A, 'Q, 'EL, 'P> afterRender beforeChange afterChange beforeDestroy respond)
 
-    let applyStringAttribute (name: string) (el: HTMLElement) (s: string option) =
-        match s with
-        | Some s -> el.setAttribute (name, s)
-        | None -> el.removeAttribute name
-
-    let applyTrigger domTrigger name el dispatch state =
+    let applyTrigger<'S, 'A> (name: string) (domTrigger: IHTMLTrigger<'S, 'A>) (impl: HTMLElementImpl) (dispatch: 'A -> unit) (getState: unit -> 'S) =
         unpackHTMLTrigger
             domTrigger
             { new IHTMLTriggerInvoker<'S, 'A, int> with
-                override this.Invoke<'E, 'EL when 'E :> Event and 'EL :> Element>(t: HTMLTrigger<'S, 'A, 'E, 'EL>) =
-                    let el = (el :> Element :?> 'EL)
-
-                    el.addEventListener (
-                        name,
-                        (fun e ->
-                            dispatch
-                            <| t.Handler(
-                                { State = state ()
-                                  Event = (e :?> 'E)
-                                  Element = el }
-                            ))
-                    )
+                override this.Invoke<'E, 'EL when 'E :> Event and 'EL :> Element>(trigger: HTMLTrigger<'S, 'A, 'E, 'EL>) =
+                    impl.SetHandler name getState dispatch trigger
 
                     0 }
         |> ignore
 
-    let applyProperty<'S> (prop: IProperty<'S>) (el: HTMLElement) (state) =
+    let applyProperty<'S> (name: string) (prop: IProperty<'S>) (impl: HTMLElementImpl) (state) =
         unpackProperty
             prop
             { new IPropertyInvoker<'S, int> with
                 override this.Invoke<'V>(prop: Property<'S, 'V>) =
-                    assign el prop.Name
-                    <| Value.Resolve prop.Value state
-
+                    impl.SetProperty<'V>(name, Value.Resolve prop.Value state)
                     0 }
         |> ignore
 
-    let extractDerivedProperty<'S> (prop: IProperty<'S>) =
+    let extractDerivedProperty<'S> name (prop: IProperty<'S>) =
         unpackProperty
             prop
-            { new IPropertyInvoker<'S, (HTMLElement -> 'S -> unit) option> with
+            { new IPropertyInvoker<'S, (HTMLElementImpl -> 'S -> unit) option> with
                 override this.Invoke<'V>(prop: Property<'S, 'V>) =
                     match prop.Value with
-                    | Derived f -> Some(fun el state -> assign el prop.Name (f state))
+                    | Derived f -> Some(fun impl state -> impl.SetProperty(name, f state))
                     | Literal _ -> None }
-
-    let derivedApplication ({ Name = name; Value = value }: HTMLNamedAttribute<'S, 'A, 'Q>) =
-        match value with
-        | StringAttr (Derived f) ->
-            Some
-            <| fun el state -> applyStringAttribute name el (f state)
-        | Property prop -> extractDerivedProperty prop
-        | StringAttr (Literal _) -> None
-        | Trigger _ -> None
-
-    let applyAttribute (dispatch: 'A -> unit) (el: HTMLElement) (state: unit -> 'S) ({ Value = value; Name = name }: HTMLNamedAttribute<'S, 'A, 'Q>) =
-        match value with
-        | StringAttr v ->
-            applyStringAttribute name el
-            <| Value.Resolve v (state ())
-        | Property prop -> applyProperty prop el (state ())
-        | Trigger domTrigger -> applyTrigger domTrigger name el dispatch state
 
     let extractLifecycle<'S, 'A, 'Q> (lc: IHTMLLifecycle<'S, 'A, 'Q>) (dispatch: Dispatch<'A>) =
         unpackHTMLLifecycle
@@ -296,6 +285,24 @@ module Impl =
 
     let createGroupNode (label: string) = HTMLGroupImpl(label) :> Impl
 
+    let aggregatedAttributes =
+        [ "class", " "; "style", "; " ] |> Map.ofList
+
+    // this fails at runtime if the list is empty
+    let foldSelf<'T> (f: 'T -> 'T -> 'T) (ls: 'T list) =
+        let head = ls.Head
+        let tail = ls.Tail
+        List.fold f head tail
+
+    let combineAttributes<'S> (name: string) (va: Value<'S, string option>) (vb: Value<'S, string option>) : Value<'S, string option> =
+        match Map.tryFind name aggregatedAttributes with
+        | Some sep ->
+            let combiner (a: string option) (b: string option) =
+                Option.map2 (fun a b -> $"{a}{sep}{b}") a b
+
+            Value.Combine<'S, string option, string option, string option>(combiner, va, vb)
+        | None -> va
+
     let rec makeHTMLNodeRender<'S, 'A, 'Q> (make: Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q> -> Render<'S, 'A, 'Q>) (node: HTMLTemplateNode<'S, 'A, 'Q>) : Render<'S, 'A, 'Q> =
         match node with
         | HTMLTemplateElementNS (ns, el) -> makeRenderDOMElement (Some ns) el make
@@ -312,7 +319,7 @@ module Impl =
                 | None -> HTMLElementImpl node.Name
 
             let impl = htmlImpl :> Impl
-            let getState () = localState
+            let getState () : 'S = localState
 
             let namedAttributes =
                 List.filterMap
@@ -321,8 +328,48 @@ module Impl =
                     | _ -> None)
                     node.Attributes
 
-            // TODO use HTMLElementImpl methods
-            List.iter (applyAttribute dispatch htmlImpl.element getState) namedAttributes
+            let (attributes, properties, triggers) =
+                List.fold
+                    (fun (attributes, properties, triggers) { Name = name; Value = value } ->
+                        match value with
+                        | StringAttr v -> ((name, v) :: attributes, properties, triggers)
+                        | Property v -> (attributes, (name, v) :: properties, triggers)
+                        | Trigger v -> (attributes, properties, (name, v) :: triggers))
+                    ([], [], [])
+                    namedAttributes
+
+            let groupedAttributes =
+                List.groupBy (fun (name, _) -> name) attributes
+                |> List.map (fun (name, ls) -> (name, List.map (fun (_, v) -> v) ls))
+
+            let attributes =
+                List.map (fun (name: string, ls: Value<'S, string option> list) -> (name, foldSelf (combineAttributes name) ls)) groupedAttributes
+
+            // Apply Attributes
+            List.iter (fun (name, value) -> htmlImpl.SetAttribute(name, (Value.Resolve value state))) attributes
+            // Store Derived Attributes
+            let attributeUpdates =
+                List.filterMap
+                    (fun (name, value) ->
+                        match value with
+                        | Derived f -> Some(name, f)
+                        | Literal _ -> None)
+                    attributes
+                |> List.map (fun (name, f) -> (fun s -> htmlImpl.SetAttribute(name, f s)))
+
+            // Apply Properties
+            List.iter (fun (name, prop) -> applyProperty name prop htmlImpl state) properties
+            // Store Derived Properties
+            let propertyUpdates =
+                List.filterMap (fun (name, prop) -> extractDerivedProperty name prop) properties
+                |> List.map (fun f -> f htmlImpl)
+
+            // Apply Triggers
+            let callback (name, handler) =
+                applyTrigger name handler htmlImpl dispatch getState
+
+            List.iter callback triggers
+
             parent.Append impl
 
             // TODO use HTMLElementImpl methods
@@ -352,12 +399,13 @@ module Impl =
                 List.map (fun ({ Query = query }: View<_, _>) -> query) childViews
 
             // TODO use HTMLElementImpl methods
-            let attributeUpdates =
-                namedAttributes
-                |> List.filterMap derivedApplication
-                |> List.map (fun f -> f htmlImpl.element)
+            // let attributeUpdates =
+            // namedAttributes
+            // |> List.filterMap derivedApplication
+            // |> List.map (fun f -> f htmlImpl.element)
 
-            let updates = attributeUpdates @ childUpdates
+            let updates =
+                attributeUpdates @ propertyUpdates @ childUpdates
 
             let change =
                 fun state ->

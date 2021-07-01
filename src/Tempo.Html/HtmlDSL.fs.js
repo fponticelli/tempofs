@@ -1,8 +1,8 @@
 import { class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { comp, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
 import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { makeTrigger, packProperty, HTMLElementImpl_$ctor_4C3D2741, createGroupNode, makeHTMLNodeRender } from "./HtmlImpl.fs.js";
-import { Property$2_$ctor_57011354, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
+import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./HtmlImpl.fs.js";
+import { Property$2_$ctor_1D5210CF, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
 import { some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
 import { empty } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
@@ -22,7 +22,7 @@ function DSL_MakeRender() {
 
 export function DSL_MakeProgram_Z9447D8C(template, el) {
     let render;
-    const clo1 = MakeRender$4__Make_1DCD9633(DSL_MakeRender(), template)(HTMLElementImpl_$ctor_4C3D2741(el));
+    const clo1 = MakeRender$4__Make_1DCD9633(DSL_MakeRender(), template)(HTMLElementImpl_$ctor_Z5966C024(el));
     render = ((arg10) => {
         const clo2 = clo1(arg10);
         return (arg20) => clo2(arg20);
@@ -92,22 +92,16 @@ export function DSL_Attr_Z6A312DE(name, f) {
     return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (s) => (f(s) ? name : (void 0))))));
 }
 
+export function DSL_Attr_30230F9B(name, whenTrue, whenFalse) {
+    return DSL_Attr_3DF4EB53(name, (b) => (b ? whenTrue : whenFalse));
+}
+
 export function DSL_Prop_4A53169E(name, value) {
-    const name_1 = name;
-    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name_1, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_57011354(name_1, new Value$2(0, value))))));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_1D5210CF(new Value$2(0, value))))));
 }
 
 export function DSL_Prop_36180E4D(name, f) {
-    const name_1 = name;
-    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name_1, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_57011354(name_1, new Value$2(1, (arg) => some(f(arg))))))));
-}
-
-export function DSL_On_4A53169E(name, action) {
-    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger((_arg2) => action))));
-}
-
-export function DSL_On_459CDA74(name, handler) {
-    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger((_arg3) => handler()))));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_1D5210CF(new Value$2(1, (arg) => some(f(arg))))))));
 }
 
 export function DSL_On_47AABEE2(name, handler) {
@@ -250,8 +244,8 @@ export function DSL_Seq_Z7461BB91(f, template) {
 }
 
 export function DSL_CompareStates_5C9B84BF(f, template) {
-    return lifecycle((x) => x, f, (state, _arg4) => state, (value) => {
-    }, (_arg5, p) => p, template);
+    return lifecycle((x) => x, f, (state, _arg6) => state, (value) => {
+    }, (_arg7, p) => p, template);
 }
 
 export function DSL_Component_Z228F47D0(update, middleware, template) {

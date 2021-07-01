@@ -74,8 +74,7 @@ export function HTMLTemplateAttributeValue$3$reflection(gen0, gen1, gen2) {
 }
 
 export class Property$2 {
-    constructor(name, value) {
-        this.name = name;
+    constructor(value) {
         this.value = value;
     }
     Accept(f) {
@@ -88,8 +87,8 @@ export function Property$2$reflection(gen0, gen1) {
     return class_type("Tempo.Html.Property`2", [gen0, gen1], Property$2);
 }
 
-export function Property$2_$ctor_57011354(name, value) {
-    return new Property$2(name, value);
+export function Property$2_$ctor_1D5210CF(value) {
+    return new Property$2(value);
 }
 
 export class TriggerPayload$3 extends Record {
@@ -170,10 +169,6 @@ export function HTMLLifecycle$5$reflection(gen0, gen1, gen2, gen3, gen4) {
 
 export function HTMLLifecycle$5_$ctor_17DF349(afterRender, beforeChange, afterChange, beforeDestroy, respond) {
     return new HTMLLifecycle$5(afterRender, beforeChange, afterChange, beforeDestroy, respond);
-}
-
-export function Property$2__get_Name(this$) {
-    return this$.name;
 }
 
 export function Property$2__get_Value(this$) {
