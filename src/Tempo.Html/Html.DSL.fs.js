@@ -1,11 +1,11 @@
-import { class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { transform, comp, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
-import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { class_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { transform, comp, makeCapture, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
+import { uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./Html.Impl.fs.js";
 import { Property$2_$ctor_1D5210CF, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
-import { some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
-import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
-import { empty } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { some } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
+import { empty } from "../../../src/.fable/fable-library.3.1.10/List.js";
 
 export class DSL {
     constructor() {
@@ -21,8 +21,11 @@ function DSL_MakeRender() {
 }
 
 export function DSL_MakeProgram_Z9447D8C(template, el) {
+    const renderInstance = DSL_MakeRender();
+    const f = MakeRender$4__Make_1DCD9633(renderInstance, template);
+    const parent = HTMLElementImpl_$ctor_Z5966C024(el);
     let render;
-    const clo1 = MakeRender$4__Make_1DCD9633(DSL_MakeRender(), template)(HTMLElementImpl_$ctor_Z5966C024(el));
+    const clo1 = f(parent);
     render = ((arg10) => {
         const clo2 = clo1(arg10);
         return (arg20) => clo2(arg20);
@@ -43,7 +46,9 @@ export function DSL_MakeProgram_Z9447D8C(template, el) {
 export function DSL_MakeProgramOnContentLoaded_56DDD9AE(template, selector, f) {
     return (update) => ((middleware) => ((state) => {
         const value = window.addEventListener("DOMContentLoaded", (_arg1) => {
-            f(DSL_MakeProgram_Z9447D8C(template, document.querySelector(selector))(update)(middleware)(state));
+            const el = document.querySelector(selector);
+            const render = DSL_MakeProgram_Z9447D8C(template, el);
+            f(render(update)(middleware)(state));
         });
     }));
 }
@@ -117,13 +122,16 @@ export function DSL_OneOf_Z2AFE4804(f, template1, template2, template3) {
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c_1 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_1));
             }
             case 2: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_2 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_2));
             }
             default: {
-                return new FSharpChoice$2(0, matchValue.fields[0]);
+                const c = matchValue.fields[0];
+                return new FSharpChoice$2(0, c);
             }
         }
     }, template1, DSL_OneOf_Z491B0F3C((x) => x, template2, template3));
@@ -134,16 +142,20 @@ export function DSL_OneOf_Z1F5D2DDE(f, template1, template2, template3, template
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_1 = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
             }
             case 2: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c_2 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_2));
             }
             case 3: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_3 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_3));
             }
             default: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
             }
         }
     }, DSL_OneOf_Z491B0F3C((x) => x, template1, template2), DSL_OneOf_Z491B0F3C((x_1) => x_1, template3, template4));
@@ -154,19 +166,24 @@ export function DSL_OneOf_7B4F0B5A(f, template1, template2, template3, template4
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_1 = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
             }
             case 2: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c_2 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_2));
             }
             case 3: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_3 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_3));
             }
             case 4: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(2, matchValue.fields[0]));
+                const c_4 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(2, c_4));
             }
             default: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
             }
         }
     }, DSL_OneOf_Z491B0F3C((x) => x, template1, template2), DSL_OneOf_Z2AFE4804((x_1) => x_1, template3, template4, template5));
@@ -177,22 +194,28 @@ export function DSL_OneOf_Z35273380(f, template1, template2, template3, template
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_1 = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
             }
             case 2: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(2, matchValue.fields[0]));
+                const c_2 = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(2, c_2));
             }
             case 3: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c_3 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_3));
             }
             case 4: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_4 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_4));
             }
             case 5: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(2, matchValue.fields[0]));
+                const c_5 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(2, c_5));
             }
             default: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
             }
         }
     }, DSL_OneOf_Z2AFE4804((x) => x, template1, template2, template3), DSL_OneOf_Z2AFE4804((x_1) => x_1, template4, template5, template6));
@@ -203,25 +226,32 @@ export function DSL_OneOf_390DE0B8(f, template1, template2, template3, template4
         const matchValue = f(s);
         switch (matchValue.tag) {
             case 1: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_1 = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(1, c_1));
             }
             case 2: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(2, matchValue.fields[0]));
+                const c_2 = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(2, c_2));
             }
             case 3: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c_3 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(0, c_3));
             }
             case 4: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(1, matchValue.fields[0]));
+                const c_4 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(1, c_4));
             }
             case 5: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(2, matchValue.fields[0]));
+                const c_5 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(2, c_5));
             }
             case 6: {
-                return new FSharpChoice$2(1, new FSharpChoice$2(3, matchValue.fields[0]));
+                const c_6 = matchValue.fields[0];
+                return new FSharpChoice$2(1, new FSharpChoice$2(3, c_6));
             }
             default: {
-                return new FSharpChoice$2(0, new FSharpChoice$2(0, matchValue.fields[0]));
+                const c = matchValue.fields[0];
+                return new FSharpChoice$2(0, new FSharpChoice$2(0, c));
             }
         }
     }, DSL_OneOf_Z2AFE4804((x) => x, template1, template2, template3), DSL_OneOf_Z1F5D2DDE((x_1) => x_1, template4, template5, template6, template7));
@@ -248,13 +278,23 @@ export function DSL_CompareStates_5C9B84BF(f, template) {
     }, (_arg7, p) => p, template);
 }
 
+export function DSL_MakeCapture() {
+    return makeCapture();
+}
+
 export function DSL_Component_Z228F47D0(update, middleware, template) {
     return comp(update, middleware, template);
 }
 
+export function DSL_Component_71622930(update, template) {
+    return comp(update, (value) => {
+    }, template);
+}
+
 export function DSL_Portal_10AF510E(selector, template) {
     return transform((render2, impl, state, dispatch) => {
-        const parent_1 = HTMLElementImpl_$ctor_Z5966C024(document.querySelector(selector));
+        const parent = document.querySelector(selector);
+        const parent_1 = HTMLElementImpl_$ctor_Z5966C024(parent);
         const view = render2(impl, state, dispatch);
         parent_1.Append(view.Impl);
         return view;

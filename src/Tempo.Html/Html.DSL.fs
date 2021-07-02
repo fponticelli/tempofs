@@ -262,6 +262,39 @@ type DSL =
         ) : HTMLTemplate<'S, 'A, 'Q1> =
         DSL.MapQuery(f, Fragment templates)
 
+    static member inline MapSA<'S1, 'S2, 'A1, 'A2, 'Q>
+        (
+            mapState: 'S1 -> 'S2,
+            mapAction: 'A2 -> 'A1 option,
+            template: HTMLTemplate<'S2, 'A2, 'Q>
+        ) : HTMLTemplate<'S1, 'A1, 'Q> =
+        mapSA mapState mapAction template
+
+    static member inline MapSAQ<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
+        (
+            mapState: 'S1 -> 'S2,
+            mapAction: 'A2 -> 'A1 option,
+            mapQuery: 'Q1 -> 'Q2,
+            template: HTMLTemplate<'S2, 'A2, 'Q2>
+        ) =
+        mapSAQ mapState mapAction mapQuery template
+
+    static member inline MapSQ<'S1, 'S2, 'A, 'Q1, 'Q2>
+        (
+            mapState: 'S1 -> 'S2,
+            mapQuery: 'Q1 -> 'Q2,
+            template: HTMLTemplate<'S2, 'A, 'Q2>
+        ) =
+        mapSQ mapState mapQuery template
+
+    static member inline MapAQ<'S, 'A1, 'A2, 'Q1, 'Q2>
+        (
+            mapAction: 'A2 -> 'A1 option,
+            mapQuery: 'Q1 -> 'Q2,
+            template: HTMLTemplate<'S, 'A2, 'Q2>
+        ) =
+        mapAQ mapAction mapQuery template
+
     static member OneOf<'S, 'S1, 'S2, 'A, 'Q>
         (
             f: 'S -> Choice<'S1, 'S2>,
@@ -414,6 +447,13 @@ type DSL =
         ) : HTMLTemplate<'S1, 'A, 'Q> =
         iterator createGroupNode f template
 
+    static member inline Transform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
+        (
+            transformf: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
+            template: HTMLTemplate<'S2, 'A2, 'Q2>
+        ) : HTMLTemplate<'S1, 'A1, 'Q1> =
+        transform transformf template
+
     static member inline Lifecycle<'S, 'A, 'Q, 'P>
         (
             afterRender: 'S -> 'P,
@@ -454,7 +494,19 @@ type DSL =
             f: 'S -> bool,
             template: HTMLTemplate<'S, 'A, 'Q>
         ) : HTMLTemplate<'S, 'A, 'Q> =
-        DSL.CompareStates((=), template)
+        DSL.CompareStates((<>), template)
+
+    // static member MatchMediaQuery<'S, 'A, 'Q>
+    //     (
+    //         matchMedia: string,
+    //         whenMatchesTemplate: HTMLTemplate<'S, 'A, 'Q>,
+    //         unlessMatchesTemplate: HTMLTemplate<'S, 'A, 'Q>
+    //     ) : HTMLTemplate<'S, 'A, 'Q> = TODO
+
+    static member MakeCapture<'S1, 'S2, 'S3, 'A1, 'A2, 'Q1, 'Q2>() =
+        // TODO why do I need the unsafe cast?
+        (makeCapture ()) :> obj
+        :?> (HTMLTemplate<'S1, 'A1, 'Q1> -> HTMLTemplate<'S1, 'A1, 'Q1>) * (('S1 -> 'S2 -> 'S3) * HTMLTemplate<'S3, 'A2, 'Q2> -> HTMLTemplate<'S2, 'A2, 'Q2>)
 
     static member Component<'S, 'A, 'Q>
         (
@@ -463,6 +515,13 @@ type DSL =
             template: HTMLTemplate<'S, 'A, 'Q>
         ) : HTMLTemplate<'S, 'A, 'Q> =
         comp update middleware template
+
+    static member Component<'S, 'A, 'Q>
+        (
+            update: 'S -> 'A -> 'S,
+            template: HTMLTemplate<'S, 'A, 'Q>
+        ) : HTMLTemplate<'S, 'A, 'Q> =
+        comp update ignore template
 
     static member Portal<'S, 'A, 'Q>(selector: string, template: HTMLTemplate<'S, 'A, 'Q>) : HTMLTemplate<'S, 'A, 'Q> =
         transform
@@ -481,6 +540,7 @@ type DSL =
 
     static member inline cls(text: string) = DSL.Attr("class", text)
     static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
+    static member inline cls(f: 'S -> string option) = DSL.cls (Option.defaultValue "" << f)
     static member inline cls(whenTrue: string, whenFalse: string) = DSL.Attr("class", whenTrue, whenFalse)
 
     static member inline id(text: string) = DSL.Attr("id", text)
@@ -519,6 +579,28 @@ type DSL =
     static member inline DIV() = DSL.DIV([], [])
 
     static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.DIV(attributes, [ child ])
+
+    static member inline MAIN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("main", attributes, children)
+
+    static member inline MAIN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.MAIN(attributes, [])
+
+    static member inline MAIN(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.MAIN([], children)
+    static member inline MAIN(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.MAIN([], [ child ])
+
+    static member inline MAIN() = DSL.MAIN([], [])
+
+    static member inline MAIN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.MAIN(attributes, [ child ])
+
+    static member inline ASIDE(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("aside", attributes, children)
+
+    static member inline ASIDE(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.ASIDE(attributes, [])
+
+    static member inline ASIDE(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.ASIDE([], children)
+    static member inline ASIDE(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.ASIDE([], [ child ])
+
+    static member inline ASIDE() = DSL.ASIDE([], [])
+
+    static member inline ASIDE(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.ASIDE(attributes, [ child ])
 
     static member inline BUTTON(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("button", attributes, children)
 

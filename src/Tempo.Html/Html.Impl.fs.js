@@ -1,15 +1,15 @@
-import { record_type, unit_type, lambda_type, bool_type, class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { append, map, tail as tail_1, head as head_1, ofArray, fold, empty, filter, cons, reverse, collect, iterate, singleton } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
-import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
+import { record_type, unit_type, lambda_type, bool_type, class_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { append, map, tail as tail_1, head as head_1, ofArray, fold, empty, filter, cons, reverse, collect, iterate, singleton } from "../../../src/.fable/fable-library.3.1.10/List.js";
+import { interpolate, toText } from "../../../src/.fable/fable-library.3.1.10/String.js";
 import { remove } from "./Html.Tools.fs.js";
 import { HTMLLifecycle$5__get_Respond, HTMLLifecycle$5__get_BeforeDestroy, HTMLLifecycle$5__get_AfterChange, HTMLLifecyclePayload$4, HTMLLifecycle$5__get_BeforeChange, HTMLLifecycleInitialPayload$3, HTMLLifecycle$5__get_AfterRender, Property$2__get_Value, HTMLTemplateAttribute$3, HTMLLifecycle$5_$ctor_17DF349, HTMLTrigger$4_$ctor_75095B8B, TriggerPayload$3, HTMLTrigger$4__get_Handler } from "./Html.fs.js";
-import { partialApply, mapCurriedArgs, stringHash, uncurry, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
+import { partialApply, mapCurriedArgs, stringHash, uncurry, equals } from "../../../src/.fable/fable-library.3.1.10/Util.js";
+import { Record } from "../../../src/.fable/fable-library.3.1.10/Types.js";
 import { View$2, Value$2_Combine_Z4D48493B, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
-import { tryFind, ofList } from "../Tempo.Demo/.fable/fable-library.3.1.10/Map.js";
-import { map2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
+import { tryFind, ofList } from "../../../src/.fable/fable-library.3.1.10/Map.js";
+import { map2 } from "../../../src/.fable/fable-library.3.1.10/Option.js";
 import { filterMap } from "../Tempo.Core/Std.List.fs.js";
-import { List_groupBy } from "../Tempo.Demo/.fable/fable-library.3.1.10/Seq2.js";
+import { List_groupBy } from "../../../src/.fable/fable-library.3.1.10/Seq2.js";
 
 export class HTMLImpl {
     constructor() {
@@ -35,9 +35,11 @@ export class HTMLElementImpl {
     Append(child) {
         const this$ = this;
         if (child["GetNodes"] !== null) {
+            const child_1 = child;
+            const nodes = child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             iterate((arg) => {
                 void this$.element.appendChild(arg);
-            }, (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
+            }, nodes);
         }
         else {
             throw (new Error(toText(interpolate("HTMLElementImpl doesn\u0027t know how to append a child of type %P()", [child]))));
@@ -45,9 +47,11 @@ export class HTMLElementImpl {
     }
     Remove(child) {
         if (child["GetNodes"] !== null) {
+            const child_1 = child;
+            const ls = child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             iterate((n) => {
                 remove(n);
-            }, (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
+            }, ls);
         }
         else {
             throw (new Error(toText(interpolate("HTMLElementImpl doesn\u0027t know how to remove a child of type %P()", [child]))));
@@ -64,7 +68,8 @@ export function HTMLElementImpl__SetAttribute_68C4AEB5(this$, name, value) {
         this$.element.removeAttribute();
     }
     else {
-        this$.element.setAttribute(name, value);
+        const s = value;
+        this$.element.setAttribute(name, s);
     }
 }
 
@@ -131,7 +136,8 @@ export class HTMLGroupImpl {
         const this$ = this;
         return cons(this$.ref, collect((child) => {
             if (child["GetNodes"] !== null) {
-                return (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
+                const child_1 = child;
+                return child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             }
             else {
                 throw (new Error(toText(interpolate("Group contains a foreign element %P()", [child]))));
@@ -142,10 +148,12 @@ export class HTMLGroupImpl {
         const this$ = this;
         this$.children = cons(child, this$.children);
         if (child["GetNodes"] !== null) {
+            const child_1 = child;
+            const nodes = child_1["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             const parent = this$.ref.parentNode;
             iterate((node) => {
                 void parent.insertBefore(node, this$.ref);
-            }, (child)["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
+            }, nodes);
         }
         else {
             throw (new Error(toText(interpolate("HTMLGroupImpl doesn\u0027t know how to append a child of type %P()", [child]))));
@@ -156,9 +164,10 @@ export class HTMLGroupImpl {
         if (child["GetNodes"] !== null) {
             const htmlChild = child;
             this$.children = filter((c) => (!equals(c, child)), this$.children);
+            const ls = htmlChild["Tempo.Html.Impl.HTMLImpl.GetNodes"]();
             iterate((n) => {
                 remove(n);
-            }, htmlChild["Tempo.Html.Impl.HTMLImpl.GetNodes"]());
+            }, ls);
         }
         else {
             throw (new Error(toText(interpolate("HTMLGroupImpl doesn\u0027t know how to remove a child of type %P()", [child]))));
@@ -171,8 +180,9 @@ export function HTMLGroupImpl$reflection() {
 }
 
 export function HTMLGroupImpl_$ctor_Z721C83C5(label) {
+    counter = (counter + 1);
     HTMLImpl_$ctor();
-    return new HTMLGroupImpl(document.createTextNode(""), empty());
+    return new HTMLGroupImpl(document.createComment(toText(interpolate("%P(): %P()", [label, counter]))), empty());
 }
 
 export class LifecycleImpl$3 extends Record {
@@ -248,9 +258,15 @@ export function extractDerivedProperty(name, prop) {
     return unpackProperty(prop, {
         Invoke(prop_1) {
             const matchValue = Property$2__get_Value(prop_1);
-            return (matchValue.tag === 0) ? (void 0) : ((impl) => ((state) => {
-                HTMLElementImpl__SetProperty_4A53169E(impl, name, matchValue.fields[0](state));
-            }));
+            if (matchValue.tag === 0) {
+                return void 0;
+            }
+            else {
+                const f = matchValue.fields[0];
+                return (impl) => ((state) => {
+                    HTMLElementImpl__SetProperty_4A53169E(impl, name, f(state));
+                });
+            }
         },
     });
 }
@@ -260,29 +276,37 @@ export function extractLifecycle(lc, dispatch) {
         Invoke(t) {
             return (el) => ((state) => {
                 let payload = HTMLLifecycle$5__get_AfterRender(t)(new HTMLLifecycleInitialPayload$3(state, el, dispatch));
-                return new LifecycleImpl$3((state_1) => {
+                const beforeChange = (state_1) => {
                     const patternInput = HTMLLifecycle$5__get_BeforeChange(t)(new HTMLLifecyclePayload$4(state_1, el, payload, dispatch));
-                    payload = patternInput[1];
-                    return patternInput[0];
-                }, (state_2) => {
+                    const result = patternInput[0];
+                    const newPayload = patternInput[1];
+                    payload = newPayload;
+                    return result;
+                };
+                const afterChange = (state_2) => {
                     payload = HTMLLifecycle$5__get_AfterChange(t)(new HTMLLifecyclePayload$4(state_2, el, payload, dispatch));
-                }, () => {
+                };
+                const beforeDestroy = () => {
                     HTMLLifecycle$5__get_BeforeDestroy(t)(new HTMLLifecyclePayload$4(state, el, payload, dispatch));
-                }, dispatch, (query) => {
+                };
+                const respond = (query) => {
                     payload = HTMLLifecycle$5__get_Respond(t)(query)(new HTMLLifecyclePayload$4(state, el, payload, dispatch));
-                });
+                };
+                return new LifecycleImpl$3(beforeChange, afterChange, beforeDestroy, dispatch, respond);
             });
         },
     });
 }
 
 export function mergeLifecycles(ls) {
-    return fold((a, b) => (new LifecycleImpl$3((s) => {
-        if (a.BeforeChange(s)) {
+    const merge = (a, b) => (new LifecycleImpl$3((s) => {
+        const ra = a.BeforeChange(s);
+        const rb = b.BeforeChange(s);
+        if (ra) {
             return true;
         }
         else {
-            return b.BeforeChange(s);
+            return rb;
         }
     }, (s_1) => {
         a.AfterChange(s_1);
@@ -296,11 +320,13 @@ export function mergeLifecycles(ls) {
     }, (q) => {
         a.Respond(q);
         b.Respond(q);
-    })), new LifecycleImpl$3((_arg1) => true, (value) => {
+    }));
+    const start = new LifecycleImpl$3((_arg1) => true, (value) => {
     }, () => {
     }, (value_3) => {
     }, (value_2) => {
-    }), ls);
+    });
+    return fold(merge, start, ls);
 }
 
 export function createGroupNode(label) {
@@ -310,7 +336,9 @@ export function createGroupNode(label) {
 export const aggregatedAttributes = ofList(ofArray([["class", " "], ["style", "; "]]));
 
 export function foldSelf(f, ls) {
-    return fold(f, head_1(ls), tail_1(ls));
+    const head = head_1(ls);
+    const tail = tail_1(ls);
+    return fold(f, head, tail);
 }
 
 export function combineAttributes(name, va, vb) {
@@ -320,30 +348,52 @@ export function combineAttributes(name, va, vb) {
     }
     else {
         const sep = matchValue;
-        return Value$2_Combine_Z4D48493B((a, b) => map2((a_1, b_1) => toText(interpolate("%P()%P()%P()", [a_1, sep, b_1])), a, b), va, vb);
+        const combiner = (a, b) => map2((a_1, b_1) => toText(interpolate("%P()%P()%P()", [a_1, sep, b_1])), a, b);
+        return Value$2_Combine_Z4D48493B(combiner, va, vb);
     }
 }
 
 export function makeHTMLNodeRender(make, node) {
     switch (node.tag) {
         case 1: {
+            const el_1 = node.fields[0];
             const make_2 = make;
-            return (parent_1) => ((state_1) => ((dispatch_1) => makeRenderDOMElement(void 0, node.fields[0], make_2, parent_1, state_1, dispatch_1)));
+            return (parent_1) => ((state_1) => ((dispatch_1) => makeRenderDOMElement(void 0, el_1, make_2, parent_1, state_1, dispatch_1)));
         }
         case 2: {
-            return (parent_2) => ((state_2) => ((dispatch_2) => makeRenderDOMText(node.fields[0], parent_2, state_2, dispatch_2)));
+            const v = node.fields[0];
+            return (parent_2) => ((state_2) => ((dispatch_2) => makeRenderDOMText(v, parent_2, state_2, dispatch_2)));
         }
         default: {
+            const ns = node.fields[0];
+            const el = node.fields[1];
             const make_1 = make;
-            return (parent) => ((state) => ((dispatch) => makeRenderDOMElement(node.fields[0], node.fields[1], make_1, parent, state, dispatch)));
+            return (parent) => ((state) => ((dispatch) => makeRenderDOMElement(ns, el, make_1, parent, state, dispatch)));
         }
     }
 }
 
 export function makeRenderDOMElement(ns, node, make, parent, state, dispatch) {
     let localState = state;
-    const htmlImpl = (ns == null) ? HTMLElementImpl_$ctor_Z721C83C5(node.Name) : HTMLElementImpl_$ctor_Z384F8060(ns, node.Name);
+    let htmlImpl;
+    if (ns == null) {
+        htmlImpl = HTMLElementImpl_$ctor_Z721C83C5(node.Name);
+    }
+    else {
+        const ns_1 = ns;
+        htmlImpl = HTMLElementImpl_$ctor_Z384F8060(ns_1, node.Name);
+    }
     const impl = htmlImpl;
+    const getState = () => localState;
+    const namedAttributes = filterMap((_arg1) => {
+        if (_arg1.tag === 0) {
+            const at = _arg1.fields[0];
+            return at;
+        }
+        else {
+            return void 0;
+        }
+    }, node.Attributes);
     const patternInput = fold(uncurry(2, (tupledArg) => {
         const attributes = tupledArg[0];
         const properties = tupledArg[1];
@@ -353,73 +403,138 @@ export function makeRenderDOMElement(ns, node, make, parent, state, dispatch) {
             const name = _arg1_1.Name;
             switch (value.tag) {
                 case 1: {
-                    return [attributes, cons([name, value.fields[0]], properties), triggers];
+                    const v_1 = value.fields[0];
+                    return [attributes, cons([name, v_1], properties), triggers];
                 }
                 case 2: {
-                    return [attributes, properties, cons([name, value.fields[0]], triggers)];
+                    const v_2 = value.fields[0];
+                    return [attributes, properties, cons([name, v_2], triggers)];
                 }
                 default: {
-                    return [cons([name, value.fields[0]], attributes), properties, triggers];
+                    const v = value.fields[0];
+                    return [cons([name, v], attributes), properties, triggers];
                 }
             }
         };
-    }), [empty(), empty(), empty()], filterMap((_arg1) => ((_arg1.tag === 0) ? _arg1.fields[0] : (void 0)), node.Attributes));
+    }), [empty(), empty(), empty()], namedAttributes);
+    const triggers_1 = patternInput[2];
     const properties_1 = patternInput[1];
-    const attributes_2 = map((tupledArg_4) => {
-        const name_3 = tupledArg_4[0];
-        return [name_3, foldSelf((va, vb) => combineAttributes(name_3, va, vb), tupledArg_4[1])];
-    }, map((tupledArg_2) => [tupledArg_2[0], map((tupledArg_3) => tupledArg_3[1], tupledArg_2[1])], List_groupBy((tupledArg_1) => tupledArg_1[0], patternInput[0], {
+    const attributes_1 = patternInput[0];
+    const groupedAttributes = map((tupledArg_2) => {
+        const name_2 = tupledArg_2[0];
+        const ls = tupledArg_2[1];
+        return [name_2, map((tupledArg_3) => {
+            const v_3 = tupledArg_3[1];
+            return v_3;
+        }, ls)];
+    }, List_groupBy((tupledArg_1) => {
+        const name_1 = tupledArg_1[0];
+        return name_1;
+    }, attributes_1, {
         Equals: (x, y) => (x === y),
         GetHashCode: (x) => stringHash(x),
-    })));
+    }));
+    const attributes_2 = map((tupledArg_4) => {
+        const name_3 = tupledArg_4[0];
+        const ls_1 = tupledArg_4[1];
+        return [name_3, foldSelf((va, vb) => combineAttributes(name_3, va, vb), ls_1)];
+    }, groupedAttributes);
     iterate((tupledArg_5) => {
-        HTMLElementImpl__SetAttribute_68C4AEB5(htmlImpl, tupledArg_5[0], Value$2_Resolve(tupledArg_5[1], state));
+        const name_4 = tupledArg_5[0];
+        const value_1 = tupledArg_5[1];
+        HTMLElementImpl__SetAttribute_68C4AEB5(htmlImpl, name_4, Value$2_Resolve(value_1, state));
     }, attributes_2);
-    const attributeUpdates = map((tupledArg_7) => ((s) => {
-        HTMLElementImpl__SetAttribute_68C4AEB5(htmlImpl, tupledArg_7[0], tupledArg_7[1](s));
-    }), filterMap((tupledArg_6) => {
+    const attributeUpdates = map((tupledArg_7) => {
+        const name_6 = tupledArg_7[0];
+        const f_1 = tupledArg_7[1];
+        return (s) => {
+            HTMLElementImpl__SetAttribute_68C4AEB5(htmlImpl, name_6, f_1(s));
+        };
+    }, filterMap((tupledArg_6) => {
+        const name_5 = tupledArg_6[0];
         const value_2 = tupledArg_6[1];
-        return (value_2.tag === 0) ? (void 0) : [tupledArg_6[0], value_2.fields[0]];
+        if (value_2.tag === 0) {
+            return void 0;
+        }
+        else {
+            const f = value_2.fields[0];
+            return [name_5, f];
+        }
     }, attributes_2));
     iterate((tupledArg_8) => {
-        applyProperty(tupledArg_8[0], tupledArg_8[1], htmlImpl, state);
+        const name_7 = tupledArg_8[0];
+        const prop = tupledArg_8[1];
+        applyProperty(name_7, prop, htmlImpl, state);
     }, properties_1);
-    const propertyUpdates = map(mapCurriedArgs((f_2) => partialApply(1, f_2, [htmlImpl]), [[0, 2]]), filterMap((tupledArg_9) => extractDerivedProperty(tupledArg_9[0], tupledArg_9[1]), properties_1));
-    iterate((tupledArg_10) => {
-        applyTrigger(tupledArg_10[0], tupledArg_10[1], htmlImpl, dispatch, () => localState);
-    }, patternInput[2]);
+    const propertyUpdates = map(mapCurriedArgs((f_2) => partialApply(1, f_2, [htmlImpl]), [[0, 2]]), filterMap((tupledArg_9) => {
+        const name_8 = tupledArg_9[0];
+        const prop_1 = tupledArg_9[1];
+        return extractDerivedProperty(name_8, prop_1);
+    }, properties_1));
+    const callback = (tupledArg_10) => {
+        const name_9 = tupledArg_10[0];
+        const handler = tupledArg_10[1];
+        applyTrigger(name_9, handler, htmlImpl, dispatch, getState);
+    };
+    iterate(callback, triggers_1);
     parent.Append(impl);
     const childViews = map((child) => make(child, impl, localState, dispatch), node.Children);
-    const patternInput_1 = mergeLifecycles(filterMap((_arg2_1) => ((_arg2_1.tag === 1) ? extractLifecycle(_arg2_1.fields[0], dispatch)(htmlImpl.element)(state) : (void 0)), node.Attributes));
-    const childUpdates = map((_arg4) => _arg4.Change, childViews);
-    const childDestroys = map((_arg5) => _arg5.Destroy, childViews);
-    const childQueries = map((_arg6) => _arg6.Query, childViews);
+    const patternInput_1 = mergeLifecycles(filterMap((_arg2_1) => {
+        if (_arg2_1.tag === 1) {
+            const lc = _arg2_1.fields[0];
+            return extractLifecycle(lc, dispatch)(htmlImpl.element)(state);
+        }
+        else {
+            return void 0;
+        }
+    }, node.Attributes));
+    const respond = patternInput_1.Respond;
+    const beforeDestroy = patternInput_1.BeforeDestroy;
+    const beforeChange = patternInput_1.BeforeChange;
+    const afterChange = patternInput_1.AfterChange;
+    const childUpdates = map((_arg4) => {
+        const change = _arg4.Change;
+        return change;
+    }, childViews);
+    const childDestroys = map((_arg5) => {
+        const destroy = _arg5.Destroy;
+        return destroy;
+    }, childViews);
+    const childQueries = map((_arg6) => {
+        const query = _arg6.Query;
+        return query;
+    }, childViews);
     const updates = append(attributeUpdates, append(propertyUpdates, childUpdates));
-    return new View$2(impl, (state_1) => {
-        if (patternInput_1.BeforeChange(state_1)) {
+    const change_2 = (state_1) => {
+        if (beforeChange(state_1)) {
             localState = state_1;
             iterate((change_1) => {
                 change_1(localState);
             }, updates);
-            patternInput_1.AfterChange(localState);
+            afterChange(localState);
         }
-    }, () => {
-        patternInput_1.BeforeDestroy();
+    };
+    const destroy_2 = () => {
+        beforeDestroy();
         parent.Remove(impl);
         iterate((destroy_1) => {
             destroy_1();
         }, childDestroys);
-    }, (q) => {
+    };
+    const query_2 = (q) => {
         iterate((query_1) => {
             query_1(q);
         }, childQueries);
-        patternInput_1.Respond(q);
-    });
+        respond(q);
+    };
+    return new View$2(impl, change_2, destroy_2, query_2);
 }
 
 export function makeRenderDOMText(value, parent, state, dispatch) {
     if (value.tag === 0) {
-        const impl_1 = HTMLTextImpl_$ctor_Z721C83C5(value.fields[0]);
+        const s = value.fields[0];
+        const htmlImpl_1 = HTMLTextImpl_$ctor_Z721C83C5(s);
+        const impl_1 = htmlImpl_1;
         parent.Append(impl_1);
         return new View$2(impl_1, (value_2) => {
         }, () => {

@@ -19,6 +19,8 @@ module HtmlParser =
 
     let knownElements =
         [ "div", "DIV"
+          "main", "MAIN"
+          "aside", "ASIDE"
           "button", "BUTTON"
           "img", "IMG"
           "span", "SPAN"
