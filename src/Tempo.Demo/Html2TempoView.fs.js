@@ -2,7 +2,7 @@ import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
 import { lambda_type, unit_type, string_type, record_type, union_type, bool_type } from "./.fable/fable-library.3.1.10/Reflection.js";
 import { createAtom } from "./.fable/fable-library.3.1.10/Util.js";
 import { transformHtml } from "./HtmlEncoder.fs.js";
-import { DSL_Component_Z228F47D0, DSL_NSEl_7639458A, DSL_Text_Z721C83C5, DSL_Attr_30230F9B, DSL_On_47AABEE2, DSL_Attr_Z384F8060, DSL_El_Z7374416F } from "../Tempo.Html/HtmlDSL.fs.js";
+import { DSL_Component_Z228F47D0, DSL_NSEl_7639458A, DSL_Text_Z721C83C5, DSL_Attr_30230F9B, DSL_On_47AABEE2, DSL_Attr_Z384F8060, DSL_El_Z7374416F } from "../Tempo.Html/Html.DSL.fs.js";
 import { empty, ofArray, singleton } from "./.fable/fable-library.3.1.10/List.js";
 import { Template$4, map } from "../Tempo.Core/Core.fs.js";
 import { interpolate, toText } from "./.fable/fable-library.3.1.10/String.js";

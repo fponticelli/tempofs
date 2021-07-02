@@ -1,7 +1,7 @@
 import { class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { comp, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
+import { transform, comp, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
 import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./HtmlImpl.fs.js";
+import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./Html.Impl.fs.js";
 import { Property$2_$ctor_1D5210CF, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
 import { some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
@@ -250,5 +250,14 @@ export function DSL_CompareStates_5C9B84BF(f, template) {
 
 export function DSL_Component_Z228F47D0(update, middleware, template) {
     return comp(update, middleware, template);
+}
+
+export function DSL_Portal_10AF510E(selector, template) {
+    return transform((render2, impl, state, dispatch) => {
+        const parent_1 = HTMLElementImpl_$ctor_Z5966C024(document.querySelector(selector));
+        const view = render2(impl, state, dispatch);
+        parent_1.Append(view.Impl);
+        return view;
+    }, template);
 }
 

@@ -1,6 +1,6 @@
 import { Record, Union } from "./.fable/fable-library.3.1.10/Types.js";
 import { record_type, class_type, union_type } from "./.fable/fable-library.3.1.10/Reflection.js";
-import { lifecycleAttribute } from "../Tempo.Html/HtmlImpl.fs.js";
+import { lifecycleAttribute } from "../Tempo.Html/Html.Impl.fs.js";
 import * as monaco$002Deditor from "monaco-editor";
 import { value } from "./.fable/fable-library.3.1.10/Option.js";
 

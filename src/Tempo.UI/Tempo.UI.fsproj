@@ -10,10 +10,10 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Html.Tools.fs" />
+    <Compile Include="HtmlTools.fs" />
     <Compile Include="Html.fs" />
-    <Compile Include="Html.Impl.fs" />
-    <Compile Include="Html.DSL.fs" />
+    <Compile Include="HtmlImpl.fs" />
+    <Compile Include="HtmlDSL.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Tempo.Core\Tempo.Core.fsproj" />

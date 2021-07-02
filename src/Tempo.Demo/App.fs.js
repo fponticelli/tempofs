@@ -1,5 +1,5 @@
 import { Html2TempoState, update, comp } from "./Html2TempoView.fs.js";
-import { DSL_MakeProgramOnContentLoaded_56DDD9AE } from "../Tempo.Html/HtmlDSL.fs.js";
+import { DSL_MakeProgramOnContentLoaded_56DDD9AE } from "../Tempo.Html/Html.DSL.fs.js";
 
 export const template = comp;
 

@@ -2,7 +2,7 @@ import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.j
 import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { append, take, skip, zip, length, iterate, map as map_2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
 import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
+import { some, value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 
 export class Value$2 extends Union {
     constructor(tag, ...fields) {
@@ -425,6 +425,21 @@ export function map(mapImpl, stateMap, actionMap, queryMap, template) {
             view.Query(queryMap(q1));
         });
     }, template);
+}
+
+export function makeCapture() {
+    let localState = void 0;
+    return [(template1) => transform((render, impl, state, dispatch) => {
+        localState = some(state);
+        const view = render(impl, state, dispatch);
+        return new View$2(view.Impl, (s) => {
+            localState = some(s);
+            view.Change(s);
+        }, () => {
+            localState = (void 0);
+            view.Destroy();
+        }, view.Query);
+    }, template1), (tupledArg) => map((x) => x, (s2) => tupledArg[0](value(localState))(s2), (arg0) => some(arg0), (x_1) => x_1, tupledArg[1])];
 }
 
 export function lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {

@@ -347,7 +347,7 @@ module Core =
                     merge s1 s2)
                 template3
 
-        (hold, release)
+        (catch, release)
     // let (hold, release) = makeCapture()
     // DIV([], [
     //     hold(

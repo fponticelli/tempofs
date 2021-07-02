@@ -1,7 +1,7 @@
 import { join, substring, interpolate, toText, replace } from "./.fable/fable-library.3.1.10/String.js";
 import { tryFind, ofList } from "./.fable/fable-library.3.1.10/Map.js";
 import { append, empty, head, length, singleton, ofArray } from "./.fable/fable-library.3.1.10/List.js";
-import { filterMap } from "../Tempo.Core/ListExtra.fs.js";
+import { filterMap } from "../Tempo.Core/Std.List.fs.js";
 import { map } from "./.fable/fable-library.3.1.10/Array.js";
 import { map as map_2, defaultArg, some } from "./.fable/fable-library.3.1.10/Option.js";
 import { map as map_1, delay, toList } from "./.fable/fable-library.3.1.10/Seq.js";
