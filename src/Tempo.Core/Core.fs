@@ -125,7 +125,6 @@ module Core =
             | Fragment ls -> this.MakeFragmentRender ls
             | Transform map -> this.MakeTransformRender map
             | OneOf2 oneOf2 -> this.MakeOneOf2Render oneOf2
-        // | Iterator iterator -> this.MakeIteratorRender iterator
 
         // TODO super cheating!
         member this.MakeRenderS<'N2, 'S2, 'A2, 'Q2>() : MakeRender<'N2, 'S2, 'A2, 'Q2> =
@@ -256,7 +255,7 @@ module Core =
         (mapImpl: Impl -> Impl)
         (stateMap: 'S1 -> 'S2)
         (actionMap: 'A2 -> 'A1 option)
-        (queryMap: 'Q1 -> 'Q2)
+        (queryMap: 'Q1 -> 'Q2 option)
         (template: Template<'N2, 'S2, 'A2, 'Q2>)
         =
         transform<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
@@ -275,17 +274,21 @@ module Core =
 
                     { Impl = impl2
                       Change = fun s1 -> view.Change(stateMap s1)
-                      Query = fun q1 -> view.Query(queryMap q1)
+                      Query =
+                          fun q1 ->
+                              match queryMap q1 with
+                              | Some q -> view.Query(q)
+                              | None -> ()
                       Destroy = view.Destroy }))
             template
 
     let inline mapState<'N1, 'N2, 'S1, 'S2, 'A, 'Q> (f: 'S1 -> 'S2) (template: Template<'N2, 'S2, 'A, 'Q>) =
-        map<'N1, 'N2, 'S1, 'S2, 'A, 'A, 'Q, 'Q> id f Some id template
+        map<'N1, 'N2, 'S1, 'S2, 'A, 'A, 'Q, 'Q> id f Some Some template
 
     let inline mapAction<'N1, 'N2, 'S, 'A1, 'A2, 'Q> (f: 'A2 -> 'A1 option) (template: Template<'N2, 'S, 'A2, 'Q>) =
-        map<'N1, 'N2, 'S, 'S, 'A1, 'A2, 'Q, 'Q> id id f id template
+        map<'N1, 'N2, 'S, 'S, 'A1, 'A2, 'Q, 'Q> id id f Some template
 
-    let inline mapQuery<'N1, 'N2, 'S, 'A, 'Q1, 'Q2> (f: 'Q1 -> 'Q2) (template: Template<'N2, 'S, 'A, 'Q2>) =
+    let inline mapQuery<'N1, 'N2, 'S, 'A, 'Q1, 'Q2> (f: 'Q1 -> 'Q2 option) (template: Template<'N2, 'S, 'A, 'Q2>) =
         map<'N1, 'N2, 'S, 'S, 'A, 'A, 'Q1, 'Q2> id id Some f template
 
     let inline mapSA<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q>
@@ -293,40 +296,50 @@ module Core =
         (mapAction: 'A2 -> 'A1 option)
         (template: Template<'N2, 'S2, 'A2, 'Q>)
         =
-        map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q, 'Q> id mapState mapAction id template
+        map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q, 'Q> id mapState mapAction Some template
 
     let inline mapSAQ<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
         (mapState: 'S1 -> 'S2)
         (mapAction: 'A2 -> 'A1 option)
-        (mapQuery: 'Q1 -> 'Q2)
+        (mapQuery: 'Q1 -> 'Q2 option)
         (template: Template<'N2, 'S2, 'A2, 'Q2>)
         =
         map<'N1, 'N2, 'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> id mapState mapAction mapQuery template
 
     let inline mapSQ<'N1, 'N2, 'S1, 'S2, 'A, 'Q1, 'Q2>
         (mapState: 'S1 -> 'S2)
-        (mapQuery: 'Q1 -> 'Q2)
+        (mapQuery: 'Q1 -> 'Q2 option)
         (template: Template<'N2, 'S2, 'A, 'Q2>)
         =
         map<'N1, 'N2, 'S1, 'S2, 'A, 'A, 'Q1, 'Q2> id mapState Some mapQuery template
 
     let inline mapAQ<'N1, 'N2, 'S, 'A1, 'A2, 'Q1, 'Q2>
         (mapAction: 'A2 -> 'A1 option)
-        (mapQuery: 'Q1 -> 'Q2)
+        (mapQuery: 'Q1 -> 'Q2 option)
         (template: Template<'N2, 'S, 'A2, 'Q2>)
         =
         map<'N1, 'N2, 'S, 'S, 'A1, 'A2, 'Q1, 'Q2> id id mapAction mapQuery template
 
-    let makeCapture<'N1, 'N2, 'S1, 'S2, 'S3, 'A1, 'A2, 'Q1, 'Q2>
+    type CatchF<'N1, 'S1, 'A1, 'Q1> = Template<'N1, 'S1, 'A1, 'Q1> -> Template<'N1, 'S1, 'A1, 'Q1>
+
+    type ReleaseF<'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1> =
+        ('S1 -> 'S2 -> 'S3) * ('A3 -> Choice<'A1, 'A2> option) * Template<'N3, 'S3, 'A3, 'Q1> -> Template<'N2, 'S2, 'A2, 'Q1>
+
+    type CaptureResult<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1> =
+        CatchF<'N1, 'S1, 'A1, 'Q1> * ReleaseF<'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1>
+
+    let makeCaptureSA<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1>
         ()
-        : (Template<'N1, 'S1, 'A1, 'Q1> -> Template<'N1, 'S1, 'A1, 'Q1>) * (('S1 -> 'S2 -> 'S3) * Template<'N2, 'S3, 'A2, 'Q2> -> Template<'N2, 'S2, 'A2, 'Q2>) =
+        : CaptureResult<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1> =
         let mutable localState = None
+        let mutable localDispatch = None
 
         let catch (template1: Template<'N1, 'S1, 'A1, 'Q1>) : Template<'N1, 'S1, 'A1, 'Q1> =
             transform<'N1, 'N1, 'S1, 'S1, 'A1, 'A1, 'Q1, 'Q1>
                 (fun render ->
                     (fun impl state dispatch ->
                         localState <- Some state
+                        localDispatch <- Some dispatch
                         let view = render impl state dispatch
 
                         { view with
@@ -337,27 +350,60 @@ module Core =
                               Destroy =
                                   fun () ->
                                       localState <- None
+                                      localDispatch <- None
                                       view.Destroy() }))
                 template1
 
-        let release (merge: 'S1 -> 'S2 -> 'S3, template3: Template<'N2, 'S3, 'A2, 'Q2>) : Template<'N2, 'S2, 'A2, 'Q2> =
-            mapState
+        let release
+            (
+                mergeState: 'S1 -> 'S2 -> 'S3,
+                mapAction: 'A3 -> Choice<'A1, 'A2> option,
+                template3: Template<'N3, 'S3, 'A3, 'Q1>
+            ) : Template<'N2, 'S2, 'A2, 'Q1> =
+            mapSA
                 (fun s2 ->
                     let s1 = Option.get localState
-                    merge s1 s2)
+                    mergeState s1 s2)
+                (fun (a3: 'A3) ->
+                    match mapAction a3 with
+                    | Some (Choice1Of2 (a1)) ->
+                        let d1 = Option.get localDispatch
+                        d1 a1
+                        None
+                    | Some (Choice2Of2 (a2)) -> Some a2
+                    | None -> None)
                 template3
 
         (catch, release)
-    // let (hold, release) = makeCapture()
-    // DIV([], [
-    //     hold(
-    //         DIV([], [
-    //             mapState(
-    //                 fun s -> $"{s}"
-    //                 release(merge, DIV([], []))
-    //             )
-    //         ]))
-    // ])
+
+    type ReleaseActionF<'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1> =
+        ('A3 -> Choice<'A1, 'A2> option) * Template<'N3, 'S1, 'A3, 'Q1> -> Template<'N2, 'S1, 'A2, 'Q1>
+
+    type CaptureActionResult<'N1, 'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1> =
+        CatchF<'N1, 'S1, 'A1, 'Q1> * ReleaseActionF<'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1>
+
+    let makeCaptureAction<'N1, 'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1>
+        ()
+        : CaptureActionResult<'N1, 'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1> =
+        let (catch, release) =
+            makeCaptureSA<'N1, 'N2, 'N3, 'S1, 'S1, 'S1, 'A1, 'A2, 'A3, 'Q1> ()
+
+        (catch,
+         (fun (mapActionF: 'A3 -> Choice<'A1, 'A2> option, template) -> release ((fun _ s -> s), mapActionF, template)))
+
+    type ReleaseStateF<'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'Q1> =
+        ('S1 -> 'S2 -> 'S3) * Template<'N3, 'S3, 'A1, 'Q1> -> Template<'N2, 'S2, 'A1, 'Q1>
+
+    type CaptureStateResult<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'Q1> =
+        CatchF<'N1, 'S1, 'A1, 'Q1> * ReleaseStateF<'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'Q1>
+
+    let makeCaptureState<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'Q1>
+        ()
+        : CaptureStateResult<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'Q1> =
+        let (catch, release) =
+            makeCaptureSA<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A1, 'A1, 'Q1> ()
+
+        (catch, (fun (mapStateF: 'S1 -> 'S2 -> 'S3, template) -> release (mapStateF, Some << Choice2Of2, template)))
 
     let lifecycle<'N, 'S, 'A, 'Q, 'P>
         (afterRender: 'S -> 'P)
@@ -444,7 +490,7 @@ module Core =
         : Template<'N, 'S, 'A, 'Q> =
         transform<'N, 'N, 'S, 'S, 'A, 'A, 'Q, 'Q>
             (fun render ->
-                (fun impl state dispatch ->
+                (fun impl state outerDispatch ->
                     let mutable localState = state
 
                     let rec dispatch a =
@@ -459,6 +505,7 @@ module Core =
                               Query = view.Query }
 
                         localState <- curr
+                        outerDispatch a
 
                     and view = render impl localState dispatch
 

@@ -210,12 +210,15 @@ type DSL =
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         DSL.On<'S, 'A, 'Q, _, 'E>(name, (fun { Event = e } -> handler e))
 
+    static member inline Fragment<'S, 'A, 'Q>(templates: HTMLTemplate<'S, 'A, 'Q> list) : HTMLTemplate<'S, 'A, 'Q> =
+        Fragment templates
+
     static member inline Map<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
         (
             impl: Impl -> Impl,
             state: 'S1 -> 'S2,
             action: 'A2 -> 'A1 option,
-            query: 'Q1 -> 'Q2,
+            query: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S2, 'A2, 'Q2>
         ) : HTMLTemplate<'S1, 'A1, 'Q1> =
         map impl state action query template
@@ -225,7 +228,7 @@ type DSL =
             f: 'S1 -> 'S2,
             template: HTMLTemplate<'S2, 'A, 'Q>
         ) : HTMLTemplate<'S1, 'A, 'Q> =
-        DSL.Map(id, f, Some, id, template)
+        DSL.Map(id, f, Some, Some, template)
 
     static member inline MapState<'S1, 'S2, 'A, 'Q>
         (
@@ -239,7 +242,7 @@ type DSL =
             f: 'A2 -> 'A1 option,
             template: HTMLTemplate<'S, 'A2, 'Q>
         ) : HTMLTemplate<'S, 'A1, 'Q> =
-        DSL.Map(id, id, f, id, template)
+        DSL.Map(id, id, f, Some, template)
 
     static member inline MapAction<'S, 'A1, 'A2, 'Q>
         (
@@ -250,14 +253,14 @@ type DSL =
 
     static member inline MapQuery<'S, 'A, 'Q1, 'Q2>
         (
-            f: 'Q1 -> 'Q2,
+            f: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S, 'A, 'Q2>
         ) : HTMLTemplate<'S, 'A, 'Q1> =
         DSL.Map(id, id, Some, f, template)
 
     static member inline MapQuery<'S, 'A, 'Q1, 'Q2>
         (
-            f: 'Q1 -> 'Q2,
+            f: 'Q1 -> 'Q2 option,
             templates: HTMLTemplate<'S, 'A, 'Q2> list
         ) : HTMLTemplate<'S, 'A, 'Q1> =
         DSL.MapQuery(f, Fragment templates)
@@ -274,7 +277,7 @@ type DSL =
         (
             mapState: 'S1 -> 'S2,
             mapAction: 'A2 -> 'A1 option,
-            mapQuery: 'Q1 -> 'Q2,
+            mapQuery: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S2, 'A2, 'Q2>
         ) =
         mapSAQ mapState mapAction mapQuery template
@@ -282,7 +285,7 @@ type DSL =
     static member inline MapSQ<'S1, 'S2, 'A, 'Q1, 'Q2>
         (
             mapState: 'S1 -> 'S2,
-            mapQuery: 'Q1 -> 'Q2,
+            mapQuery: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S2, 'A, 'Q2>
         ) =
         mapSQ mapState mapQuery template
@@ -290,7 +293,7 @@ type DSL =
     static member inline MapAQ<'S, 'A1, 'A2, 'Q1, 'Q2>
         (
             mapAction: 'A2 -> 'A1 option,
-            mapQuery: 'Q1 -> 'Q2,
+            mapQuery: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S, 'A2, 'Q2>
         ) =
         mapAQ mapAction mapQuery template
@@ -503,10 +506,20 @@ type DSL =
     //         unlessMatchesTemplate: HTMLTemplate<'S, 'A, 'Q>
     //     ) : HTMLTemplate<'S, 'A, 'Q> = TODO
 
-    static member MakeCapture<'S1, 'S2, 'S3, 'A1, 'A2, 'Q1, 'Q2>() =
-        // TODO why do I need the unsafe cast?
-        (makeCapture ()) :> obj
-        :?> (HTMLTemplate<'S1, 'A1, 'Q1> -> HTMLTemplate<'S1, 'A1, 'Q1>) * (('S1 -> 'S2 -> 'S3) * HTMLTemplate<'S3, 'A2, 'Q2> -> HTMLTemplate<'S2, 'A2, 'Q2>)
+    static member MakeCaptureSA<'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1>
+        ()
+        : CaptureResult<HTMLTemplateNode<'S1, 'A1, 'Q1>, HTMLTemplateNode<'S2, 'A2, 'Q1>, HTMLTemplateNode<'S3, 'A3, 'Q1>, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1> =
+        makeCaptureSA ()
+
+    static member MakeCaptureState<'S1, 'S2, 'S3, 'A1, 'Q1>
+        ()
+        : CaptureStateResult<HTMLTemplateNode<'S1, 'A1, 'Q1>, HTMLTemplateNode<'S2, 'A1, 'Q1>, HTMLTemplateNode<'S3, 'A1, 'Q1>, 'S1, 'S2, 'S3, 'A1, 'Q1> =
+        makeCaptureState ()
+
+    static member MakeCaptureAction<'S1, 'A1, 'A2, 'A3, 'Q1>
+        ()
+        : CaptureActionResult<HTMLTemplateNode<'S1, 'A1, 'Q1>, HTMLTemplateNode<'S1, 'A2, 'Q1>, HTMLTemplateNode<'S1, 'A3, 'Q1>, 'S1, 'A1, 'A2, 'A3, 'Q1> =
+        makeCaptureAction ()
 
     static member Component<'S, 'A, 'Q>
         (

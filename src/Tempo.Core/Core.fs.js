@@ -3,6 +3,7 @@ import { record_type, unit_type, class_type, list_type, union_type, lambda_type 
 import { append, take, skip, zip, length, iterate, map as map_2 } from "../../../src/.fable/fable-library.3.1.10/List.js";
 import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { some, value } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
 
 export class Value$2 extends Union {
     constructor(tag, ...fields) {
@@ -474,33 +475,80 @@ export function map(mapImpl, stateMap, actionMap, queryMap, template) {
         return new View$2(impl2, (s1) => {
             view.Change(stateMap(s1));
         }, view.Destroy, (q1) => {
-            view.Query(queryMap(q1));
+            const matchValue_1 = queryMap(q1);
+            if (matchValue_1 == null) {
+            }
+            else {
+                const q = value(matchValue_1);
+                view.Query(q);
+            }
         });
     }, template);
 }
 
-export function makeCapture() {
+export function makeCaptureSA() {
     let localState = void 0;
+    let localDispatch = void 0;
     const catch$ = (template1) => transform((render, impl, state, dispatch) => {
         localState = some(state);
+        localDispatch = dispatch;
         const view = render(impl, state, dispatch);
         return new View$2(view.Impl, (s) => {
             localState = some(s);
             view.Change(s);
         }, () => {
             localState = (void 0);
+            localDispatch = (void 0);
             view.Destroy();
         }, view.Query);
     }, template1);
     const release = (tupledArg) => {
-        const merge = tupledArg[0];
-        const template3 = tupledArg[1];
+        const mergeState = tupledArg[0];
+        const mapAction = tupledArg[1];
+        const template3 = tupledArg[2];
         return map((x) => x, (s2) => {
             const s1 = value(localState);
-            return merge(s1)(s2);
-        }, (arg0) => some(arg0), (x_1) => x_1, template3);
+            return mergeState(s1)(s2);
+        }, (a3) => {
+            const matchValue = mapAction(a3);
+            if (matchValue == null) {
+                return void 0;
+            }
+            else if (matchValue.tag === 1) {
+                const a2 = matchValue.fields[0];
+                return some(a2);
+            }
+            else {
+                const a1 = matchValue.fields[0];
+                const d1 = value(localDispatch);
+                d1(a1);
+                return void 0;
+            }
+        }, (arg0) => some(arg0), template3);
     };
     return [catch$, release];
+}
+
+export function makeCaptureAction() {
+    const patternInput = makeCaptureSA();
+    const release = patternInput[1];
+    const catch$ = patternInput[0];
+    return [catch$, (tupledArg) => {
+        const mapActionF = tupledArg[0];
+        const template = tupledArg[1];
+        return release([(_arg1) => ((s) => s), mapActionF, template]);
+    }];
+}
+
+export function makeCaptureState() {
+    const patternInput = makeCaptureSA();
+    const release = patternInput[1];
+    const catch$ = patternInput[0];
+    return [catch$, (tupledArg) => {
+        const mapStateF = tupledArg[0];
+        const template = tupledArg[1];
+        return release([mapStateF, (arg) => (new FSharpChoice$2(1, arg)), template]);
+    }];
 }
 
 export function lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {
@@ -558,15 +606,16 @@ export function iterator(createGroupNode, map_1, template) {
 }
 
 export function comp(update, middleware, template) {
-    return transform((render, impl, state, dispatch) => {
+    return transform((render, impl, state, outerDispatch) => {
         let localState = state;
-        const dispatch_1 = (a) => {
+        const dispatch = (a) => {
             const curr = update(localState, a);
             view.Change(curr);
-            middleware(new MiddlewarePayload$3(curr, localState, a, dispatch_1, view.Query));
+            middleware(new MiddlewarePayload$3(curr, localState, a, dispatch, view.Query));
             localState = curr;
+            outerDispatch(a);
         };
-        const view = render(impl, localState, dispatch_1);
+        const view = render(impl, localState, dispatch);
         return new View$2(impl, (s) => {
             view.Change(s);
         }, () => {
