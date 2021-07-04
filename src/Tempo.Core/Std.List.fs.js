@@ -1,14 +1,20 @@
-import { sortBy, map, append, length, fold, empty, cons, foldBack } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
-import { value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
-import { Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { union_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { List_groupBy } from "../Tempo.Demo/.fable/fable-library.3.1.10/Seq2.js";
-import { compare, structuralHash, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { sortBy, append, map, length, fold, empty, cons, foldBack } from "../../../src/.fable/fable-library.3.1.10/List.js";
+import { value } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
+import { union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { compare, structuralHash, equals, uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
+import { List_groupBy } from "../../../src/.fable/fable-library.3.1.10/Seq2.js";
 
 export function filterMap(f, ls) {
     return foldBack((curr, acc) => {
         const matchValue = f(curr);
-        return (matchValue == null) ? acc : cons(value(matchValue), acc);
+        if (matchValue == null) {
+            return acc;
+        }
+        else {
+            const v = value(matchValue);
+            return cons(v, acc);
+        }
     }, ls, empty());
 }
 
@@ -28,30 +34,42 @@ export function RankStrategy$reflection() {
 }
 
 export function rank(getScore, strategy, ls) {
-    return fold((tupledArg_2, rest) => {
-        let patternInput;
-        const groupLength = length(rest) | 0;
-        const current = tupledArg_2[0] | 0;
+    const calcRank = (current, groupLength) => {
         switch (strategy.tag) {
             case 1: {
-                patternInput = [current + groupLength, 0];
-                break;
+                const assign = (current + groupLength) | 0;
+                return [assign, 0];
             }
             case 2: {
-                patternInput = [current + 1, 0];
-                break;
+                return [current + 1, 0];
             }
             default: {
-                patternInput = [current + 1, groupLength - 1];
+                return [current + 1, groupLength - 1];
             }
         }
-        const assign_1 = patternInput[0] | 0;
-        return [assign_1 + patternInput[1], append(tupledArg_2[1], map((v_1) => [assign_1, v_1], rest))];
-    }, [0, empty()], map((tupledArg_1) => tupledArg_1[1], sortBy((tupledArg) => tupledArg[0], List_groupBy(getScore, ls, {
+    };
+    const ls_2 = fold(uncurry(2, (tupledArg_2) => {
+        const currRank = tupledArg_2[0] | 0;
+        const ls_1 = tupledArg_2[1];
+        return (rest) => {
+            const patternInput = calcRank(currRank, length(rest));
+            const shift = patternInput[1] | 0;
+            const assign_1 = patternInput[0] | 0;
+            const accLs = map((v_1) => [assign_1, v_1], rest);
+            return [assign_1 + shift, append(ls_1, accLs)];
+        };
+    }), [0, empty()], map((tupledArg_1) => {
+        const v = tupledArg_1[1];
+        return v;
+    }, sortBy((tupledArg) => {
+        const s = tupledArg[0];
+        return s;
+    }, List_groupBy(getScore, ls, {
         Equals: (x, y) => equals(x, y),
         GetHashCode: (x) => structuralHash(x),
     }), {
         Compare: (x_1, y_1) => compare(x_1, y_1),
     })))[1];
+    return ls_2;
 }
 

@@ -208,6 +208,7 @@ type DSL =
             name: string,
             handler: TriggerPayload<'S, 'E, 'EL> -> 'A
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        let handler p dispatch = dispatch <| handler p
         attribute name (makeTrigger handler |> Trigger)
 
     static member inline On<'S, 'A, 'Q>(name: string, action: 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
@@ -216,10 +217,38 @@ type DSL =
     static member inline On<'S, 'A, 'Q>(name: string, handler: unit -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         DSL.On<'S, 'A, 'Q, _, _>(name, (fun _ -> handler ()))
 
-    static member inline On<'S, 'A, 'Q>(name: string, handler: 'S -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+    static member inline OnState<'S, 'A, 'Q>(name: string, handler: 'S -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         DSL.On<'S, 'A, 'Q, _, _>(name, (fun { State = s } -> handler s))
 
     static member inline On<'S, 'A, 'Q, 'E when 'E :> Event>
+        (
+            name: string,
+            handler: 'E -> 'A
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, _, 'E>(name, (fun { Event = e } -> handler e))
+
+    static member DispatchOn<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
+        (
+            name: string,
+            handler: TriggerPayload<'S, 'E, 'EL> -> Dispatch<'A> -> unit
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        attribute name (makeTrigger handler |> Trigger)
+
+    static member inline DispatchOn<'S, 'A, 'Q>
+        (
+            name: string,
+            handler: Dispatch<'A> -> unit
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.DispatchOn<'S, 'A, 'Q, _, _>(name, (fun _ dispatch -> handler dispatch))
+
+    static member inline DispatchOnState<'S, 'A, 'Q>
+        (
+            name: string,
+            handler: 'S -> Dispatch<'A> -> unit
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.DispatchOn<'S, 'A, 'Q, _, _>(name, (fun { State = s } -> handler s))
+
+    static member inline DispatchOn<'S, 'A, 'Q, 'E when 'E :> Event>
         (
             name: string,
             handler: 'E -> 'A
@@ -507,6 +536,23 @@ type DSL =
             respond: 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         lifecycleAttribute afterRender beforeChange afterChange beforeDestroy respond
+
+    static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+        (
+            afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P,
+            beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P),
+            afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P,
+            beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.Lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, (fun _ { Payload = payload } -> payload))
+
+    static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+        (
+            afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P,
+            afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P,
+            beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.Lifecycle(afterRender, (fun { Payload = payload } -> (true, payload)), afterChange, beforeDestroy)
 
     static member CompareStates<'S, 'A, 'Q>
         (

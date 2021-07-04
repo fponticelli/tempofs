@@ -49,7 +49,7 @@ and IHTMLTrigger<'S, 'A> =
 and TriggerPayload<'S, 'E, 'EL when 'E :> Event and 'EL :> Element> = { State: 'S; Event: 'E; Element: 'EL }
 
 and HTMLTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element>(handler) =
-    member this.Handler : TriggerPayload<'S, 'E, 'EL> -> 'A = handler
+    member this.Handler : TriggerPayload<'S, 'E, 'EL> -> Dispatch<'A> -> unit = handler
     with
         interface IHTMLTrigger<'S, 'A> with
             member this.Accept f = f.Invoke<'E, 'EL> this

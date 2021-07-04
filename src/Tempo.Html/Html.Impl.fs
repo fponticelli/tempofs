@@ -33,12 +33,11 @@ module Impl =
             this.element.addEventListener (
                 name,
                 (fun e ->
-                    dispatch
-                    <| trigger.Handler(
+                    trigger.Handler
                         { State = getState ()
                           Event = (e :?> 'E)
                           Element = this.element :?> 'EL }
-                    ))
+                        dispatch)
             )
 
         interface Impl with
@@ -142,7 +141,7 @@ module Impl =
 
     let unpackHTMLTrigger (trigger: IHTMLTrigger<'S, 'A>) (f: IHTMLTriggerInvoker<'S, 'A, 'R>) : 'R = trigger.Accept f
 
-    let makeTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'E, 'EL> -> 'A) = packHTMLTrigger <| HTMLTrigger(f)
+    let makeTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'E, 'EL> -> Dispatch<'A> -> unit) = packHTMLTrigger <| HTMLTrigger(f)
 
     let packProperty (trigger: Property<'S, 'V>) = trigger :> IProperty<'S>
 

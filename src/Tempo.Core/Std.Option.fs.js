@@ -1,4 +1,4 @@
-import { defaultArg } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
+import { defaultArg } from "../../../src/.fable/fable-library.3.1.10/Option.js";
 
 export function ofString(value) {
     if (value === "") {

@@ -1,7 +1,7 @@
-import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { lambda_type, unit_type, option_type, class_type, record_type, list_type, union_type, string_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
+import { lambda_type, unit_type, option_type, class_type, record_type, list_type, union_type, string_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
 import { Template$4$reflection, Value$2$reflection } from "../Tempo.Core/Core.fs.js";
-import { curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { curry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 
 export class HTMLTemplateNode$3 extends Union {
     constructor(tag, ...fields) {
@@ -118,7 +118,7 @@ export function HTMLTrigger$4$reflection(gen0, gen1, gen2, gen3) {
     return class_type("Tempo.Html.HTMLTrigger`4", [gen0, gen1, gen2, gen3], HTMLTrigger$4);
 }
 
-export function HTMLTrigger$4_$ctor_75095B8B(handler) {
+export function HTMLTrigger$4_$ctor_49480E0B(handler) {
     return new HTMLTrigger$4(handler);
 }
 
@@ -176,7 +176,7 @@ export function Property$2__get_Value(this$) {
 }
 
 export function HTMLTrigger$4__get_Handler(this$) {
-    return this$.handler;
+    return curry(2, this$.handler);
 }
 
 export function HTMLLifecycle$5__get_AfterRender(this$) {

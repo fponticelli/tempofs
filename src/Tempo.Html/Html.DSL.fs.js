@@ -114,6 +114,11 @@ export function DSL_Prop_36180E4D(name, f) {
 }
 
 export function DSL_On_47AABEE2(name, handler) {
+    const handler_1 = (p, dispatch) => dispatch(handler(p));
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger(handler_1))));
+}
+
+export function DSL_DispatchOn_322CD462(name, handler) {
     return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger(handler))));
 }
 
@@ -291,8 +296,8 @@ export function DSL_Seq_Z7461BB91(f, template) {
 }
 
 export function DSL_CompareStates_5C9B84BF(f, template) {
-    return lifecycle((x) => x, f, (state, _arg6) => state, (value) => {
-    }, (_arg7, p) => p, template);
+    return lifecycle((x) => x, f, (state, _arg12) => state, (value) => {
+    }, (_arg13, p) => p, template);
 }
 
 export function DSL_MakeCaptureSA() {
