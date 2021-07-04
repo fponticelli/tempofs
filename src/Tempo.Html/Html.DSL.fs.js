@@ -3,7 +3,7 @@ import { transform, comp, makeCaptureAction, makeCaptureState, makeCaptureSA, li
 import { uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./Html.Impl.fs.js";
 import { Property$2_$ctor_1D5210CF, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
-import { some } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { value as value_2, some } from "../../../src/.fable/fable-library.3.1.10/Option.js";
 import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
 import { empty } from "../../../src/.fable/fable-library.3.1.10/List.js";
 
@@ -97,6 +97,10 @@ export function DSL_Attr_Z6A312DE(name, f) {
     return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(1, (s) => (f(s) ? name : (void 0))))));
 }
 
+export function DSL_Attr_41B4E442(name, predicate, whenTrue, whenFalse) {
+    return DSL_Attr_3DF4EB53(name, (s) => (predicate(s) ? whenTrue : whenFalse));
+}
+
 export function DSL_Attr_30230F9B(name, whenTrue, whenFalse) {
     return DSL_Attr_3DF4EB53(name, (b) => (b ? whenTrue : whenFalse));
 }
@@ -115,6 +119,19 @@ export function DSL_On_47AABEE2(name, handler) {
 
 export function DSL_OneOf_Z491B0F3C(f, template1, template2) {
     return new Template$4(3, packOneOf2(OneOf2$8_$ctor_Z4F5F76C(f, template1, template2)));
+}
+
+export function DSL_Maybe_53C11510(f, template) {
+    return DSL_OneOf_Z491B0F3C((s) => {
+        const matchValue = f(s);
+        if (matchValue == null) {
+            return new FSharpChoice$2(1, void 0);
+        }
+        else {
+            const v = value_2(matchValue);
+            return new FSharpChoice$2(0, v);
+        }
+    }, template, DSL_Text_Z721C83C5(""));
 }
 
 export function DSL_OneOf_Z2AFE4804(f, template1, template2, template3) {

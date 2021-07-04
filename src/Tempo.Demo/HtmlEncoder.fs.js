@@ -21,7 +21,7 @@ export function quote(value) {
     return toText(interpolate("\"%P()\"", [value]));
 }
 
-export const knownElements = ofList(ofArray([["div", "DIV"], ["button", "BUTTON"], ["img", "IMG"], ["span", "SPAN"], ["svg", "SVG"], ["path", "PATH"]]));
+export const knownElements = ofList(ofArray([["div", "DIV"], ["main", "MAIN"], ["aside", "ASIDE"], ["button", "BUTTON"], ["img", "IMG"], ["span", "SPAN"], ["svg", "SVG"], ["path", "PATH"]]));
 
 export const knownAttributes = ofList(singleton(["class", (value) => toText(interpolate("cls %P()", [quote(value)]))]));
 

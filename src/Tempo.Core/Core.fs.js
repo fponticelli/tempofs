@@ -1,9 +1,9 @@
-import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
-import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
-import { append, take, skip, zip, length, iterate, map as map_2 } from "../../../src/.fable/fable-library.3.1.10/List.js";
-import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
-import { some, value } from "../../../src/.fable/fable-library.3.1.10/Option.js";
-import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
+import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
+import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { append, take, skip, zip, length, iterate, map as map_2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { some, value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
+import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
 
 export class Value$2 extends Union {
     constructor(tag, ...fields) {
@@ -34,23 +34,19 @@ export function Value$2_Of() {
 
 export function Value$2_Resolve(v, s) {
     if (v.tag === 1) {
-        const f = v.fields[0];
-        return f(s);
+        return v.fields[0](s);
     }
     else {
-        const v_1 = v.fields[0];
-        return v_1;
+        return v.fields[0];
     }
 }
 
 export function Value$2_Map(m, v) {
     if (v.tag === 1) {
-        const f = v.fields[0];
-        return new Value$2(1, (arg) => m(f(arg)));
+        return new Value$2(1, (arg) => m(v.fields[0](arg)));
     }
     else {
-        const v_1 = v.fields[0];
-        return new Value$2(0, m(v_1));
+        return new Value$2(0, m(v.fields[0]));
     }
 }
 
@@ -58,25 +54,17 @@ export function Value$2_Combine_Z4D48493B(f, va, vb) {
     const matchValue = [va, vb];
     if (matchValue[0].tag === 1) {
         if (matchValue[1].tag === 0) {
-            const b_1 = matchValue[1].fields[0];
-            const fa_1 = matchValue[0].fields[0];
-            return new Value$2(1, (s_2) => f(fa_1(s_2), b_1));
+            return new Value$2(1, (s_2) => f(matchValue[0].fields[0](s_2), matchValue[1].fields[0]));
         }
         else {
-            const fa = matchValue[0].fields[0];
-            const fb = matchValue[1].fields[0];
-            return new Value$2(1, (s) => f(fa(s), fb(s)));
+            return new Value$2(1, (s) => f(matchValue[0].fields[0](s), matchValue[1].fields[0](s)));
         }
     }
     else if (matchValue[1].tag === 1) {
-        const a_1 = matchValue[0].fields[0];
-        const fb_1 = matchValue[1].fields[0];
-        return new Value$2(1, (s_1) => f(a_1, fb_1(s_1)));
+        return new Value$2(1, (s_1) => f(matchValue[0].fields[0], matchValue[1].fields[0](s_1)));
     }
     else {
-        const a = matchValue[0].fields[0];
-        const b = matchValue[1].fields[0];
-        return new Value$2(0, f(a, b));
+        return new Value$2(0, f(matchValue[0].fields[0], matchValue[1].fields[0]));
     }
 }
 
@@ -251,20 +239,16 @@ export function MakeRender$4_$ctor_Z4E96F168(makeNodeRender, createGroupNode) {
 export function MakeRender$4__Make_1DCD9633(this$, template) {
     switch (template.tag) {
         case 1: {
-            const ls = template.fields[0];
-            return MakeRender$4__MakeFragmentRender_7D0C1B99(this$, ls);
+            return MakeRender$4__MakeFragmentRender_7D0C1B99(this$, template.fields[0]);
         }
         case 2: {
-            const map_1 = template.fields[0];
-            return MakeRender$4__MakeTransformRender_Z673AFE5A(this$, map_1);
+            return MakeRender$4__MakeTransformRender_Z673AFE5A(this$, template.fields[0]);
         }
         case 3: {
-            const oneOf2 = template.fields[0];
-            return MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2);
+            return MakeRender$4__MakeOneOf2Render_134AD555(this$, template.fields[0]);
         }
         default: {
-            const n = template.fields[0];
-            return partialApply(3, this$.makeNodeRender, [uncurry(4, (arg00) => MakeRender$4__Make_1DCD9633(this$, arg00)), n]);
+            return partialApply(3, this$.makeNodeRender, [uncurry(4, (arg00) => MakeRender$4__Make_1DCD9633(this$, arg00)), template.fields[0]]);
         }
     }
 }
@@ -315,78 +299,73 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
                 parent.Append(group);
                 let assignament;
                 const matchValue = OneOf2$8__get_MapF(oneOf2_1)(s);
-                if (matchValue.tag === 1) {
-                    const s2 = matchValue.fields[0];
-                    const view2 = render2(group)(s2)(dispatch);
-                    assignament = (new ChoiceAssignament$2(1, view2));
-                }
-                else {
-                    const s1 = matchValue.fields[0];
-                    const view1 = render1(group)(s1)(dispatch);
-                    assignament = (new ChoiceAssignament$2(0, view1));
-                }
-                const change = (state) => {
+                assignament = ((matchValue.tag === 1) ? (new ChoiceAssignament$2(1, render2(group)(matchValue.fields[0])(dispatch))) : (new ChoiceAssignament$2(0, render1(group)(matchValue.fields[0])(dispatch))));
+                return new View$2(group, (state) => {
                     const matchValue_1 = [assignament, OneOf2$8__get_MapF(oneOf2_1)(state)];
                     if (matchValue_1[0].tag === 2) {
                         if (matchValue_1[1].tag === 1) {
-                            const s2_4 = matchValue_1[1].fields[0];
-                            const view1_4 = matchValue_1[0].fields[0];
-                            const view2_4 = matchValue_1[0].fields[1];
-                            group.Append(view2_4.Impl);
-                            view2_4.Change(s2_4);
-                            group.Remove(view1_4.Impl);
-                            assignament = (new ChoiceAssignament$2(3, view1_4, view2_4));
+                            group.Append(matchValue_1[0].fields[1].Impl);
+                            matchValue_1[0].fields[1].Change(matchValue_1[1].fields[0]);
+                            group.Remove(matchValue_1[0].fields[0].Impl);
+                            assignament = (new ChoiceAssignament$2(3, matchValue_1[0].fields[0], matchValue_1[0].fields[1]));
                         }
                         else {
-                            const s1_2 = matchValue_1[1].fields[0];
-                            const view1_2 = matchValue_1[0].fields[0];
-                            view1_2.Change(s1_2);
+                            matchValue_1[0].fields[0].Change(matchValue_1[1].fields[0]);
                         }
                     }
                     else if (matchValue_1[0].tag === 1) {
                         if (matchValue_1[1].tag === 0) {
-                            const s1_3 = matchValue_1[1].fields[0];
-                            const view2_5 = matchValue_1[0].fields[0];
-                            const view1_5 = render1(group)(s1_3)(dispatch);
-                            group.Remove(view2_5.Impl);
-                            assignament = (new ChoiceAssignament$2(2, view1_5, view2_5));
+                            const view1_5 = render1(group)(matchValue_1[1].fields[0])(dispatch);
+                            group.Remove(matchValue_1[0].fields[0].Impl);
+                            assignament = (new ChoiceAssignament$2(2, view1_5, matchValue_1[0].fields[0]));
                         }
                         else {
-                            const s2_1 = matchValue_1[1].fields[0];
-                            const view2_1 = matchValue_1[0].fields[0];
-                            view2_1.Change(s2_1);
+                            matchValue_1[0].fields[0].Change(matchValue_1[1].fields[0]);
                         }
                     }
                     else if (matchValue_1[0].tag === 3) {
                         if (matchValue_1[1].tag === 0) {
-                            const s1_4 = matchValue_1[1].fields[0];
-                            const view1_6 = matchValue_1[0].fields[0];
-                            const view2_6 = matchValue_1[0].fields[1];
-                            group.Append(view1_6.Impl);
-                            view1_6.Change(s1_4);
-                            group.Remove(view2_6.Impl);
-                            assignament = (new ChoiceAssignament$2(2, view1_6, view2_6));
+                            group.Append(matchValue_1[0].fields[0].Impl);
+                            matchValue_1[0].fields[0].Change(matchValue_1[1].fields[0]);
+                            group.Remove(matchValue_1[0].fields[1].Impl);
+                            assignament = (new ChoiceAssignament$2(2, matchValue_1[0].fields[0], matchValue_1[0].fields[1]));
                         }
                         else {
-                            const s2_2 = matchValue_1[1].fields[0];
-                            const view2_2 = matchValue_1[0].fields[1];
-                            view2_2.Change(s2_2);
+                            matchValue_1[0].fields[1].Change(matchValue_1[1].fields[0]);
                         }
                     }
                     else if (matchValue_1[1].tag === 1) {
-                        const s2_3 = matchValue_1[1].fields[0];
-                        const view1_3 = matchValue_1[0].fields[0];
-                        const view2_3 = render2(group)(s2_3)(dispatch);
-                        group.Remove(view1_3.Impl);
-                        assignament = (new ChoiceAssignament$2(3, view1_3, view2_3));
+                        const view2_3 = render2(group)(matchValue_1[1].fields[0])(dispatch);
+                        group.Remove(matchValue_1[0].fields[0].Impl);
+                        assignament = (new ChoiceAssignament$2(3, matchValue_1[0].fields[0], view2_3));
                     }
                     else {
-                        const s1_1 = matchValue_1[1].fields[0];
-                        const view1_1 = matchValue_1[0].fields[0];
-                        view1_1.Change(s1_1);
+                        matchValue_1[0].fields[0].Change(matchValue_1[1].fields[0]);
                     }
-                };
-                const query = (q) => {
+                }, (q_1) => {
+                    parent.Remove(group);
+                    switch (assignament.tag) {
+                        case 0: {
+                            assignament.fields[0].Destroy();
+                            break;
+                        }
+                        case 3: {
+                            const view1_10 = assignament.fields[0];
+                            assignament.fields[1].Destroy();
+                            view1_10.Destroy();
+                            break;
+                        }
+                        case 1: {
+                            assignament.fields[0].Destroy();
+                            break;
+                        }
+                        default: {
+                            const view2_8 = assignament.fields[1];
+                            assignament.fields[0].Destroy();
+                            view2_8.Destroy();
+                        }
+                    }
+                }, (q) => {
                     let pattern_matching_result, view1_7, view2_7;
                     switch (assignament.tag) {
                         case 0: {
@@ -419,36 +398,7 @@ export function MakeRender$4__MakeOneOf2Render_134AD555(this$, oneOf2) {
                             break;
                         }
                     }
-                };
-                const destroy = (q_1) => {
-                    parent.Remove(group);
-                    switch (assignament.tag) {
-                        case 0: {
-                            const view1_9 = assignament.fields[0];
-                            view1_9.Destroy();
-                            break;
-                        }
-                        case 3: {
-                            const view2_9 = assignament.fields[1];
-                            const view1_10 = assignament.fields[0];
-                            view2_9.Destroy();
-                            view1_10.Destroy();
-                            break;
-                        }
-                        case 1: {
-                            const view2_10 = assignament.fields[0];
-                            view2_10.Destroy();
-                            break;
-                        }
-                        default: {
-                            const view2_8 = assignament.fields[1];
-                            const view1_8 = assignament.fields[0];
-                            view1_8.Destroy();
-                            view2_8.Destroy();
-                        }
-                    }
-                };
-                return new View$2(group, change, destroy, query);
+                });
             }));
         },
     });
@@ -461,17 +411,15 @@ export function transform(transform_1, template) {
 export function map(mapImpl, stateMap, actionMap, queryMap, template) {
     return transform((render2, impl, state, dispatch) => {
         const state2 = stateMap(state);
-        const dispatch2 = (action2) => {
+        const impl2 = mapImpl(impl);
+        const view = render2(impl2, state2, (action2) => {
             const matchValue = actionMap(action2);
             if (matchValue == null) {
             }
             else {
-                const a = value(matchValue);
-                dispatch(a);
+                dispatch(value(matchValue));
             }
-        };
-        const impl2 = mapImpl(impl);
-        const view = render2(impl2, state2, dispatch2);
+        });
         return new View$2(impl2, (s1) => {
             view.Change(stateMap(s1));
         }, view.Destroy, (q1) => {
@@ -479,8 +427,7 @@ export function map(mapImpl, stateMap, actionMap, queryMap, template) {
             if (matchValue_1 == null) {
             }
             else {
-                const q = value(matchValue_1);
-                view.Query(q);
+                view.Query(value(matchValue_1));
             }
         });
     }, template);
@@ -489,7 +436,7 @@ export function map(mapImpl, stateMap, actionMap, queryMap, template) {
 export function makeCaptureSA() {
     let localState = void 0;
     let localDispatch = void 0;
-    const catch$ = (template1) => transform((render, impl, state, dispatch) => {
+    return [(template1) => transform((render, impl, state, dispatch) => {
         localState = some(state);
         localDispatch = dispatch;
         const view = render(impl, state, dispatch);
@@ -501,54 +448,31 @@ export function makeCaptureSA() {
             localDispatch = (void 0);
             view.Destroy();
         }, view.Query);
-    }, template1);
-    const release = (tupledArg) => {
-        const mergeState = tupledArg[0];
-        const mapAction = tupledArg[1];
-        const template3 = tupledArg[2];
-        return map((x) => x, (s2) => {
-            const s1 = value(localState);
-            return mergeState(s1)(s2);
-        }, (a3) => {
-            const matchValue = mapAction(a3);
-            if (matchValue == null) {
-                return void 0;
-            }
-            else if (matchValue.tag === 1) {
-                const a2 = matchValue.fields[0];
-                return some(a2);
-            }
-            else {
-                const a1 = matchValue.fields[0];
-                const d1 = value(localDispatch);
-                d1(a1);
-                return void 0;
-            }
-        }, (arg0) => some(arg0), template3);
-    };
-    return [catch$, release];
+    }, template1), (tupledArg) => map((x) => x, (s2) => tupledArg[0](value(localState))(s2), (a3) => {
+        const matchValue = tupledArg[1](a3);
+        if (matchValue == null) {
+            return void 0;
+        }
+        else if (matchValue.tag === 1) {
+            const a2 = matchValue.fields[0];
+            return some(a2);
+        }
+        else {
+            const a1 = matchValue.fields[0];
+            value(localDispatch)(a1);
+            return void 0;
+        }
+    }, (arg0) => some(arg0), tupledArg[2])];
 }
 
 export function makeCaptureAction() {
     const patternInput = makeCaptureSA();
-    const release = patternInput[1];
-    const catch$ = patternInput[0];
-    return [catch$, (tupledArg) => {
-        const mapActionF = tupledArg[0];
-        const template = tupledArg[1];
-        return release([(_arg1) => ((s) => s), mapActionF, template]);
-    }];
+    return [patternInput[0], (tupledArg) => patternInput[1]([(_arg1) => ((s) => s), tupledArg[0], tupledArg[1]])];
 }
 
 export function makeCaptureState() {
     const patternInput = makeCaptureSA();
-    const release = patternInput[1];
-    const catch$ = patternInput[0];
-    return [catch$, (tupledArg) => {
-        const mapStateF = tupledArg[0];
-        const template = tupledArg[1];
-        return release([mapStateF, (arg) => (new FSharpChoice$2(1, arg)), template]);
-    }];
+    return [patternInput[0], (tupledArg) => patternInput[1]([tupledArg[0], (arg) => (new FSharpChoice$2(1, arg)), tupledArg[1]])];
 }
 
 export function lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond, template) {
@@ -574,20 +498,12 @@ export function iterator(createGroupNode, map_1, template) {
     return transform((render, parent, s, dispatch) => {
         const group = createGroupNode("Iterator");
         parent.Append(group);
-        const ls = map_1(s);
-        let views = map_2((state) => render(group, state, dispatch), ls);
-        const query = (q) => {
-            iterate((view) => {
-                view.Query(q);
-            }, views);
-        };
-        const change = (s_1) => {
+        let views = map_2((state) => render(group, state, dispatch), map_1(s));
+        return new View$2(group, (s_1) => {
             const states = map_1(s_1);
             const min = min_1((x, y) => comparePrimitives(x, y), length(views), length(states)) | 0;
             iterate((tupledArg) => {
-                const view_1 = tupledArg[0];
-                const state_1 = tupledArg[1];
-                view_1.Change(state_1);
+                tupledArg[0].Change(tupledArg[1]);
             }, zip(views, states));
             iterate((view_2) => {
                 view_2.Destroy();
@@ -595,13 +511,15 @@ export function iterator(createGroupNode, map_1, template) {
             views = take(min, views);
             const newViews = map_2((state_2) => render(group, state_2, dispatch), skip(min, states));
             views = append(views, newViews);
-        };
-        const destroy = () => {
+        }, () => {
             iterate((view_3) => {
                 view_3.Destroy();
             }, views);
-        };
-        return new View$2(group, change, destroy, query);
+        }, (q) => {
+            iterate((view) => {
+                view.Query(q);
+            }, views);
+        });
     }, template);
 }
 

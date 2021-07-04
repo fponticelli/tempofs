@@ -173,6 +173,22 @@ type DSL =
              |> Derived
              |> StringAttr)
 
+    static member Attr<'S, 'A, 'Q>
+        (
+            name: string,
+            predicate: 'S -> bool,
+            whenTrue: string,
+            whenFalse: string
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.Attr<'S, 'A, 'Q>(
+            name,
+            (fun (s: 'S) ->
+                if (predicate s) then
+                    whenTrue
+                else
+                    whenFalse)
+        )
+
     static member Attr<'A, 'Q>
         (
             name: string,
@@ -307,6 +323,20 @@ type DSL =
         Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>.OneOf2
             (packOneOf2<HTMLTemplateNode<'S, 'A, 'Q>, HTMLTemplateNode<'S1, 'A, 'Q>, HTMLTemplateNode<'S2, 'A, 'Q>, 'S, 'S1, 'S2, 'A, 'Q>
              <| OneOf2(f, template1, template2))
+
+    static member Maybe<'S1, 'S2, 'A, 'Q>
+        (
+            f: 'S1 -> 'S2 option,
+            template: HTMLTemplate<'S2, 'A, 'Q>
+        ) : HTMLTemplate<'S1, 'A, 'Q> =
+        DSL.OneOf(
+            (fun s ->
+                match f s with
+                | Some v -> Choice1Of2(v)
+                | None -> Choice2Of2(())),
+            template,
+            DSL.Text ""
+        )
 
 
     static member OneOf<'S, 'S1, 'S2, 'S3, 'A, 'Q>
@@ -555,6 +585,9 @@ type DSL =
     static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
     static member inline cls(f: 'S -> string option) = DSL.cls (Option.defaultValue "" << f)
     static member inline cls(whenTrue: string, whenFalse: string) = DSL.Attr("class", whenTrue, whenFalse)
+
+    static member inline cls(predicate: 'S -> bool, whenTrue: string, whenFalse: string) =
+        DSL.Attr("class", predicate, whenTrue, whenFalse)
 
     static member inline id(text: string) = DSL.Attr("id", text)
     static member inline id(f: 'S -> string) = DSL.Attr("id", f)
