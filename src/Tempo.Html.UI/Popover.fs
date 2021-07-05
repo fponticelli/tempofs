@@ -2,6 +2,7 @@ namespace Tempo.Html.UI
 
 open Browser.Types
 open Browser.Dom
+open Tempo.Core
 open Tempo.Html
 open Tempo.Html.Tools
 
@@ -25,139 +26,146 @@ module Popover =
 
 module private PopoverImpl =
     type Position = Popover.Position
-    type PopoverState = { Open: bool; Rect: ClientRect }
+
+    type State<'S, 'A> =
+        { Open: bool
+          TriggerElement: Element
+          OuterState: 'S
+          OuterDispatch: Dispatch<'A> }
+
     type Coords = { X: float; Y: float }
 
-    type PopoverAction =
+    type Action<'S, 'A> =
         | Open
         | Close
-        | Reposition of ClientRect
-
-    type PopoverPayload =
-        { ManageClickDoc: unit -> unit
-          RemoveRepositionHandlers: unit -> unit }
+        | Toggle
+        | Reposition
+        | SetOuterState of 'S
+        | OuterActionTriggered of 'A
 
     let makeCalculatePosition (position: Position) (distance: float) =
         match position with
         | Position.Centered ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
+            (fun (ref: ClientRect) (target: ClientRect) ->
                 let x =
-                    reference.left
-                    + (reference.width - target.width) / 2.0
+                    ref.left + (ref.width - target.width) / 2.0
 
                 let y =
-                    reference.top
-                    + (reference.height - target.height) / 2.0
+                    ref.top + (ref.height - target.height) / 2.0
 
                 { X = x; Y = y })
         | Position.Top ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
+            (fun (ref: ClientRect) (target: ClientRect) ->
                 let x =
-                    reference.left
-                    + (reference.width - target.width) / 2.0
+                    ref.left + (ref.width - target.width) / 2.0
 
-                let y = reference.top - target.height - distance
+                let y = ref.top - target.height - distance
                 { X = x; Y = y })
         | Position.Bottom ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
+            (fun (ref: ClientRect) (target: ClientRect) ->
                 let x =
-                    reference.left
-                    + (reference.width - target.width) / 2.0
+                    ref.left + (ref.width - target.width) / 2.0
 
-                let y = reference.bottom + distance
+                let y = ref.bottom + distance
                 { X = x; Y = y })
         | Position.Left ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.left - target.width - distance
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.left - target.width - distance
 
                 let y =
-                    reference.top
-                    + (reference.height - target.height) / 2.0
+                    ref.top + (ref.height - target.height) / 2.0
 
                 { X = x; Y = y })
         | Position.Right ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.right + distance
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.right + distance
 
                 let y =
-                    reference.top
-                    + (reference.height - target.height) / 2.0
+                    ref.top + (ref.height - target.height) / 2.0
 
                 { X = x; Y = y })
         | Position.TopLeft ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.left
-                let y = reference.top - target.height - distance
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.left
+                let y = ref.top - target.height - distance
                 { X = x; Y = y })
         | Position.TopRight ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.right - target.width
-                let y = reference.top - target.height - distance
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.right - target.width
+                let y = ref.top - target.height - distance
                 { X = x; Y = y })
         | Position.BottomLeft ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.left
-                let y = reference.bottom + distance
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.left
+                let y = ref.bottom + distance
                 { X = x; Y = y })
         | Position.BottomRight ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.right - target.width
-                let y = reference.bottom + distance
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.right - target.width
+                let y = ref.bottom + distance
                 { X = x; Y = y })
         | Position.LeftTop ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.left - target.width - distance
-                let y = reference.top
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.left - target.width - distance
+                let y = ref.top
                 { X = x; Y = y })
         | Position.LeftBottom ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.left - target.width - distance
-                let y = reference.bottom - target.height
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.left - target.width - distance
+                let y = ref.bottom - target.height
                 { X = x; Y = y })
         | Position.RightTop ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.right + distance
-                let y = reference.top
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.right + distance
+                let y = ref.top
                 { X = x; Y = y })
         | Position.RightBottom ->
-            (fun (reference: ClientRect) (target: ClientRect) ->
-                let x = reference.right + distance
-                let y = reference.bottom - target.height
+            (fun (ref: ClientRect) (target: ClientRect) ->
+                let x = ref.right + distance
+                let y = ref.bottom - target.height
                 { X = x; Y = y })
 
 type Popover =
-    static member Make<'S, 'A, 'Q>
+    static member MakeAttr<'S, 'A, 'Q>
         (
-            position: Popover.Position,
-            trigger: HTMLTemplate<'S, 'A, 'Q>,
             panel: HTMLTemplate<'S, 'A, 'Q>,
-            buttonClass: string
-        ) : HTMLTemplate<'S, 'A, 'Q> =
-        Popover.Make(position, 2.0, trigger, panel, buttonClass)
+            ?position: Popover.Position,
+            ?triggeringEvents: string list,
+            ?distance: float,
+            ?container: Element,
+            ?startOpen: 'S -> bool,
+            ?closeOnAction: 'A -> bool
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        let position =
+            Option.defaultValue Popover.BottomLeft position
 
-    static member Make<'S, 'A, 'Q>
-        (
-            position: Popover.Position,
-            distance: float,
-            trigger: HTMLTemplate<'S, 'A, 'Q>,
-            panel: HTMLTemplate<'S, 'A, 'Q>,
-            buttonClass: string
-        ) : HTMLTemplate<'S, 'A, 'Q> =
-        let (hold, release) = MakeCaptureSA()
+        let distance = Option.defaultValue 2.0 distance
+
+        let triggeringEvents =
+            Option.defaultValue [ "click" ] triggeringEvents
+
+        let container =
+            Option.defaultValue (document.body :> Element) container
+
+        let startOpen =
+            Option.defaultValue (fun _ -> false) startOpen
+
+        let closeOnAction =
+            Option.defaultValue (fun _ -> true) closeOnAction
 
         let calcPosition =
             PopoverImpl.makeCalculatePosition position distance
 
-        let calcPosition ref (target: HTMLElement) =
-            calcPosition ref (target.getBoundingClientRect ())
+        let calcPosition (ref: Element) (target: Element) =
+            calcPosition (ref.getBoundingClientRect ()) (target.getBoundingClientRect ())
 
-        let makeCloseOnClickOutsideImpl (el: EventTarget) dispatch =
+        let makeCloseOnClickOutsideImpl dispatch =
             let rec f (ev: Event) =
                 remove ()
 
                 match getProperty (ev, "key") with
-                | None -> dispatch PopoverImpl.PopoverAction.Close
-                | Some k when k = "Escape" || k = "Esc" -> dispatch PopoverImpl.PopoverAction.Close
+                | None -> dispatch PopoverImpl.Action.Close
+                | Some k when k = "Escape" || k = "Esc" -> dispatch PopoverImpl.Action.Close
                 | Some _ -> ()
 
             and remove () =
@@ -174,131 +182,134 @@ type Popover =
 
             remove
 
-        let makeCloseOnClickOutside isOpen el dispatch =
+        let makeCloseOnClickOutside isOpen dispatch =
             if isOpen then
-                makeCloseOnClickOutsideImpl el dispatch
+                makeCloseOnClickOutsideImpl dispatch
             else
                 ignore
 
-        let makeReposition (el: HTMLElement) dispatch =
-            let update _ =
-                let rect = el.getBoundingClientRect ()
-
-                rect
-                |> PopoverImpl.PopoverAction.Reposition
-                |> dispatch
+        let makeReposition (el: Element) dispatch =
+            let dispatchReposition _ =
+                PopoverImpl.Action.Reposition |> dispatch
 
             let rObserver =
-                JSe.ResizeObserver((fun _ _ -> update ()))
+                JSe.ResizeObserver((fun _ _ -> dispatchReposition ()))
 
             let ancestors = collectElementAndAncestors el
 
             List.iter
                 (fun (el: Element) ->
-                    el.addEventListener ("scroll", update)
+                    el.addEventListener ("scroll", dispatchReposition)
                     rObserver.observe (el))
                 ancestors
 
             let remove () =
                 rObserver.disconnect ()
-                List.iter (fun (i: Element) -> i.removeEventListener ("scroll", update)) ancestors
+                List.iter (fun (i: Element) -> i.removeEventListener ("scroll", dispatchReposition)) ancestors
 
             remove
 
-        hold (
-            MapSA<'S, PopoverImpl.PopoverState, 'A, PopoverImpl.PopoverAction, 'Q>(
-                (fun _ ->
-                    { Open = false
-                      Rect = document.body.getBoundingClientRect () }),
-                (fun (_: PopoverImpl.PopoverAction) -> None),
-                Component<PopoverImpl.PopoverState, PopoverImpl.PopoverAction, _>(
-                    (fun (s: PopoverImpl.PopoverState) (a: PopoverImpl.PopoverAction) ->
-                        match a with
-                        | PopoverImpl.PopoverAction.Open -> { s with Open = true }
-                        | PopoverImpl.PopoverAction.Close -> { s with Open = false }
-                        | PopoverImpl.PopoverAction.Reposition rect -> { s with Rect = rect }),
-                    Fragment [ BUTTON(
-                                   [ Lifecycle(
-                                       (fun { State = { PopoverImpl.PopoverState.Open = isOpen }
-                                              Dispatch = dispatch
-                                              Element = el } ->
-
-                                           let manageClickDoc =
-                                               makeCloseOnClickOutside isOpen el dispatch // after render
-
-                                           let removeRepositionHandlers = makeReposition el dispatch
-
-                                           { PopoverImpl.PopoverPayload.ManageClickDoc = manageClickDoc
-                                             PopoverImpl.PopoverPayload.RemoveRepositionHandlers =
-                                                 removeRepositionHandlers }),
-                                       (fun { State = { Open = isOpen }
-                                              Payload = payload
-                                              Dispatch = dispatch
-                                              Element = el } ->
-                                           payload.ManageClickDoc()
-
-                                           let manageClickDoc =
-                                               makeCloseOnClickOutside isOpen el dispatch
-
-                                           { payload with
-                                                 ManageClickDoc = manageClickDoc }), // after change
-                                       (fun { Payload = payload } ->
-                                           payload.ManageClickDoc()
-                                           payload.RemoveRepositionHandlers()) // before destroy
-                                     )
-                                     On<PopoverImpl.PopoverState, PopoverImpl.PopoverAction, _, HTMLElement, Event>(
-                                         "click",
-                                         (fun { State = { Open = isOpen } } ->
-                                             if isOpen then
-                                                 PopoverImpl.PopoverAction.Close
-                                             else
-                                                 PopoverImpl.PopoverAction.Open)
-                                     )
-                                     Attr("type", "button")
-                                     cls buttonClass
-                                     aria ("expanded", "true")
-                                     aria ("haspopup", "true") ],
-                                   [ release ((fun s _ -> s), Choice1Of3 >> Some, trigger) ]
-                               )
-                               Portal(
-                                   "body",
-                                   DIV(
-                                       [ DispatchOn(
-                                           "click",
-                                           (fun { Event = event } _ ->
-                                               event.cancelBubble <- true
-                                               event.preventDefault ())
-                                         )
-                                         Attr(
-                                             "style",
-                                             (fun { PopoverImpl.PopoverState.Open = isOpen } ->
-                                                 if isOpen then
-                                                     "position: absolute"
-                                                 else
-                                                     "display: none")
-                                         )
-                                         Lifecycle(
-                                             (fun { State = { Rect = reference }
-                                                    Element = target } ->
-                                                 let { PopoverImpl.Coords.X = x
-                                                       PopoverImpl.Coords.Y = y } =
-                                                     calcPosition reference target
-
-                                                 setStyle (target, "top", $"{y}px")
-                                                 setStyle (target, "left", $"{x}px")),
-                                             (fun { State = { Rect = reference }
-                                                    Element = target } ->
-                                                 let { PopoverImpl.Coords.X = x
-                                                       PopoverImpl.Coords.Y = y } =
-                                                     calcPosition reference target
-
-                                                 setStyle (target, "top", $"{y}px")
-                                                 setStyle (target, "left", $"{x}px")),
-                                             ignore
-                                         ) ],
-                                       [ release ((fun s _ -> s), Choice1Of3 >> Some, panel) ]
-                                   )
-                               ) ]
-                )
+        // TODO
+        let mapped =
+            MapSAQ(
+                (fun ({ OuterState = state }: PopoverImpl.State<'S, 'A>) -> state),
+                Some << PopoverImpl.OuterActionTriggered,
+                (fun () -> None),
+                panel
             )
+
+        let applyPositioning (isOpen: bool) (trigger: Element) (panel: Element) =
+            if isOpen then
+                let { PopoverImpl.X = x; PopoverImpl.Y = y } = calcPosition trigger panel
+                setStyle (panel, "left", $"{x}px")
+                setStyle (panel, "top", $"{y}px")
+            else
+                ()
+
+        let template =
+            OneOf(
+                (fun (s: PopoverImpl.State<'S, 'A>) ->
+                    if s.Open then
+                        Choice1Of2(s)
+                    else
+                        Choice2Of2(())),
+
+                DIV(
+                    [ Attr("style", "position: absolute")
+                      Lifecycle(
+                          (fun { State = ({ Open = isOpen
+                                            TriggerElement = trigger }: PopoverImpl.State<'S, 'A>)
+                                 Dispatch = dispatch
+                                 Element = panel } ->
+                              panel.addEventListener (
+                                  "click",
+                                  (fun event ->
+                                      event.cancelBubble <- true
+                                      event.preventDefault ())
+                              )
+
+                              applyPositioning isOpen trigger panel
+                              makeCloseOnClickOutside isOpen dispatch),
+                          afterChange =
+                              (fun { State = { Open = isOpen
+                                               TriggerElement = trigger }
+                                     Dispatch = dispatch
+                                     Element = panel
+                                     Payload = manageClickDoc } ->
+                                  applyPositioning isOpen trigger panel
+                                  manageClickDoc ()
+                                  makeCloseOnClickOutside isOpen dispatch),
+                          beforeDestroy = (fun { Payload = manageClickDoc } -> manageClickDoc ())
+                      ) ],
+                    [ mapped ]
+                ),
+                Text ""
+            )
+
+        // Button/Control lifecycle
+        Lifecycle<'S, 'A, 'Q, Element, _>(
+            (fun { State = state
+                   Dispatch = dispatch
+                   Element = el } ->
+                let render = MakeProgram(template, container)
+
+                let update (state: PopoverImpl.State<'S, 'A>) (action: PopoverImpl.Action<'S, 'A>) =
+                    match action with
+                    | PopoverImpl.Toggle -> { state with Open = not state.Open }
+                    | PopoverImpl.Open -> { state with Open = true }
+                    | PopoverImpl.Close -> { state with Open = false }
+                    | PopoverImpl.SetOuterState outs -> { state with OuterState = outs }
+                    | PopoverImpl.OuterActionTriggered act ->
+                        state.OuterDispatch act
+
+                        if closeOnAction act then
+                            { state with Open = false }
+                        else
+                            state
+                    | PopoverImpl.Reposition -> state // triggers refresh of location
+
+                let view =
+                    render
+                        update
+                        ignore
+                        { Open = startOpen state
+                          TriggerElement = el
+                          OuterState = state
+                          OuterDispatch = dispatch }
+
+                let dispatchOpen _ = view.Dispatch(PopoverImpl.Toggle)
+                List.iter (fun te -> el.addEventListener (te, dispatchOpen)) triggeringEvents
+                let removeReposition = makeReposition el view.Dispatch
+
+                let destroy () =
+                    removeReposition ()
+                    List.iter (fun te -> el.removeEventListener (te, dispatchOpen)) triggeringEvents
+                    view.Destroy()
+
+                { view with Destroy = destroy }),
+            afterChange =
+                (fun { State = state; Payload = view } ->
+                    view.Dispatch(PopoverImpl.SetOuterState state)
+                    view),
+            beforeDestroy = (fun { Payload = view } -> view.Destroy())
         )

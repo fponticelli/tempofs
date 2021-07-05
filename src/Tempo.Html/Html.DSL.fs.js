@@ -20,7 +20,7 @@ function DSL_MakeRender() {
     return MakeRender$4_$ctor_Z4E96F168(uncurry(5, (make) => ((node) => makeHTMLNodeRender(make, node))), (label) => createGroupNode(label));
 }
 
-export function DSL_MakeProgram_Z9447D8C(template, el) {
+export function DSL_MakeProgram_1C1F9AE9(template, el) {
     const renderInstance = DSL_MakeRender();
     const f = MakeRender$4__Make_1DCD9633(renderInstance, template);
     const parent = HTMLElementImpl_$ctor_Z5966C024(el);
@@ -43,14 +43,17 @@ export function DSL_MakeProgram_Z9447D8C(template, el) {
     }));
 }
 
-export function DSL_MakeProgramOnContentLoaded_56DDD9AE(template, selector, f) {
+export function DSL_MakeProgramOnContentLoaded_Z2D102497(template, parent, f) {
     return (update) => ((middleware) => ((state) => {
         const value = window.addEventListener("DOMContentLoaded", (_arg1) => {
-            const el = document.querySelector(selector);
-            const render = DSL_MakeProgram_Z9447D8C(template, el);
+            const render = DSL_MakeProgram_1C1F9AE9(template, parent);
             f(render(update)(middleware)(state));
         });
     }));
+}
+
+export function DSL_MakeProgramOnContentLoaded_56DDD9AE(template, selector, f) {
+    return DSL_MakeProgramOnContentLoaded_Z2D102497(template, document.querySelector(selector), f);
 }
 
 export function DSL_NSEl_7639458A(ns, name, attributes, children) {

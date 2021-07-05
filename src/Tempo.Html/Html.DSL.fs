@@ -12,7 +12,7 @@ type DSL =
     static member private MakeRender<'S, 'A, 'Q>() =
         MakeRender<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>(makeHTMLNodeRender, createGroupNode)
 
-    static member MakeProgram<'S, 'A, 'Q>(template: HTMLTemplate<'S, 'A, 'Q>, el: HTMLElement) =
+    static member MakeProgram<'S, 'A, 'Q>(template: HTMLTemplate<'S, 'A, 'Q>, el: Element) =
         let renderInstance = DSL.MakeRender()
 
         let f = renderInstance.Make template
@@ -47,20 +47,25 @@ type DSL =
     static member MakeProgramOnContentLoaded<'S, 'A, 'Q>
         (
             template: HTMLTemplate<'S, 'A, 'Q>,
-            selector: string,
+            parent: Element,
             f: (ComponentView<'S, 'A, 'Q> -> unit)
         ) =
         fun update middleware state ->
             window.addEventListener (
                 "DOMContentLoaded",
                 fun _ ->
-                    let el =
-                        document.querySelector selector :?> HTMLElement
-
-                    let render = DSL.MakeProgram(template, el)
+                    let render = DSL.MakeProgram(template, parent)
                     render update middleware state |> f
             )
             |> ignore
+
+    static member MakeProgramOnContentLoaded<'S, 'A, 'Q>
+        (
+            template: HTMLTemplate<'S, 'A, 'Q>,
+            selector: string,
+            f: (ComponentView<'S, 'A, 'Q> -> unit)
+        ) =
+        DSL.MakeProgramOnContentLoaded<'S, 'A, 'Q>(template, (document.querySelector selector), f)
 
     static member NSEl<'S, 'A, 'Q>
         (
@@ -324,7 +329,7 @@ type DSL =
             mapAction: 'A2 -> 'A1 option,
             mapQuery: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S2, 'A2, 'Q2>
-        ) =
+        ) : HTMLTemplate<'S1, 'A1, 'Q1> =
         mapSAQ mapState mapAction mapQuery template
 
     static member inline MapSQ<'S1, 'S2, 'A, 'Q1, 'Q2>
@@ -332,7 +337,7 @@ type DSL =
             mapState: 'S1 -> 'S2,
             mapQuery: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S2, 'A, 'Q2>
-        ) =
+        ) : HTMLTemplate<'S1, 'A, 'Q1> =
         mapSQ mapState mapQuery template
 
     static member inline MapAQ<'S, 'A1, 'A2, 'Q1, 'Q2>
@@ -340,7 +345,7 @@ type DSL =
             mapAction: 'A2 -> 'A1 option,
             mapQuery: 'Q1 -> 'Q2 option,
             template: HTMLTemplate<'S, 'A2, 'Q2>
-        ) =
+        ) : HTMLTemplate<'S, 'A1, 'Q1> =
         mapAQ mapAction mapQuery template
 
     static member OneOf<'S, 'S1, 'S2, 'A, 'Q>
@@ -661,84 +666,84 @@ type DSL =
 
     static member inline innerHTML<'A, 'Q>(html: string -> string) : HTMLTemplateAttribute<string, 'A, 'Q> = DSL.innerHTML<string, 'A, 'Q> id
 
-    static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("div", attributes, children)
+    static member inline DIV<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("div", attributes, children)
 
-    static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.DIV(attributes, [])
+    static member inline DIV<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.DIV(attributes, [])
 
-    static member inline DIV(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.DIV([], children)
-    static member inline DIV(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.DIV([], [ child ])
+    static member inline DIV<'S, 'A, 'Q>(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.DIV([], children)
+    static member inline DIV<'S, 'A, 'Q>(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.DIV([], [ child ])
 
-    static member inline DIV() = DSL.DIV([], [])
+    static member inline DIV<'S, 'A, 'Q>() = DSL.DIV([], [])
 
-    static member inline DIV(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.DIV(attributes, [ child ])
+    static member inline DIV<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.DIV(attributes, [ child ])
 
-    static member inline MAIN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("main", attributes, children)
+    static member inline MAIN<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("main", attributes, children)
 
-    static member inline MAIN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.MAIN(attributes, [])
+    static member inline MAIN<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.MAIN(attributes, [])
 
-    static member inline MAIN(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.MAIN([], children)
-    static member inline MAIN(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.MAIN([], [ child ])
+    static member inline MAIN<'S, 'A, 'Q>(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.MAIN([], children)
+    static member inline MAIN<'S, 'A, 'Q>(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.MAIN([], [ child ])
 
-    static member inline MAIN() = DSL.MAIN([], [])
+    static member inline MAIN<'S, 'A, 'Q>() = DSL.MAIN([], [])
 
-    static member inline MAIN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.MAIN(attributes, [ child ])
+    static member inline MAIN<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.MAIN(attributes, [ child ])
 
-    static member inline ASIDE(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("aside", attributes, children)
+    static member inline ASIDE<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("aside", attributes, children)
 
-    static member inline ASIDE(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.ASIDE(attributes, [])
+    static member inline ASIDE<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.ASIDE(attributes, [])
 
-    static member inline ASIDE(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.ASIDE([], children)
-    static member inline ASIDE(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.ASIDE([], [ child ])
+    static member inline ASIDE<'S, 'A, 'Q>(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.ASIDE([], children)
+    static member inline ASIDE<'S, 'A, 'Q>(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.ASIDE([], [ child ])
 
-    static member inline ASIDE() = DSL.ASIDE([], [])
+    static member inline ASIDE<'S, 'A, 'Q>() = DSL.ASIDE([], [])
 
-    static member inline ASIDE(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.ASIDE(attributes, [ child ])
+    static member inline ASIDE<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.ASIDE(attributes, [ child ])
 
-    static member inline BUTTON(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("button", attributes, children)
+    static member inline BUTTON<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("button", attributes, children)
 
-    static member inline BUTTON(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.BUTTON(attributes, [])
+    static member inline BUTTON<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.BUTTON(attributes, [])
 
-    static member inline BUTTON(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.BUTTON([], children)
+    static member inline BUTTON<'S, 'A, 'Q>(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.BUTTON([], children)
 
-    static member inline BUTTON() = DSL.BUTTON([], [])
+    static member inline BUTTON<'S, 'A, 'Q>() = DSL.BUTTON([], [])
 
-    static member inline BUTTON(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.BUTTON(attributes, [ child ])
-    static member inline BUTTON(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.BUTTON([], [ child ])
+    static member inline BUTTON<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.BUTTON(attributes, [ child ])
+    static member inline BUTTON<'S, 'A, 'Q>(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.BUTTON([], [ child ])
 
-    static member inline IMG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.El("img", attributes, [])
+    static member inline IMG<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.El("img", attributes, [])
 
-    static member inline IMG() = DSL.IMG([])
+    static member inline IMG<'S, 'A, 'Q>() = DSL.IMG([])
 
-    static member inline SPAN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("span", attributes, children)
+    static member inline SPAN<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("span", attributes, children)
 
-    static member inline SPAN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.SPAN(attributes, [])
+    static member inline SPAN<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.SPAN(attributes, [])
 
-    static member inline SPAN(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.SPAN([], children)
-    static member inline SPAN(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SPAN([], [ child ])
+    static member inline SPAN<'S, 'A, 'Q>(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.SPAN([], children)
+    static member inline SPAN<'S, 'A, 'Q>(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SPAN([], [ child ])
 
-    static member inline SPAN() = DSL.SPAN([], [])
+    static member inline SPAN<'S, 'A, 'Q>() = DSL.SPAN([], [])
 
-    static member inline SPAN(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SPAN(attributes, [ child ])
+    static member inline SPAN<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SPAN(attributes, [ child ])
 
-    static member inline SVG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) =
+    static member inline SVG<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) =
         DSL.NSEl("http://www.w3.org/2000/svg", "svg", attributes, children)
 
-    static member inline SVG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.SVG(attributes, [])
+    static member inline SVG<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.SVG(attributes, [])
 
-    static member inline SVG(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.SVG([], children)
-    static member inline SVG(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SVG([], [ child ])
+    static member inline SVG<'S, 'A, 'Q>(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.SVG([], children)
+    static member inline SVG<'S, 'A, 'Q>(child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SVG([], [ child ])
 
-    static member inline SVG() = DSL.SVG([], [])
+    static member inline SVG<'S, 'A, 'Q>() = DSL.SVG([], [])
 
-    static member inline SVG(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SVG(attributes, [ child ])
+    static member inline SVG<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.SVG(attributes, [ child ])
 
-    static member inline PATH(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) =
+    static member inline PATH<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) =
         DSL.NSEl("http://www.w3.org/2000/svg", "path", attributes, children)
 
-    static member inline PATH(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.PATH(attributes, [])
+    static member inline PATH<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.PATH(attributes, [])
 
-    static member inline PATH(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.PATH([], children)
+    static member inline PATH<'S, 'A, 'Q>(children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.PATH([], children)
 
-    static member inline PATH() = DSL.PATH([], [])
+    static member inline PATH<'S, 'A, 'Q>() = DSL.PATH([], [])
 
-    static member inline PATH(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.PATH(attributes, [ child ])
+    static member inline PATH<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.PATH(attributes, [ child ])
