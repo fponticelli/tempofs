@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>Temp.Core</PackageId>
+    <PackageId>Tempo.Core</PackageId>
     <Version>0.1.0</Version>
     <Authors>Franco Ponticelli</Authors>
     <Company></Company>

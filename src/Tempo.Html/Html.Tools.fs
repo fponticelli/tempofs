@@ -16,6 +16,9 @@ module Tools =
     [<Emit("$0[$1] !== null")>]
     let hasProperty<'X> (target: 'X, prop: string) : bool = jsNative
 
+    [<Emit("$0[$1]")>]
+    let getProperty<'X, 'Y> (target: 'X, prop: string) : 'Y option = jsNative
+
     [<Emit("$0 instanceof HTMLElement")>]
     let isHTMLElement<'X> (target: 'X) : bool = jsNative
 
@@ -36,3 +39,21 @@ module Tools =
 
     [<Emit("$0.ownerDocument || document")>]
     let ownerOrDocument (n: Node) : Document = jsNative
+
+    let collectElementAndAncestors (el: Element) : Element list =
+        let rec go (el: Element) acc =
+            if isNull el then
+                acc
+            else
+                go el.parentElement <| el :: acc
+
+        go el []
+
+    [<Emit("btoa($0)")>]
+    let toBase64String (s: string) : string = jsNative
+
+    [<Emit("atob($0)")>]
+    let fromBase64String (s: string) : string = jsNative
+
+    [<Emit("$0.style[$1] = $2")>]
+    let setStyle (target: Element, style: string, value: string) : unit = jsNative

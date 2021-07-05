@@ -323,7 +323,7 @@ module Core =
     type CatchF<'N1, 'S1, 'A1, 'Q1> = Template<'N1, 'S1, 'A1, 'Q1> -> Template<'N1, 'S1, 'A1, 'Q1>
 
     type ReleaseF<'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1> =
-        ('S1 -> 'S2 -> 'S3) * ('A3 -> Choice<'A1, 'A2> option) * Template<'N3, 'S3, 'A3, 'Q1> -> Template<'N2, 'S2, 'A2, 'Q1>
+        ('S1 -> 'S2 -> 'S3) * ('A3 -> Choice<'A1, 'A2, 'A1 * 'A2> option) * Template<'N3, 'S3, 'A3, 'Q1> -> Template<'N2, 'S2, 'A2, 'Q1>
 
     type CaptureResult<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1> =
         CatchF<'N1, 'S1, 'A1, 'Q1> * ReleaseF<'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1>
@@ -357,7 +357,7 @@ module Core =
         let release
             (
                 mergeState: 'S1 -> 'S2 -> 'S3,
-                mapAction: 'A3 -> Choice<'A1, 'A2> option,
+                mapAction: 'A3 -> Choice<'A1, 'A2, 'A1 * 'A2> option,
                 template3: Template<'N3, 'S3, 'A3, 'Q1>
             ) : Template<'N2, 'S2, 'A2, 'Q1> =
             mapSA
@@ -366,18 +366,22 @@ module Core =
                     mergeState s1 s2)
                 (fun (a3: 'A3) ->
                     match mapAction a3 with
-                    | Some (Choice1Of2 (a1)) ->
+                    | Some (Choice1Of3 (a1)) ->
                         let d1 = Option.get localDispatch
                         d1 a1
                         None
-                    | Some (Choice2Of2 (a2)) -> Some a2
+                    | Some (Choice2Of3 (a2)) -> Some a2
+                    | Some (Choice3Of3 (a1, a2)) ->
+                        let d1 = Option.get localDispatch
+                        d1 a1
+                        Some a2
                     | None -> None)
                 template3
 
         (catch, release)
 
     type ReleaseActionF<'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1> =
-        ('A3 -> Choice<'A1, 'A2> option) * Template<'N3, 'S1, 'A3, 'Q1> -> Template<'N2, 'S1, 'A2, 'Q1>
+        ('A3 -> Choice<'A1, 'A2, 'A1 * 'A2> option) * Template<'N3, 'S1, 'A3, 'Q1> -> Template<'N2, 'S1, 'A2, 'Q1>
 
     type CaptureActionResult<'N1, 'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1> =
         CatchF<'N1, 'S1, 'A1, 'Q1> * ReleaseActionF<'N2, 'N3, 'S1, 'A1, 'A2, 'A3, 'Q1>
@@ -389,7 +393,8 @@ module Core =
             makeCaptureSA<'N1, 'N2, 'N3, 'S1, 'S1, 'S1, 'A1, 'A2, 'A3, 'Q1> ()
 
         (catch,
-         (fun (mapActionF: 'A3 -> Choice<'A1, 'A2> option, template) -> release ((fun _ s -> s), mapActionF, template)))
+         (fun (mapActionF: 'A3 -> Choice<'A1, 'A2, 'A1 * 'A2> option, template) ->
+             release ((fun _ s -> s), mapActionF, template)))
 
     type ReleaseStateF<'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'Q1> =
         ('S1 -> 'S2 -> 'S3) * Template<'N3, 'S3, 'A1, 'Q1> -> Template<'N2, 'S2, 'A1, 'Q1>
@@ -403,7 +408,7 @@ module Core =
         let (catch, release) =
             makeCaptureSA<'N1, 'N2, 'N3, 'S1, 'S2, 'S3, 'A1, 'A1, 'A1, 'Q1> ()
 
-        (catch, (fun (mapStateF: 'S1 -> 'S2 -> 'S3, template) -> release (mapStateF, Some << Choice2Of2, template)))
+        (catch, (fun (mapStateF: 'S1 -> 'S2 -> 'S3, template) -> release (mapStateF, Some << Choice2Of3, template)))
 
     let lifecycle<'N, 'S, 'A, 'Q, 'P>
         (afterRender: 'S -> 'P)

@@ -20,7 +20,7 @@ module Impl =
         member this.SetAttribute(name: string, value: string option) =
             match value with
             | Some s -> this.element.setAttribute (name, s)
-            | None -> this.element.removeAttribute ()
+            | None -> this.element.removeAttribute (name)
 
         member this.SetProperty<'T>(name: string, value: 'T) : unit = assign this.element name value
 

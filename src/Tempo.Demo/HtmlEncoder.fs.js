@@ -1,8 +1,8 @@
 import { join, substring, interpolate, toText, replace } from "./.fable/fable-library.3.1.10/String.js";
 import { tryFind, ofList } from "./.fable/fable-library.3.1.10/Map.js";
 import { append, empty, head, length, singleton, ofArray } from "./.fable/fable-library.3.1.10/List.js";
-import { filterMap } from "../Tempo.Core/Std.List.fs.js";
 import { map } from "./.fable/fable-library.3.1.10/Array.js";
+import { filterMap } from "../Tempo.Core/Std.List.fs.js";
 import { map as map_2, defaultArg, some } from "./.fable/fable-library.3.1.10/Option.js";
 import { map as map_1, delay, toList } from "./.fable/fable-library.3.1.10/Seq.js";
 import { rangeDouble } from "./.fable/fable-library.3.1.10/Range.js";
@@ -35,7 +35,8 @@ export function makeAttribute(name, value) {
             return toText(interpolate("Attr(%P(), %P())", [quote(name), quote(value)]));
         }
         else {
-            return func(value);
+            const f = func;
+            return f(value);
         }
     }
 }
@@ -54,7 +55,8 @@ export function renderDOMBody(filterComments, body) {
 }
 
 export function renderDOMElementChildren(filterComments, el) {
-    return filterMap((x) => x, ofArray(map((node) => renderDOMNode(filterComments, node), Array.from(el.childNodes))));
+    const children = map((node) => renderDOMNode(filterComments, node), Array.from(el.childNodes));
+    return filterMap((x) => x, ofArray(children));
 }
 
 export function renderDOMNode(filterComments, node) {
@@ -88,12 +90,15 @@ export function renderDOMElement(filterComments, element) {
         func_1 = "El";
     }
     else {
-        func_1 = func;
+        const v = func;
+        func_1 = v;
     }
     const count = element.attributes.length | 0;
     const attributes = toList(delay(() => map_1((index) => {
         const att = element.attributes.item(index);
-        return makeAttribute(att.name, att.value);
+        const name_1 = att.name;
+        const value = att.value;
+        return makeAttribute(name_1, value);
     }, rangeDouble(0, 1, count - 1))));
     if (length(attributes) > 0) {
         args = append(args, singleton(("[" + join("; ", attributes)) + "]"));
@@ -106,7 +111,8 @@ export function renderDOMElement(filterComments, element) {
         return toText(interpolate("%P()(%P())", [func_1, head(args)]));
     }
     else {
-        return toText(interpolate("%P()(%P())", [func_1, join(", ", args)]));
+        const args_1 = join(", ", args);
+        return toText(interpolate("%P()(%P())", [func_1, args_1]));
     }
 }
 
@@ -125,6 +131,8 @@ export function renderDOMComment(comment) {
 }
 
 export function transformHtml(filterComments, content) {
-    return defaultArg(map_2((s) => replace(s, " *);", " *)"), renderDOMBody(filterComments, makeDOM(content).body)), "");
+    const dom = makeDOM(content);
+    const maybe = renderDOMBody(filterComments, dom.body);
+    return defaultArg(map_2((s) => replace(s, " *);", " *)"), maybe), "");
 }
 

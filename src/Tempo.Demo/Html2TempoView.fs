@@ -101,12 +101,9 @@ module View =
                                                       MapState(
                                                           (fun { FilterComments = v } -> v),
                                                           Fragment [ BUTTON(
-                                                                         [ id "filter-comments"
+                                                                         [ elId "filter-comments"
                                                                            Attr("type", "button")
-                                                                           On<_, Html2TempoAction, _>(
-                                                                               "click",
-                                                                               not >> SetFilterComments
-                                                                           )
+                                                                           OnState("click", not >> SetFilterComments)
                                                                            cls (
                                                                                "relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                                                            )

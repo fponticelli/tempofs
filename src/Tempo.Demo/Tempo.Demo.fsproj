@@ -14,7 +14,7 @@
     <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Tempo.Html\Tempo.Html.fsproj" />
+    <ProjectReference Include="..\Tempo.Html.UI\Tempo.Html.UI.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
   <ItemGroup>

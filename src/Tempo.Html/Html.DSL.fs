@@ -635,9 +635,9 @@ type DSL =
     static member inline cls(predicate: 'S -> bool, whenTrue: string, whenFalse: string) =
         DSL.Attr("class", predicate, whenTrue, whenFalse)
 
-    static member inline id(text: string) = DSL.Attr("id", text)
-    static member inline id(f: 'S -> string) = DSL.Attr("id", f)
-    static member inline id(whenTrue: string, whenFalse: string) = DSL.Attr("id", whenTrue, whenFalse)
+    static member inline elId(text: string) = DSL.Attr("id", text)
+    static member inline elId(f: 'S -> string) = DSL.Attr("id", f)
+    static member inline elId(whenTrue: string, whenFalse: string) = DSL.Attr("id", whenTrue, whenFalse)
 
     static member inline aria(name: string, text: string) = DSL.Attr($"aria-{name}", text)
     static member inline aria(name: string, f: 'S -> string) = DSL.Attr($"aria-{name}", f)

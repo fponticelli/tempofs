@@ -65,7 +65,7 @@ export function HTMLElementImpl$reflection() {
 
 export function HTMLElementImpl__SetAttribute_68C4AEB5(this$, name, value) {
     if (value == null) {
-        this$.element.removeAttribute();
+        this$.element.removeAttribute(name);
     }
     else {
         const s = value;

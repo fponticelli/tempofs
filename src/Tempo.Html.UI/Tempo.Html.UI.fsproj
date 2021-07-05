@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>Temp.Html</PackageId>
+    <PackageId>Tempo.Html.UI</PackageId>
     <Version>0.1.0</Version>
     <Authors>Franco Ponticelli</Authors>
     <Company>
@@ -10,13 +10,12 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="HtmlTools.fs" />
-    <Compile Include="Html.fs" />
-    <Compile Include="HtmlImpl.fs" />
-    <Compile Include="HtmlDSL.fs" />
+    <Compile Include="ResizeObserver.fs" />
+    <Compile Include="Popover.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Tempo.Core\Tempo.Core.fsproj" />
+    <ProjectReference Include="..\Tempo.Html\Tempo.Html.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; **\*.fs; **\*.fsi" PackagePath="fable\" />

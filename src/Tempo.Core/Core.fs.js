@@ -518,6 +518,13 @@ export function makeCaptureSA() {
                 const a2 = matchValue.fields[0];
                 return some(a2);
             }
+            else if (matchValue.tag === 2) {
+                const a1_1 = matchValue.fields[0][0];
+                const a2_1 = matchValue.fields[0][1];
+                const d1_1 = value(localDispatch);
+                d1_1(a1_1);
+                return some(a2_1);
+            }
             else {
                 const a1 = matchValue.fields[0];
                 const d1 = value(localDispatch);
