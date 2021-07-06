@@ -1,7 +1,7 @@
-import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
-import { lambda_type, unit_type, option_type, class_type, record_type, list_type, union_type, string_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
+import { lambda_type, unit_type, option_type, class_type, record_type, list_type, union_type, string_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { Template$4$reflection, Value$2$reflection } from "../Tempo.Core/Core.fs.js";
-import { curry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
+import { curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 
 export class HTMLTemplateNode$3 extends Union {
     constructor(tag, ...fields) {

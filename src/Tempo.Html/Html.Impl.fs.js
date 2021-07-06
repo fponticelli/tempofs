@@ -1,15 +1,15 @@
-import { record_type, unit_type, lambda_type, bool_type, class_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
-import { append, map, tail as tail_1, head as head_1, ofArray, fold, empty, filter, cons, reverse, collect, iterate, singleton } from "../../../src/.fable/fable-library.3.1.10/List.js";
-import { interpolate, toText } from "../../../src/.fable/fable-library.3.1.10/String.js";
+import { record_type, unit_type, lambda_type, bool_type, class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { append, map, tail as tail_1, head as head_1, ofArray, fold, empty, filter, cons, reverse, collect, iterate, singleton } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
 import { remove } from "./Html.Tools.fs.js";
 import { HTMLLifecycle$5__get_Respond, HTMLLifecycle$5__get_BeforeDestroy, HTMLLifecycle$5__get_AfterChange, HTMLLifecyclePayload$4, HTMLLifecycle$5__get_BeforeChange, HTMLLifecycleInitialPayload$3, HTMLLifecycle$5__get_AfterRender, Property$2__get_Value, HTMLTemplateAttribute$3, HTMLLifecycle$5_$ctor_17DF349, HTMLTrigger$4_$ctor_49480E0B, TriggerPayload$3, HTMLTrigger$4__get_Handler } from "./Html.fs.js";
-import { partialApply, mapCurriedArgs, stringHash, uncurry, equals } from "../../../src/.fable/fable-library.3.1.10/Util.js";
-import { Record } from "../../../src/.fable/fable-library.3.1.10/Types.js";
+import { partialApply, mapCurriedArgs, stringHash, uncurry, equals } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { Record } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
 import { View$2, Value$2_Combine_Z4D48493B, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
-import { tryFind, ofList } from "../../../src/.fable/fable-library.3.1.10/Map.js";
-import { map2 } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { tryFind, ofList } from "../Tempo.Demo/.fable/fable-library.3.1.10/Map.js";
+import { map2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
 import { filterMap } from "../Tempo.Core/Std.List.fs.js";
-import { List_groupBy } from "../../../src/.fable/fable-library.3.1.10/Seq2.js";
+import { List_groupBy } from "../Tempo.Demo/.fable/fable-library.3.1.10/Seq2.js";
 
 export class HTMLImpl {
     constructor() {

@@ -1,11 +1,11 @@
-import { class_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
 import { transform, comp, makeCaptureAction, makeCaptureState, makeCaptureSA, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2_Map, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
-import { uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
+import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
 import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./Html.Impl.fs.js";
 import { Property$2_$ctor_1D5210CF, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
-import { value as value_3, some } from "../../../src/.fable/fable-library.3.1.10/Option.js";
-import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
-import { empty } from "../../../src/.fable/fable-library.3.1.10/List.js";
+import { value as value_3, some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
+import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
+import { empty } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
 
 export class DSL {
     constructor() {

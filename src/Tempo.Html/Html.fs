@@ -1,9 +1,6 @@
 namespace Tempo.Html
 
-open Browser
 open Tempo.Core
-open Tempo.Std
-open Tempo.Html.Tools
 open Browser.Types
 
 type HTMLTemplate<'S, 'A, 'Q> = Template<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>
