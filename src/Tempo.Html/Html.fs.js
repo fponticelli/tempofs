@@ -101,7 +101,7 @@ export class TriggerPayload$3 extends Record {
 }
 
 export function TriggerPayload$3$reflection(gen0, gen1, gen2) {
-    return record_type("Tempo.Html.TriggerPayload`3", [gen0, gen1, gen2], TriggerPayload$3, () => [["State", gen0], ["Event", gen1], ["Element", gen2]]);
+    return record_type("Tempo.Html.TriggerPayload`3", [gen0, gen1, gen2], TriggerPayload$3, () => [["State", gen0], ["Event", gen2], ["Element", gen1]]);
 }
 
 export class HTMLTrigger$4 {

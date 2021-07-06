@@ -220,7 +220,7 @@ type DSL =
     static member On<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
         (
             name: string,
-            handler: TriggerPayload<'S, 'E, 'EL> -> 'A
+            handler: TriggerPayload<'S, 'EL, 'E> -> 'A
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         let handler p dispatch = dispatch <| handler p
         attribute name (makeTrigger handler |> Trigger)
@@ -241,10 +241,10 @@ type DSL =
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         DSL.On<'S, 'A, 'Q, _, 'E>(name, (fun { Event = e } -> handler e))
 
-    static member DispatchOn<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
+    static member inline DispatchOn<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
         (
             name: string,
-            handler: TriggerPayload<'S, 'E, 'EL> -> Dispatch<'A> -> unit
+            handler: TriggerPayload<'S, 'EL, 'E> -> Dispatch<'A> -> unit
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         attribute name (makeTrigger handler |> Trigger)
 

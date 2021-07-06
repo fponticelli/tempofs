@@ -24,11 +24,11 @@ module Impl =
 
         member this.SetProperty<'T>(name: string, value: 'T) : unit = assign this.element name value
 
-        member this.SetHandler<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element>
+        member this.SetHandler<'S, 'A, 'EL, 'E when 'E :> Event and 'EL :> Element>
             (name: string)
             (getState: unit -> 'S)
             (dispatch: 'A -> unit)
-            (trigger: HTMLTrigger<_, _, 'E, 'EL>)
+            (trigger: HTMLTrigger<_, _, 'EL, 'E>)
             =
             this.element.addEventListener (
                 name,
@@ -137,11 +137,11 @@ module Impl =
     let inline attribute<'S, 'A, 'Q> name value : HTMLTemplateAttribute<'S, 'A, 'Q> =
         HTMLNamedAttribute { Name = name; Value = value }
 
-    let packHTMLTrigger (trigger: HTMLTrigger<'S, 'A, 'E, 'EL>) = trigger :> IHTMLTrigger<'S, 'A>
+    let packHTMLTrigger (trigger: HTMLTrigger<'S, 'A, 'EL, 'E>) = trigger :> IHTMLTrigger<'S, 'A>
 
     let unpackHTMLTrigger (trigger: IHTMLTrigger<'S, 'A>) (f: IHTMLTriggerInvoker<'S, 'A, 'R>) : 'R = trigger.Accept f
 
-    let makeTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'E, 'EL> -> Dispatch<'A> -> unit) = packHTMLTrigger <| HTMLTrigger(f)
+    let makeTrigger<'S, 'A, 'EL, 'E when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'EL, 'E> -> Dispatch<'A> -> unit) = packHTMLTrigger <| HTMLTrigger(f)
 
     let packProperty (trigger: Property<'S, 'V>) = trigger :> IProperty<'S>
 
@@ -170,7 +170,7 @@ module Impl =
         unpackHTMLTrigger
             domTrigger
             { new IHTMLTriggerInvoker<'S, 'A, int> with
-                override this.Invoke<'E, 'EL when 'E :> Event and 'EL :> Element>(trigger: HTMLTrigger<'S, 'A, 'E, 'EL>) =
+                override this.Invoke<'EL, 'E when 'E :> Event and 'EL :> Element>(trigger: HTMLTrigger<'S, 'A, 'EL, 'E>) =
                     impl.SetHandler name getState dispatch trigger
 
                     0 }

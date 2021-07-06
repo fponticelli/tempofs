@@ -125,13 +125,9 @@ export function DSL_Prop_36180E4D(name, f) {
     return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_1D5210CF(new Value$2(1, (arg) => some(f(arg))))))));
 }
 
-export function DSL_On_47AABEE2(name, handler) {
+export function DSL_On_3B61A1E2(name, handler) {
     const handler_1 = (p, dispatch) => dispatch(handler(p));
     return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger(handler_1))));
-}
-
-export function DSL_DispatchOn_322CD462(name, handler) {
-    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(2, makeTrigger(handler))));
 }
 
 export function DSL_OneOf_Z491B0F3C(f, template1, template2) {

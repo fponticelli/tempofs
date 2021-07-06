@@ -46,16 +46,16 @@ and IPropertyInvoker<'S, 'R> =
 and IHTMLTrigger<'S, 'A> =
     abstract Accept : IHTMLTriggerInvoker<'S, 'A, 'R> -> 'R
 
-and TriggerPayload<'S, 'E, 'EL when 'E :> Event and 'EL :> Element> = { State: 'S; Event: 'E; Element: 'EL }
+and TriggerPayload<'S, 'EL, 'E when 'E :> Event and 'EL :> Element> = { State: 'S; Event: 'E; Element: 'EL }
 
-and HTMLTrigger<'S, 'A, 'E, 'EL when 'E :> Event and 'EL :> Element>(handler) =
-    member this.Handler : TriggerPayload<'S, 'E, 'EL> -> Dispatch<'A> -> unit = handler
+and HTMLTrigger<'S, 'A, 'EL, 'E when 'E :> Event and 'EL :> Element>(handler) =
+    member this.Handler : TriggerPayload<'S, 'EL, 'E> -> Dispatch<'A> -> unit = handler
     with
         interface IHTMLTrigger<'S, 'A> with
-            member this.Accept f = f.Invoke<'E, 'EL> this
+            member this.Accept f = f.Invoke<'EL, 'E> this
 
 and IHTMLTriggerInvoker<'S, 'A, 'R> =
-    abstract Invoke<'E, 'EL when 'E :> Event and 'EL :> Element> : HTMLTrigger<'S, 'A, 'E, 'EL> -> 'R
+    abstract Invoke<'EL, 'E when 'E :> Event and 'EL :> Element> : HTMLTrigger<'S, 'A, 'EL, 'E> -> 'R
 
 
 and IHTMLLifecycle<'S, 'A, 'Q> =
