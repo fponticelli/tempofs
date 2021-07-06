@@ -8,15 +8,21 @@ module Core =
         static member Of<'S, 'V>(f: 'S -> 'V) = Derived f
         static member Of<'S>() = Derived id<'S>
 
-        static member Resolve (v: Value<'S, 'V>) (s: 'S) =
+        static member Resolve<'S, 'V> (v: Value<'S, 'V>) (s: 'S) =
             match v with
             | Literal v -> v
             | Derived f -> f s
 
-        static member Map m v =
+        static member Map<'S, 'V1, 'V2> (map: 'V1 -> 'V2) (v: Value<'S, 'V1>) : Value<'S, 'V2> =
             match v with
-            | Literal v -> Literal <| m v
-            | Derived f -> Derived(f >> m)
+            | Literal v -> Literal <| map v
+            | Derived f -> Derived(f >> map)
+
+        static member inline MapOption<'S, 'V1, 'V2>
+            (map: 'V1 -> 'V2)
+            (v: Value<'S, 'V1 option>)
+            : Value<'S, 'V2 option> =
+            Value.Map<'S, 'V1 option, 'V2 option>(fun v -> Option.map map v) v
 
         static member Combine<'S, 'A, 'B, 'C>(f: 'A -> 'B -> 'C, va: Value<'S, 'A>, vb: Value<'S, 'B>) : Value<'S, 'C> =
             match (va, vb) with

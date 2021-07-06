@@ -43,14 +43,14 @@ export function Value$2_Resolve(v, s) {
     }
 }
 
-export function Value$2_Map(m, v) {
+export function Value$2_Map(map_1, v) {
     if (v.tag === 1) {
         const f = v.fields[0];
-        return new Value$2(1, (arg) => m(f(arg)));
+        return new Value$2(1, (arg) => map_1(f(arg)));
     }
     else {
         const v_1 = v.fields[0];
-        return new Value$2(0, m(v_1));
+        return new Value$2(0, map_1(v_1));
     }
 }
 

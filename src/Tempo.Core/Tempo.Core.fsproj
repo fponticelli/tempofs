@@ -9,9 +9,10 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Std.String.fs" />
     <Compile Include="Std.List.fs" />
     <Compile Include="Std.Option.fs" />
-    <Compile Include="Std.String.fs" />
+    <Compile Include="Std.Result.fs" />
     <Compile Include="Core.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

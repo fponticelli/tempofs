@@ -1,9 +1,9 @@
 import { class_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
-import { transform, comp, makeCaptureAction, makeCaptureState, makeCaptureSA, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
+import { transform, comp, makeCaptureAction, makeCaptureState, makeCaptureSA, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2_Map, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
 import { uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./Html.Impl.fs.js";
 import { Property$2_$ctor_1D5210CF, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
-import { value as value_2, some } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { value as value_3, some } from "../../../src/.fable/fable-library.3.1.10/Option.js";
 import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
 import { empty } from "../../../src/.fable/fable-library.3.1.10/List.js";
 
@@ -76,6 +76,15 @@ export function DSL_Text_77A7E8C8(f) {
     return new Template$4(0, new HTMLTemplateNode$3(2, new Value$2(1, f)));
 }
 
+export function DSL_Attr_Z60BEC302(name, value) {
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, value)));
+}
+
+export function DSL_Attr_31B1E08B(name, value) {
+    const value_1 = Value$2_Map((arg0) => arg0, value);
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, value_1)));
+}
+
 export function DSL_Attr_68C4AEB5(name, value) {
     return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(0, new Value$2(0, value))));
 }
@@ -136,7 +145,7 @@ export function DSL_Maybe_53C11510(f, template) {
             return new FSharpChoice$2(1, void 0);
         }
         else {
-            const v = value_2(matchValue);
+            const v = value_3(matchValue);
             return new FSharpChoice$2(0, v);
         }
     }, template, DSL_Text_Z721C83C5(""));

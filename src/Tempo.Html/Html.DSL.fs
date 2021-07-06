@@ -152,6 +152,15 @@ type DSL =
     static member Text<'S, 'A, 'Q>(f: 'S -> string) : HTMLTemplate<'S, 'A, 'Q> =
         f |> Derived |> HTMLTemplateText |> Node
 
+    static member Attr<'S, 'A, 'Q>(name: string, value: Value<'S, string option>) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        attribute name (value |> StringAttr)
+
+    static member Attr<'S, 'A, 'Q>(name: string, value: Value<'S, string>) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        let value =
+            Value.Map<'S, string, string option> Some value
+
+        attribute name (value |> StringAttr)
+
     static member Attr<'S, 'A, 'Q>(name: string, value: string option) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         attribute name (value |> Literal |> StringAttr)
 
