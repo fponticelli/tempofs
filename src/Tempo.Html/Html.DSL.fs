@@ -211,6 +211,9 @@ type DSL =
         ) : HTMLTemplateAttribute<bool, 'A, 'Q> =
         DSL.Attr(name, (fun b -> if b then whenTrue else whenFalse))
 
+    static member PropValue<'S, 'A, 'Q, 'T>(name: string, value: Value<'S, 'T>) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        property name (value)
+
     static member Prop<'S, 'A, 'Q, 'T>(name: string, value: 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         property name (value |> Literal)
 

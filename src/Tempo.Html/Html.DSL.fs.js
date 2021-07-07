@@ -1,11 +1,11 @@
-import { class_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { class_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
 import { transform, comp, makeCaptureAction, makeCaptureState, makeCaptureSA, lifecycle, iterator, OneOf2$8_$ctor_Z4F5F76C, packOneOf2, Value$2_Map, Value$2, Template$4, ComponentView$3, MiddlewarePayload$3, MakeRender$4__Make_1DCD9633, MakeRender$4_$ctor_Z4E96F168 } from "../Tempo.Core/Core.fs.js";
-import { uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { makeTrigger, packProperty, HTMLElementImpl_$ctor_Z5966C024, createGroupNode, makeHTMLNodeRender } from "./Html.Impl.fs.js";
 import { Property$2_$ctor_1D5210CF, HTMLNamedAttribute$3, HTMLTemplateAttributeValue$3, HTMLTemplateAttribute$3, HTMLTemplateElement$3, HTMLTemplateNode$3 } from "./Html.fs.js";
-import { value as value_3, some } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
-import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
-import { empty } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { value as value_3, some } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
+import { empty } from "../../../src/.fable/fable-library.3.1.10/List.js";
 
 export class DSL {
     constructor() {
@@ -115,6 +115,10 @@ export function DSL_Attr_41B4E442(name, predicate, whenTrue, whenFalse) {
 
 export function DSL_Attr_30230F9B(name, whenTrue, whenFalse) {
     return DSL_Attr_3DF4EB53(name, (b) => (b ? whenTrue : whenFalse));
+}
+
+export function DSL_PropValue_3F4B8575(name, value) {
+    return new HTMLTemplateAttribute$3(0, new HTMLNamedAttribute$3(name, new HTMLTemplateAttributeValue$3(1, packProperty(Property$2_$ctor_1D5210CF(value)))));
 }
 
 export function DSL_Prop_4A53169E(name, value) {
