@@ -571,6 +571,18 @@ type DSL =
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         DSL.Lifecycle(afterRender, (fun { Payload = payload } -> (true, payload)), afterChange, beforeDestroy)
 
+    static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+        (
+            afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P,
+            beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.Lifecycle(
+            afterRender,
+            (fun { Payload = payload } -> (true, payload)),
+            (fun { Payload = payload } -> payload),
+            beforeDestroy
+        )
+
     static member CompareStates<'S, 'A, 'Q>
         (
             f: 'S -> 'S -> bool,

@@ -1,9 +1,10 @@
-import { sortBy, append, map, length, fold, empty, cons, foldBack } from "../../../src/.fable/fable-library.3.1.10/List.js";
-import { value } from "../../../src/.fable/fable-library.3.1.10/Option.js";
-import { Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
-import { union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
-import { compare, structuralHash, equals, uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
-import { List_groupBy } from "../../../src/.fable/fable-library.3.1.10/Seq2.js";
+import { permute, sortBy, append, map, length, fold, empty, cons, foldBack } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
+import { Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
+import { union_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { compare, structuralHash, equals, uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { List_groupBy } from "../Tempo.Demo/.fable/fable-library.3.1.10/Seq2.js";
+import { printf, toConsole } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
 
 export function filterMap(f, ls) {
     return foldBack((curr, acc) => {
@@ -71,5 +72,18 @@ export function rank(getScore, strategy, ls) {
         Compare: (x_1, y_1) => compare(x_1, y_1),
     })))[1];
     return ls_2;
+}
+
+export function moveItem(oldIndex, newIndex, list) {
+    if (oldIndex === newIndex) {
+        toConsole(printf("NO CHANGE"));
+        return list;
+    }
+    else if (oldIndex > newIndex) {
+        return permute((index) => ((index === oldIndex) ? newIndex : (((index < newIndex) ? true : (index > oldIndex)) ? index : (index + 1))), list);
+    }
+    else {
+        return permute((index_1) => ((index_1 === oldIndex) ? newIndex : (((index_1 < oldIndex) ? true : (index_1 > newIndex)) ? index_1 : (index_1 - 1))), list);
+    }
 }
 

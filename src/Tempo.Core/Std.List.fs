@@ -36,3 +36,28 @@ module List =
                 (0, List.empty)
 
         ls
+
+    let moveItem<'T> (oldIndex: int) (newIndex: int) (list: List<'T>) : List<'T> =
+        if oldIndex = newIndex then
+            printfn "NO CHANGE"
+            list
+        else if oldIndex > newIndex then
+            List.permute
+                (fun index ->
+                    if index = oldIndex then
+                        newIndex
+                    else if (index < newIndex) || (index > oldIndex) then
+                        index
+                    else
+                        index + 1)
+                list
+        else
+            List.permute
+                (fun index ->
+                    if index = oldIndex then
+                        newIndex
+                    else if (index < oldIndex) || (index > newIndex) then
+                        index
+                    else
+                        index - 1)
+                list
