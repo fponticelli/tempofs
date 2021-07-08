@@ -25,7 +25,9 @@ module HtmlParser =
           "img", "IMG"
           "span", "SPAN"
           "svg", "SVG"
-          "path", "PATH" ]
+          "path", "PATH"
+          "input", "INPUT"
+          "textarea", "TEXTAREA" ]
         |> Map.ofList
 
     let knownAttributes =

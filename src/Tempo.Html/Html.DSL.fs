@@ -771,3 +771,17 @@ type DSL =
     static member inline PATH<'S, 'A, 'Q>() = DSL.PATH([], [])
 
     static member inline PATH<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.PATH(attributes, [ child ])
+
+    static member INPUT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        El("input", [ attrs, [])
+
+    static member TEXTAREA<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) = El("textarea", attrs, [])
+
+    static member INPUT_TEXT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        El("input", [ Attr("type", "text") ] @ attrs, [])
+
+    static member INPUT_NUMBER<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        El("input", [ Attr("type", "number") ] @ attrs, [])
+
+    static member INPUT_CHECKBOX<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        El("input", [ Attr("type", "checkbox") ] @ attrs, [])
