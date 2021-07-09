@@ -88,3 +88,65 @@ and HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
 
 and IHTMLLifecycleInvoker<'S, 'A, 'Q, 'R> =
     abstract Invoke<'EL, 'P when 'EL :> Element> : HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P> -> 'R
+
+
+type HTMLLifecycle =
+    static member MapState<'S1, 'S2, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+        (
+            mapState: 'S1 -> 'S2,
+            src: HTMLLifecycle<'S2, 'A, 'Q, 'EL, 'P>
+        ) : HTMLLifecycle<'S1, 'A, 'Q, 'EL, 'P> =
+        HTMLLifecycle<'S1, 'A, 'Q, 'EL, 'P>(
+            afterRender =
+                (fun (payload: HTMLLifecycleInitialPayload<'S1, 'A, 'EL>) ->
+                    src.AfterRender
+                        { State = mapState payload.State
+                          Element = payload.Element
+                          Dispatch = payload.Dispatch }),
+            beforeChange =
+                (fun (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                    src.BeforeChange
+                        { State = mapState payload.State
+                          Element = payload.Element
+                          Payload = payload.Payload
+                          Dispatch = payload.Dispatch }),
+            afterChange =
+                (fun (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                    src.AfterChange
+                        { State = mapState payload.State
+                          Element = payload.Element
+                          Payload = payload.Payload
+                          Dispatch = payload.Dispatch }),
+            beforeDestroy =
+                (fun (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                    src.BeforeDestroy
+                        { State = mapState payload.State
+                          Element = payload.Element
+                          Payload = payload.Payload
+                          Dispatch = payload.Dispatch }),
+            respond =
+                (fun (q: 'Q) (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                    src.Respond
+                        q
+                        { State = mapState payload.State
+                          Element = payload.Element
+                          Payload = payload.Payload
+                          Dispatch = payload.Dispatch })
+        )
+
+//     static member MapState<'S1, 'S2, 'A, 'Q, 'R>
+//         (
+//             map: 'S1 -> 'S2,
+//             inv: IHTMLLifecycleInvoker<'S2, 'A, 'Q, 'R>
+//         ) : IHTMLLifecycleInvoker<'S1, 'A, 'Q, 'R> =
+//         failwith ""
+
+//     static member MapState<'S1, 'S2, 'A, 'Q>
+//         (
+//             map: 'S2 -> 'S1,
+//             lifecycle: IHTMLLifecycle<'S1, 'A, 'Q>
+//         ) : IHTMLLifecycle<'S2, 'A, 'Q> =
+//         { new IHTMLLifecycle<'S1, 'A, 'Q> with
+//             member this.Accept(f) =
+//                 (HTMLLifecycle.MapState(map, f))
+//                     .Invoke<'EL, 'P> this }

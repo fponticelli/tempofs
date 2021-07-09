@@ -214,11 +214,12 @@ type DSL =
     static member PropValue<'S, 'A, 'Q, 'T>(name: string, value: Value<'S, 'T>) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         property name (value)
 
+    static member Prop<'S, 'A, 'Q, 'T>(name: string, f: 'S -> 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        property name (f >> Some |> Derived)
+
     static member Prop<'S, 'A, 'Q, 'T>(name: string, value: 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         property name (value |> Literal)
 
-    static member Prop<'S, 'A, 'Q, 'T>(name: string, f: 'S -> 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        property name (f >> Some |> Derived)
 
     static member On<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
         (
@@ -533,6 +534,40 @@ type DSL =
         ) : HTMLTemplate<'S1, 'A1, 'Q1> =
         transform transformf template
 
+
+    static member inline MapAttrState<'S1, 'S2, 'A, 'Q>
+        (
+            map: 'S1 -> 'S2,
+            attribute: HTMLTemplateAttribute<'S2, 'A, 'Q>
+        ) : HTMLTemplateAttribute<'S1, 'A, 'Q> =
+        match attribute with
+        | Lifecycle lc ->
+            HTMLTemplateAttribute<'S1, 'A, 'Q>.Lifecycle
+            <| failwith "not implemented"
+        | HTMLNamedAttribute { Name = name; Value = value } ->
+            HTMLNamedAttribute
+                { Name = name
+                  Value =
+                      match value with
+                      | StringAttr v -> (Value.MapState map v) |> StringAttr
+                      | Property v -> failwith "not implemented"
+                      | Trigger v -> failwith "not implemented" }
+
+    (*
+and HTMLNamedAttribute<'S, 'A, 'Q> =
+    { Name: string
+      Value: HTMLTemplateAttributeValue<'S, 'A, 'Q> }
+
+and HTMLTemplateAttribute<'S, 'A, 'Q> =
+    | HTMLNamedAttribute of HTMLNamedAttribute<'S, 'A, 'Q>
+    | Lifecycle of IHTMLLifecycle<'S, 'A, 'Q>
+
+and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
+    | StringAttr of Value<'S, string option>
+    | Property of IProperty<'S>
+    | Trigger of IHTMLTrigger<'S, 'A>
+*)
+
     static member inline Lifecycle<'S, 'A, 'Q, 'P>
         (
             afterRender: 'S -> 'P,
@@ -772,16 +807,15 @@ type DSL =
 
     static member inline PATH<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, child: HTMLTemplate<'S, 'A, 'Q>) = DSL.PATH(attributes, [ child ])
 
-    static member INPUT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
-        El("input", [ attrs, [])
+    static member inline INPUT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.El("input", attrs, [])
 
-    static member TEXTAREA<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) = El("textarea", attrs, [])
+    static member inline TEXTAREA<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.El("textarea", attrs, [])
 
-    static member INPUT_TEXT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
-        El("input", [ Attr("type", "text") ] @ attrs, [])
+    static member inline INPUT_TEXT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "text") :: attrs, [])
 
-    static member INPUT_NUMBER<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
-        El("input", [ Attr("type", "number") ] @ attrs, [])
+    static member inline INPUT_NUMBER<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "number") :: attrs, [])
 
-    static member INPUT_CHECKBOX<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
-        El("input", [ Attr("type", "checkbox") ] @ attrs, [])
+    static member inline INPUT_CHECKBOX<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "checkbox") :: attrs, [])

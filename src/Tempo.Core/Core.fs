@@ -4,6 +4,8 @@ module Core =
     type Value<'S, 'V> =
         | Literal of 'V
         | Derived of ('S -> 'V)
+
+    type Value =
         static member Of<'V>(v: 'V) = Literal v
         static member Of<'S, 'V>(f: 'S -> 'V) = Derived f
         static member Of<'S>() = Derived id<'S>
@@ -17,6 +19,11 @@ module Core =
             match v with
             | Literal v -> Literal <| map v
             | Derived f -> Derived(f >> map)
+
+        static member MapState<'S1, 'S2, 'V> (map: 'S1 -> 'S2) (v: Value<'S2, 'V>) : Value<'S1, 'V> =
+            match v with
+            | Literal v -> Literal v
+            | Derived f -> Derived(map >> f)
 
         static member inline MapOption<'S, 'V1, 'V2>
             (map: 'V1 -> 'V2)

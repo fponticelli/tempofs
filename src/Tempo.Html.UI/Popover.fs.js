@@ -1,12 +1,12 @@
-import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { float64_type, record_type, lambda_type, unit_type, class_type, bool_type, union_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { defaultArg } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
-import { ofArray, iterate, singleton } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
+import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
+import { float64_type, record_type, lambda_type, unit_type, class_type, bool_type, union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { defaultArg } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { ofArray, iterate, singleton } from "../../../src/.fable/fable-library.3.1.10/List.js";
 import { collectElementAndAncestors } from "../Tempo.Html/Html.Tools.fs.js";
 import { ComponentView$3, map } from "../Tempo.Core/Core.fs.js";
-import { interpolate, toText } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
+import { interpolate, toText } from "../../../src/.fable/fable-library.3.1.10/String.js";
 import { DSL_MakeProgram_1C1F9AE9, DSL_Text_Z721C83C5, DSL_Attr_Z384F8060, DSL_El_Z7374416F, DSL_OneOf_Z491B0F3C } from "../Tempo.Html/Html.DSL.fs.js";
-import { FSharpChoice$2 } from "../Tempo.Demo/.fable/fable-library.3.1.10/Choice.js";
+import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
 import { lifecycleAttribute } from "../Tempo.Html/Html.Impl.fs.js";
 
 export class PopoverModule_Position extends Union {

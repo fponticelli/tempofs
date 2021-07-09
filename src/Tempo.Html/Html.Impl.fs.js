@@ -5,7 +5,7 @@ import { remove } from "./Html.Tools.fs.js";
 import { HTMLLifecycle$5__get_Respond, HTMLLifecycle$5__get_BeforeDestroy, HTMLLifecycle$5__get_AfterChange, HTMLLifecyclePayload$4, HTMLLifecycle$5__get_BeforeChange, HTMLLifecycleInitialPayload$3, HTMLLifecycle$5__get_AfterRender, Property$2__get_Value, HTMLTemplateAttribute$3, HTMLLifecycle$5_$ctor_17DF349, HTMLTrigger$4_$ctor_49480E0B, TriggerPayload$3, HTMLTrigger$4__get_Handler } from "./Html.fs.js";
 import { partialApply, mapCurriedArgs, stringHash, uncurry, equals } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { Record } from "../../../src/.fable/fable-library.3.1.10/Types.js";
-import { View$2, Value$2_Combine_Z4D48493B, Value$2_Resolve } from "../Tempo.Core/Core.fs.js";
+import { View$2, Value_Combine_5A7E2045, Value_Resolve } from "../Tempo.Core/Core.fs.js";
 import { tryFind, ofList } from "../../../src/.fable/fable-library.3.1.10/Map.js";
 import { map2 } from "../../../src/.fable/fable-library.3.1.10/Option.js";
 import { filterMap } from "../Tempo.Core/Std.List.fs.js";
@@ -248,7 +248,7 @@ export function applyTrigger(name, domTrigger, impl, dispatch, getState) {
 export function applyProperty(name, prop, impl, state) {
     void unpackProperty(prop, {
         Invoke(prop_1) {
-            HTMLElementImpl__SetProperty_4A53169E(impl, name, Value$2_Resolve(Property$2__get_Value(prop_1), state));
+            HTMLElementImpl__SetProperty_4A53169E(impl, name, Value_Resolve(Property$2__get_Value(prop_1), state));
             return 0;
         },
     });
@@ -349,7 +349,7 @@ export function combineAttributes(name, va, vb) {
     else {
         const sep = matchValue;
         const combiner = (a, b) => map2((a_1, b_1) => toText(interpolate("%P()%P()%P()", [a_1, sep, b_1])), a, b);
-        return Value$2_Combine_Z4D48493B(combiner, va, vb);
+        return Value_Combine_5A7E2045(combiner, va, vb);
     }
 }
 
@@ -442,7 +442,7 @@ export function makeRenderDOMElement(ns, node, make, parent, state, dispatch) {
     iterate((tupledArg_5) => {
         const name_4 = tupledArg_5[0];
         const value_1 = tupledArg_5[1];
-        HTMLElementImpl__SetAttribute_68C4AEB5(htmlImpl, name_4, Value$2_Resolve(value_1, state));
+        HTMLElementImpl__SetAttribute_68C4AEB5(htmlImpl, name_4, Value_Resolve(value_1, state));
     }, attributes_2);
     const attributeUpdates = map((tupledArg_7) => {
         const name_6 = tupledArg_7[0];

@@ -1,5 +1,5 @@
 import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
-import { record_type, unit_type, class_type, list_type, union_type, lambda_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { record_type, unit_type, list_type, class_type, union_type, lambda_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
 import { append, take, skip, zip, length, iterate, map as map_2 } from "../../../src/.fable/fable-library.3.1.10/List.js";
 import { comparePrimitives, min as min_1, mapCurriedArgs, uncurry, partialApply, curry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { some, value } from "../../../src/.fable/fable-library.3.1.10/Option.js";
@@ -20,19 +20,28 @@ export function Value$2$reflection(gen0, gen1) {
     return union_type("Tempo.Core.Value`2", [gen0, gen1], Value$2, () => [[["Item", gen1]], [["Item", lambda_type(gen0, gen1)]]]);
 }
 
-export function Value$2_Of_2B594(v) {
+export class Value {
+    constructor() {
+    }
+}
+
+export function Value$reflection() {
+    return class_type("Tempo.Core.Value", void 0, Value);
+}
+
+export function Value_Of_1505(v) {
     return new Value$2(0, v);
 }
 
-export function Value$2_Of_Z1FC644C9(f) {
+export function Value_Of_7C4B0DD6(f) {
     return new Value$2(1, f);
 }
 
-export function Value$2_Of() {
+export function Value_Of() {
     return new Value$2(1, (x) => x);
 }
 
-export function Value$2_Resolve(v, s) {
+export function Value_Resolve(v, s) {
     if (v.tag === 1) {
         const f = v.fields[0];
         return f(s);
@@ -43,7 +52,7 @@ export function Value$2_Resolve(v, s) {
     }
 }
 
-export function Value$2_Map(map_1, v) {
+export function Value_Map(map_1, v) {
     if (v.tag === 1) {
         const f = v.fields[0];
         return new Value$2(1, (arg) => map_1(f(arg)));
@@ -54,7 +63,18 @@ export function Value$2_Map(map_1, v) {
     }
 }
 
-export function Value$2_Combine_Z4D48493B(f, va, vb) {
+export function Value_MapState(map_1, v) {
+    if (v.tag === 1) {
+        const f = v.fields[0];
+        return new Value$2(1, (arg) => f(map_1(arg)));
+    }
+    else {
+        const v_1 = v.fields[0];
+        return new Value$2(0, v_1);
+    }
+}
+
+export function Value_Combine_5A7E2045(f, va, vb) {
     const matchValue = [va, vb];
     if (matchValue[0].tag === 1) {
         if (matchValue[1].tag === 0) {
@@ -80,8 +100,8 @@ export function Value$2_Combine_Z4D48493B(f, va, vb) {
     }
 }
 
-export function Value$2_Sequence_Z2F3F07FB(ls) {
-    return new Value$2(1, (s) => map_2((v) => Value$2_Resolve(v, s), ls));
+export function Value_Sequence_17EEEA04(ls) {
+    return new Value$2(1, (s) => map_2((v) => Value_Resolve(v, s), ls));
 }
 
 export class Template$4 extends Union {

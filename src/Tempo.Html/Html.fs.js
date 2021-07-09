@@ -1,7 +1,7 @@
-import { Record, Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { lambda_type, unit_type, option_type, class_type, record_type, list_type, union_type, string_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
+import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
+import { lambda_type, unit_type, option_type, class_type, record_type, list_type, union_type, string_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
 import { Template$4$reflection, Value$2$reflection } from "../Tempo.Core/Core.fs.js";
-import { curry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
+import { curry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 
 export class HTMLTemplateNode$3 extends Union {
     constructor(tag, ...fields) {
@@ -197,5 +197,20 @@ export function HTMLLifecycle$5__get_BeforeDestroy(this$) {
 
 export function HTMLLifecycle$5__get_Respond(this$) {
     return curry(2, this$.respond);
+}
+
+export class HTMLLifecycle {
+    constructor() {
+    }
+}
+
+export function HTMLLifecycle$reflection() {
+    return class_type("Tempo.Html.HTMLLifecycle", void 0, HTMLLifecycle);
+}
+
+export function HTMLLifecycle_MapState_Z34401DD8(mapState, src) {
+    return HTMLLifecycle$5_$ctor_17DF349((payload) => HTMLLifecycle$5__get_AfterRender(src)(new HTMLLifecycleInitialPayload$3(mapState(payload.State), payload.Element, payload.Dispatch)), (payload_1) => HTMLLifecycle$5__get_BeforeChange(src)(new HTMLLifecyclePayload$4(mapState(payload_1.State), payload_1.Element, payload_1.Payload, payload_1.Dispatch)), (payload_2) => HTMLLifecycle$5__get_AfterChange(src)(new HTMLLifecyclePayload$4(mapState(payload_2.State), payload_2.Element, payload_2.Payload, payload_2.Dispatch)), (payload_3) => {
+        HTMLLifecycle$5__get_BeforeDestroy(src)(new HTMLLifecyclePayload$4(mapState(payload_3.State), payload_3.Element, payload_3.Payload, payload_3.Dispatch));
+    }, (q, payload_4) => HTMLLifecycle$5__get_Respond(src)(q)(new HTMLLifecyclePayload$4(mapState(payload_4.State), payload_4.Element, payload_4.Payload, payload_4.Dispatch)));
 }
 

@@ -1,10 +1,10 @@
-import { permute, sortBy, append, map, length, fold, empty, cons, foldBack } from "../Tempo.Demo/.fable/fable-library.3.1.10/List.js";
-import { value } from "../Tempo.Demo/.fable/fable-library.3.1.10/Option.js";
-import { Union } from "../Tempo.Demo/.fable/fable-library.3.1.10/Types.js";
-import { union_type } from "../Tempo.Demo/.fable/fable-library.3.1.10/Reflection.js";
-import { compare, structuralHash, equals, uncurry } from "../Tempo.Demo/.fable/fable-library.3.1.10/Util.js";
-import { List_groupBy } from "../Tempo.Demo/.fable/fable-library.3.1.10/Seq2.js";
-import { printf, toConsole } from "../Tempo.Demo/.fable/fable-library.3.1.10/String.js";
+import { permute, sortBy, append, map, length, fold, empty, cons, foldBack } from "../../../src/.fable/fable-library.3.1.10/List.js";
+import { value } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
+import { union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { compare, structuralHash, equals, uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
+import { List_groupBy } from "../../../src/.fable/fable-library.3.1.10/Seq2.js";
+import { printf, toConsole } from "../../../src/.fable/fable-library.3.1.10/String.js";
 
 export function filterMap(f, ls) {
     return foldBack((curr, acc) => {
