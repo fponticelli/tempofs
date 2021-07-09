@@ -308,8 +308,8 @@ export function DSL_Seq_Z7461BB91(f, template) {
 }
 
 export function DSL_CompareStates_5C9B84BF(f, template) {
-    return lifecycle((x) => x, f, (state, _arg14) => state, (value) => {
-    }, (_arg15, p) => p, template);
+    return lifecycle((x) => x, f, (state, _arg15) => state, (value) => {
+    }, (_arg16, p) => p, template);
 }
 
 export function DSL_MakeCaptureSA() {

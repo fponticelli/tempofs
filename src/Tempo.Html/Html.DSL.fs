@@ -220,7 +220,6 @@ type DSL =
     static member Prop<'S, 'A, 'Q, 'T>(name: string, value: 'T) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         property name (value |> Literal)
 
-
     static member On<'S, 'A, 'Q, 'EL, 'E when 'E :> Event and 'EL :> Element>
         (
             name: string,
@@ -272,6 +271,42 @@ type DSL =
             handler: 'E -> 'A
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         DSL.On<'S, 'A, 'Q, _, 'E>(name, (fun { Event = e } -> handler e))
+
+
+    static member inline OnInputText<'S, 'A, 'Q>
+        (
+            ev: string,
+            handler: 'S -> string -> 'A
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, HTMLInputElement, Event>(ev, (fun p -> handler p.State p.Element.value))
+
+    static member inline OnInputNumber<'S, 'A, 'Q>
+        (
+            ev: string,
+            handler: 'S -> float -> 'A
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.DispatchOn<'S, 'A, 'Q, HTMLInputElement, Event>(
+            ev,
+            (fun { Element = el; State = state } dispatch ->
+                let v = el.valueAsNumber
+
+                let isFinite v =
+                    not (System.Double.IsInfinity v)
+                    && not (System.Double.IsNaN v)
+
+                if isFinite v then
+                    dispatch (handler state v))
+        )
+
+    static member inline OnInputToggle<'S, 'A, 'Q>
+        (
+            ev: string,
+            handler: 'S -> bool -> 'A
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, HTMLInputElement, Event>(ev, (fun p -> handler p.State p.Element.``checked``))
+
+    static member inline OnTrigger<'S, 'A, 'Q>(ev: string, handler: 'S -> 'A) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        DSL.On<'S, 'A, 'Q, HTMLInputElement, Event>(ev, (fun p -> handler p.State))
 
     static member inline Fragment<'S, 'A, 'Q>(templates: HTMLTemplate<'S, 'A, 'Q> list) : HTMLTemplate<'S, 'A, 'Q> =
         Fragment templates
@@ -535,23 +570,23 @@ type DSL =
         transform transformf template
 
 
-    static member inline MapAttrState<'S1, 'S2, 'A, 'Q>
-        (
-            map: 'S1 -> 'S2,
-            attribute: HTMLTemplateAttribute<'S2, 'A, 'Q>
-        ) : HTMLTemplateAttribute<'S1, 'A, 'Q> =
-        match attribute with
-        | Lifecycle lc ->
-            HTMLTemplateAttribute<'S1, 'A, 'Q>.Lifecycle
-            <| failwith "not implemented"
-        | HTMLNamedAttribute { Name = name; Value = value } ->
-            HTMLNamedAttribute
-                { Name = name
-                  Value =
-                      match value with
-                      | StringAttr v -> (Value.MapState map v) |> StringAttr
-                      | Property v -> failwith "not implemented"
-                      | Trigger v -> failwith "not implemented" }
+    // static member inline MapAttrState<'S1, 'S2, 'A, 'Q>
+    //     (
+    //         map: 'S1 -> 'S2,
+    //         attribute: HTMLTemplateAttribute<'S2, 'A, 'Q>
+    //     ) : HTMLTemplateAttribute<'S1, 'A, 'Q> =
+    //     match attribute with
+    //     | Lifecycle lc ->
+    //         HTMLTemplateAttribute<'S1, 'A, 'Q>.Lifecycle
+    //         <| failwith "not implemented"
+    //     | HTMLNamedAttribute { Name = name; Value = value } ->
+    //         HTMLNamedAttribute
+    //             { Name = name
+    //               Value =
+    //                   match value with
+    //                   | StringAttr v -> (Value.MapState map v) |> StringAttr
+    //                   | Property v -> failwith "not implemented"
+    //                   | Trigger v -> failwith "not implemented" }
 
     (*
 and HTMLNamedAttribute<'S, 'A, 'Q> =
@@ -819,3 +854,5 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
 
     static member inline INPUT_CHECKBOX<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
         DSL.El("input", DSL.Attr("type", "checkbox") :: attrs, [])
+
+    static member inline SELECT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("select", attrs, children)
