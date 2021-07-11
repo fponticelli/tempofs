@@ -3,7 +3,7 @@ namespace Tempo.Html.UI
 open Fable.Core
 open Browser.Types
 
-[<Erase; RequireQualifiedAccess>]
+[<Erase>]
 module JSe =
     [<Erase>]
     type ResizeObserverEntry =

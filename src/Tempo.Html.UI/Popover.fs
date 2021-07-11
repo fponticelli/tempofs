@@ -25,23 +25,12 @@ module Popover =
         | RightBottom
 
 module private PopoverImpl =
+    type Payload<'S, 'A, 'Q> =
+        { mutable State: 'S
+          mutable MaybeView: ComponentView<'S, 'A, 'Q> option }
+
     type Position = Popover.Position
-
-    type State<'S, 'A> =
-        { Open: bool
-          TriggerElement: Element
-          OuterState: 'S
-          OuterDispatch: Dispatch<'A> }
-
     type Coords = { X: float; Y: float }
-
-    type Action<'S, 'A> =
-        | Open
-        | Close
-        | Toggle
-        | Reposition
-        | SetOuterState of 'S
-        | OuterActionTriggered of 'A
 
     let makeCalculatePosition (position: Position) (distance: float) =
         match position with
@@ -131,6 +120,7 @@ type Popover =
             panel: HTMLTemplate<'S, 'A, 'Q>,
             ?position: Popover.Position,
             ?triggeringEvents: string list,
+            ?closingEvents: string list,
             ?distance: float,
             ?container: Element,
             ?startOpen: 'S -> bool,
@@ -142,7 +132,10 @@ type Popover =
         let distance = Option.defaultValue 2.0 distance
 
         let triggeringEvents =
-            Option.defaultValue [ "click" ] triggeringEvents
+            Option.defaultValue [ "click"; "hover" ] triggeringEvents
+
+        let closingEvents =
+            Option.defaultValue [ "click"; "keyup" ] closingEvents
 
         let container =
             Option.defaultValue (document.body :> Element) container
@@ -159,157 +152,85 @@ type Popover =
         let calcPosition (ref: Element) (target: Element) =
             calcPosition (ref.getBoundingClientRect ()) (target.getBoundingClientRect ())
 
-        let makeCloseOnClickOutsideImpl dispatch =
-            let rec f (ev: Event) =
-                remove ()
+        let applyPositioning (trigger: Element) (panel: Element) =
+            let { PopoverImpl.X = x; PopoverImpl.Y = y } = calcPosition trigger panel
+            setStyle (panel, "left", $"{x}px")
+            setStyle (panel, "top", $"{y}px")
 
-                match getProperty (ev, "key") with
-                | None -> dispatch PopoverImpl.Action.Close
-                | Some k when k = "Escape" || k = "Esc" -> dispatch PopoverImpl.Action.Close
-                | Some _ -> ()
-
-            and remove () =
-                document.removeEventListener ("keyup", f)
-                document.removeEventListener ("click", f)
-
-            window.setTimeout (
-                (fun () ->
-                    document.addEventListener ("keyup", f)
-                    document.addEventListener ("click", f)),
-                0
-            )
-            |> ignore
-
-            remove
-
-        let makeCloseOnClickOutside isOpen dispatch =
-            if isOpen then
-                makeCloseOnClickOutsideImpl dispatch
-            else
-                ignore
-
-        let makeReposition (el: Element) dispatch =
-            let dispatchReposition _ =
-                PopoverImpl.Action.Reposition |> dispatch
+        let wireReposition (button: Element) (container: Element) =
+            let apply () = applyPositioning button container
 
             let rObserver =
-                JSe.ResizeObserver((fun _ _ -> dispatchReposition ()))
+                JSe.ResizeObserver((fun _ _ -> apply ()))
 
-            let ancestors = collectElementAndAncestors el
+            let ancestors = collectElementAndAncestors button
 
             List.iter
                 (fun (el: Element) ->
-                    el.addEventListener ("scroll", dispatchReposition)
+                    el.addEventListener ("scroll", (fun _ -> apply ()))
                     rObserver.observe (el))
                 ancestors
 
             let remove () =
                 rObserver.disconnect ()
-                List.iter (fun (i: Element) -> i.removeEventListener ("scroll", dispatchReposition)) ancestors
+                List.iter (fun (i: Element) -> i.removeEventListener ("scroll", (fun _ -> apply ()))) ancestors
 
             remove
 
-        // TODO
-        let mapped =
-            MapSAQ(
-                (fun ({ OuterState = state }: PopoverImpl.State<'S, 'A>) -> state),
-                Some << PopoverImpl.OuterActionTriggered,
-                (fun () -> None),
-                panel
-            )
+        let makePanelView (payload: PopoverImpl.Payload<'S, 'A, 'Q>) (dispatch: Dispatch<'A>) (parent: Element) =
+            let update (s: 'S) (_: 'A) = s
+            let middleware { Action = action } = dispatch action
 
-        let applyPositioning (isOpen: bool) (trigger: Element) (panel: Element) =
-            if isOpen then
-                let { PopoverImpl.X = x; PopoverImpl.Y = y } = calcPosition trigger panel
-                setStyle (panel, "left", $"{x}px")
-                setStyle (panel, "top", $"{y}px")
-            else
-                ()
+            let container = document.createElement ("div")
+            setStyle (container, "position", "absolute")
+            (parent.appendChild container) |> ignore
 
-        let template =
-            OneOf(
-                (fun (s: PopoverImpl.State<'S, 'A>) ->
-                    if s.Open then
-                        Choice1Of2(s)
-                    else
-                        Choice2Of2(())),
+            let view =
+                MakeProgram(panel, container) update middleware payload.State
 
-                DIV(
-                    [ Attr("style", "position: absolute")
-                      Lifecycle(
-                          (fun { State = ({ Open = isOpen
-                                            TriggerElement = trigger }: PopoverImpl.State<'S, 'A>)
-                                 Dispatch = dispatch
-                                 Element = panel } ->
-                              panel.addEventListener (
-                                  "click",
-                                  (fun event ->
-                                      event.cancelBubble <- true
-                                      event.preventDefault ())
-                              )
-
-                              applyPositioning isOpen trigger panel
-                              makeCloseOnClickOutside isOpen dispatch),
-                          afterChange =
-                              (fun { State = { Open = isOpen
-                                               TriggerElement = trigger }
-                                     Dispatch = dispatch
-                                     Element = panel
-                                     Payload = manageClickDoc } ->
-                                  applyPositioning isOpen trigger panel
-                                  manageClickDoc ()
-                                  makeCloseOnClickOutside isOpen dispatch),
-                          beforeDestroy = (fun { Payload = manageClickDoc } -> manageClickDoc ())
-                      ) ],
-                    [ mapped ]
-                ),
-                Text ""
-            )
+            (container,
+             { view with
+                   Destroy =
+                       (fun () ->
+                           remove container
+                           view.Destroy()) })
 
         // Button/Control lifecycle
         Lifecycle<'S, 'A, 'Q, Element, _>(
-            (fun { State = state
-                   Dispatch = dispatch
-                   Element = el } ->
-                let render = MakeProgram(template, container)
+            afterRender =
+                (fun { State = state
+                       Dispatch = dispatch
+                       Element = button } ->
 
-                let update (state: PopoverImpl.State<'S, 'A>) (action: PopoverImpl.Action<'S, 'A>) =
-                    match action with
-                    | PopoverImpl.Toggle -> { state with Open = not state.Open }
-                    | PopoverImpl.Open -> { state with Open = true }
-                    | PopoverImpl.Close -> { state with Open = false }
-                    | PopoverImpl.SetOuterState outs -> { state with OuterState = outs }
-                    | PopoverImpl.OuterActionTriggered act ->
-                        state.OuterDispatch act
+                    let payload : PopoverImpl.Payload<'S, 'A, 'Q> = { State = state; MaybeView = None }
 
-                        if closeOnAction act then
-                            { state with Open = false }
-                        else
-                            state
-                    | PopoverImpl.Reposition -> state // triggers refresh of location
+                    let rec openPopover (ev: Event) =
+                        ev.cancelBubble <- true
 
-                let view =
-                    render
-                        update
-                        ignore
-                        { Open = startOpen state
-                          TriggerElement = el
-                          OuterState = state
-                          OuterDispatch = dispatch }
+                        let (containerEl, view) = makePanelView payload dispatch container
+                        applyPositioning button containerEl
+                        let removeWiring = wireReposition button containerEl
 
-                let dispatchOpen _ = view.Dispatch(PopoverImpl.Toggle)
-                List.iter (fun te -> el.addEventListener (te, dispatchOpen)) triggeringEvents
-                let removeReposition = makeReposition el view.Dispatch
+                        let rec closePopover (ev: Event) =
 
-                let destroy () =
-                    removeReposition ()
-                    List.iter (fun te -> el.removeEventListener (te, dispatchOpen)) triggeringEvents
-                    view.Destroy()
+                            if not (targetHasSpecifiedAncestor ev.target containerEl) then
+                                removeWiring ()
+                                List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
+                                List.iter (fun ce -> document.removeEventListener (ce, closePopover)) closingEvents
+                                payload.MaybeView <- None
+                                view.Destroy()
 
-                { view with Destroy = destroy }),
+                        List.iter (fun te -> button.removeEventListener (te, openPopover)) triggeringEvents
+                        List.iter (fun ce -> document.addEventListener (ce, closePopover)) closingEvents
+                        button.addEventListener ("click", closePopover)
+                        payload.MaybeView <- Some view
+
+                    List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
+                    payload),
             afterChange =
-                (fun { State = state; Payload = view } ->
-                    view.Dispatch(PopoverImpl.SetOuterState state)
-                    view),
-            beforeDestroy = (fun { Payload = view } -> view.Destroy())
+                (fun { State = state; Payload = p } ->
+                    p.State <- state
+                    Option.iter (fun (v: ComponentView<'S, 'A, 'Q>) -> v.Change(state)) p.MaybeView
+                    p),
+            beforeDestroy = (fun { Payload = p } -> Option.iter (fun (v: ComponentView<'S, 'A, 'Q>) -> v.Destroy()) p.MaybeView)
         )

@@ -57,3 +57,17 @@ module Tools =
 
     [<Emit("$0.style[$1] = $2")>]
     let setStyle (target: Element, style: string, value: string) : unit = jsNative
+
+    let rec hasSpecifiedAncestor (element: Element) (ancestor: Element) : bool =
+        if isNull element then
+            false
+        else if element = ancestor then
+            true
+        else
+            hasSpecifiedAncestor element.parentElement ancestor
+
+    let rec targetHasSpecifiedAncestor (target: EventTarget) (ancestor: Element) : bool =
+        if hasProperty (target, "tagName") then
+            hasSpecifiedAncestor (target :?> Element) ancestor
+        else
+            false

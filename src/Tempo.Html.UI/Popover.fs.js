@@ -1,13 +1,13 @@
 import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
-import { float64_type, record_type, lambda_type, unit_type, class_type, bool_type, union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
-import { defaultArg } from "../../../src/.fable/fable-library.3.1.10/Option.js";
-import { ofArray, iterate, singleton } from "../../../src/.fable/fable-library.3.1.10/List.js";
-import { collectElementAndAncestors } from "../Tempo.Html/Html.Tools.fs.js";
-import { ComponentView$3, map } from "../Tempo.Core/Core.fs.js";
+import { class_type, float64_type, record_type, option_type, union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
+import { ComponentView$3, ComponentView$3$reflection } from "../Tempo.Core/Core.fs.js";
+import { toArray, defaultArg } from "../../../src/.fable/fable-library.3.1.10/Option.js";
+import { iterate, ofArray } from "../../../src/.fable/fable-library.3.1.10/List.js";
 import { interpolate, toText } from "../../../src/.fable/fable-library.3.1.10/String.js";
-import { DSL_MakeProgram_1C1F9AE9, DSL_Text_Z721C83C5, DSL_Attr_Z384F8060, DSL_El_Z7374416F, DSL_OneOf_Z491B0F3C } from "../Tempo.Html/Html.DSL.fs.js";
-import { FSharpChoice$2 } from "../../../src/.fable/fable-library.3.1.10/Choice.js";
+import { targetHasSpecifiedAncestor, remove as remove_1, collectElementAndAncestors } from "../Tempo.Html/Html.Tools.fs.js";
+import { DSL_MakeProgram_1C1F9AE9 } from "../Tempo.Html/Html.DSL.fs.js";
 import { lifecycleAttribute } from "../Tempo.Html/Html.Impl.fs.js";
+import { iterate as iterate_1 } from "../../../src/.fable/fable-library.3.1.10/Seq.js";
 
 export class PopoverModule_Position extends Union {
     constructor(tag, ...fields) {
@@ -24,18 +24,16 @@ export function PopoverModule_Position$reflection() {
     return union_type("Tempo.Html.UI.PopoverModule.Position", [], PopoverModule_Position, () => [[], [], [], [], [], [], [], [], [], [], [], [], []]);
 }
 
-class PopoverImpl_State$2 extends Record {
-    constructor(Open, TriggerElement, OuterState, OuterDispatch) {
+class PopoverImpl_Payload$3 extends Record {
+    constructor(State, MaybeView) {
         super();
-        this.Open = Open;
-        this.TriggerElement = TriggerElement;
-        this.OuterState = OuterState;
-        this.OuterDispatch = OuterDispatch;
+        this.State = State;
+        this.MaybeView = MaybeView;
     }
 }
 
-function PopoverImpl_State$2$reflection(gen0, gen1) {
-    return record_type("Tempo.Html.UI.PopoverImpl.State`2", [gen0, gen1], PopoverImpl_State$2, () => [["Open", bool_type], ["TriggerElement", class_type("Browser.Types.Element")], ["OuterState", gen0], ["OuterDispatch", lambda_type(gen1, unit_type)]]);
+function PopoverImpl_Payload$3$reflection(gen0, gen1, gen2) {
+    return record_type("Tempo.Html.UI.PopoverImpl.Payload`3", [gen0, gen1, gen2], PopoverImpl_Payload$3, () => [["State", gen0], ["MaybeView", option_type(ComponentView$3$reflection(gen0, gen1, gen2))]]);
 }
 
 class PopoverImpl_Coords extends Record {
@@ -48,21 +46,6 @@ class PopoverImpl_Coords extends Record {
 
 function PopoverImpl_Coords$reflection() {
     return record_type("Tempo.Html.UI.PopoverImpl.Coords", [], PopoverImpl_Coords, () => [["X", float64_type], ["Y", float64_type]]);
-}
-
-class PopoverImpl_Action$2 extends Union {
-    constructor(tag, ...fields) {
-        super();
-        this.tag = (tag | 0);
-        this.fields = fields;
-    }
-    cases() {
-        return ["Open", "Close", "Toggle", "Reposition", "SetOuterState", "OuterActionTriggered"];
-    }
-}
-
-function PopoverImpl_Action$2$reflection(gen0, gen1) {
-    return union_type("Tempo.Html.UI.PopoverImpl.Action`2", [gen0, gen1], PopoverImpl_Action$2, () => [[], [], [], [], [["Item", gen0]], [["Item", gen1]]]);
 }
 
 function PopoverImpl_makeCalculatePosition(position, distance) {
@@ -170,176 +153,122 @@ export function Popover$reflection() {
     return class_type("Tempo.Html.UI.Popover", void 0, Popover);
 }
 
-export function Popover_MakeAttr_Z3D21D21A(panel, position, triggeringEvents, distance, container, startOpen, closeOnAction) {
+export function Popover_MakeAttr_2F44AA22(panel, position, triggeringEvents, closingEvents, distance, container, startOpen, closeOnAction) {
     const position_1 = defaultArg(position, new PopoverModule_Position(7));
     const distance_1 = defaultArg(distance, 2);
-    const triggeringEvents_1 = defaultArg(triggeringEvents, singleton("click"));
+    const triggeringEvents_1 = defaultArg(triggeringEvents, ofArray(["click", "hover"]));
+    const closingEvents_1 = defaultArg(closingEvents, ofArray(["click", "keyup"]));
     const container_1 = defaultArg(container, document.body);
     const startOpen_1 = defaultArg(startOpen, (_arg1) => false);
     const closeOnAction_1 = defaultArg(closeOnAction, (_arg2) => true);
     const calcPosition = PopoverImpl_makeCalculatePosition(position_1, distance_1);
     const calcPosition_1 = (ref, target) => calcPosition(ref.getBoundingClientRect())(target.getBoundingClientRect());
-    const makeCloseOnClickOutsideImpl = (dispatch) => {
-        const f = (ev) => {
-            let k;
-            remove();
-            const matchValue = ev["key"];
-            if (matchValue != null) {
-                if (k = matchValue, (k === "Escape") ? true : (k === "Esc")) {
-                    const k_1 = matchValue;
-                    dispatch(new PopoverImpl_Action$2(1));
-                }
-                else if (matchValue != null) {
-                }
-                else {
-                    throw (new Error("Match failure"));
-                }
-            }
-            else {
-                dispatch(new PopoverImpl_Action$2(1));
-            }
-        };
-        const remove = () => {
-            document.removeEventListener("keyup", f);
-            document.removeEventListener("click", f);
-        };
-        void window.setTimeout(() => {
-            document.addEventListener("keyup", f);
-            document.addEventListener("click", f);
-        }, 0);
-        return remove;
+    const applyPositioning = (trigger, panel_1) => {
+        const patternInput = calcPosition_1(trigger, panel_1);
+        const y = patternInput.Y;
+        const x = patternInput.X;
+        panel_1.style["left"] = toText(interpolate("%P()px", [x]));
+        panel_1.style["top"] = toText(interpolate("%P()px", [y]));
     };
-    const makeCloseOnClickOutside = (isOpen) => ((dispatch_1) => (isOpen ? makeCloseOnClickOutsideImpl(dispatch_1) : (() => {
-    })));
-    const makeReposition = (el) => ((dispatch_2) => {
-        const dispatchReposition = (_arg1_1) => {
-            dispatch_2(new PopoverImpl_Action$2(3));
+    const wireReposition = (button) => ((container_2) => {
+        const apply = () => {
+            applyPositioning(button, container_2);
         };
         const rObserver = new ResizeObserver(((_arg4, _arg3) => {
-            dispatchReposition();
+            apply();
         }), {root: undefined, rootMargin: undefined, threshold: undefined});
-        const ancestors = collectElementAndAncestors(el);
-        iterate((el_1) => {
-            el_1.addEventListener("scroll", dispatchReposition);
-            rObserver.observe(el_1);
+        const ancestors = collectElementAndAncestors(button);
+        iterate((el) => {
+            el.addEventListener("scroll", (_arg5) => {
+                apply();
+            });
+            rObserver.observe(el);
         }, ancestors);
-        const remove_1 = () => {
+        const remove = () => {
             rObserver.disconnect();
             iterate((i) => {
-                i.removeEventListener("scroll", dispatchReposition);
+                i.removeEventListener("scroll", (_arg6) => {
+                    apply();
+                });
             }, ancestors);
         };
-        return remove_1;
+        return remove;
     });
-    const mapped = map((x) => x, (_arg5) => {
-        const state = _arg5.OuterState;
-        return state;
-    }, (arg) => (new PopoverImpl_Action$2(5, arg)), () => (void 0), panel);
-    const applyPositioning = (isOpen_1, trigger, panel_1) => {
-        if (isOpen_1) {
-            const patternInput = calcPosition_1(trigger, panel_1);
-            const y = patternInput.Y;
-            const x_1 = patternInput.X;
-            panel_1.style["left"] = toText(interpolate("%P()px", [x_1]));
-            panel_1.style["top"] = toText(interpolate("%P()px", [y]));
-        }
-    };
-    const template_2 = DSL_OneOf_Z491B0F3C((s) => (s.Open ? (new FSharpChoice$2(0, s)) : (new FSharpChoice$2(1, void 0))), DSL_El_Z7374416F("div", ofArray([DSL_Attr_Z384F8060("style", "position: absolute"), lifecycleAttribute((_arg6) => {
-        const trigger_1 = _arg6.State.TriggerElement;
-        const panel_2 = _arg6.Element;
-        const isOpen_2 = _arg6.State.Open;
-        const dispatch_3 = _arg6.Dispatch;
-        let copyOfStruct = panel_2;
-        copyOfStruct.addEventListener("click", (event) => {
-            event.cancelBubble = true;
-            event.preventDefault();
-        });
-        applyPositioning(isOpen_2, trigger_1, panel_2);
-        return makeCloseOnClickOutside(isOpen_2)(dispatch_3);
-    }, (_arg12) => {
-        const payload = _arg12.Payload;
-        return [true, payload];
-    }, (_arg7) => {
-        const trigger_2 = _arg7.State.TriggerElement;
-        const panel_3 = _arg7.Element;
-        const manageClickDoc = _arg7.Payload;
-        const isOpen_3 = _arg7.State.Open;
-        const dispatch_4 = _arg7.Dispatch;
-        applyPositioning(isOpen_3, trigger_2, panel_3);
-        manageClickDoc();
-        return makeCloseOnClickOutside(isOpen_3)(dispatch_4);
-    }, (_arg8) => {
-        const manageClickDoc_1 = _arg8.Payload;
-        manageClickDoc_1();
-    }, (_arg11, _arg10) => {
-        const payload_1 = _arg10.Payload;
-        return payload_1;
-    })]), singleton(mapped)), DSL_Text_Z721C83C5(""));
-    return lifecycleAttribute((_arg9) => {
-        const state_1 = _arg9.State;
-        const el_2 = _arg9.Element;
-        const dispatch_5 = _arg9.Dispatch;
-        const render = DSL_MakeProgram_1C1F9AE9(template_2, container_1);
-        const update = (state_2, action) => {
-            switch (action.tag) {
-                case 0: {
-                    return new PopoverImpl_State$2(true, state_2.TriggerElement, state_2.OuterState, state_2.OuterDispatch);
-                }
-                case 1: {
-                    return new PopoverImpl_State$2(false, state_2.TriggerElement, state_2.OuterState, state_2.OuterDispatch);
-                }
-                case 4: {
-                    const outs = action.fields[0];
-                    return new PopoverImpl_State$2(state_2.Open, state_2.TriggerElement, outs, state_2.OuterDispatch);
-                }
-                case 5: {
-                    const act = action.fields[0];
-                    state_2.OuterDispatch(act);
-                    if (closeOnAction_1(act)) {
-                        return new PopoverImpl_State$2(false, state_2.TriggerElement, state_2.OuterState, state_2.OuterDispatch);
-                    }
-                    else {
-                        return state_2;
-                    }
-                }
-                case 3: {
-                    return state_2;
-                }
-                default: {
-                    return new PopoverImpl_State$2(!state_2.Open, state_2.TriggerElement, state_2.OuterState, state_2.OuterDispatch);
-                }
-            }
+    const makePanelView = (payload, dispatch, parent) => {
+        const update = (s, _arg1_1) => s;
+        const middleware = (_arg2_1) => {
+            const action = _arg2_1.Action;
+            dispatch(action);
         };
-        const view = render(update)((value_2) => {
-        })(new PopoverImpl_State$2(startOpen_1(state_1), el_2, state_1, dispatch_5));
-        const dispatchOpen = (_arg2_1) => {
-            view.Dispatch(new PopoverImpl_Action$2(2));
-        };
-        iterate((te) => {
-            el_2.addEventListener(te, dispatchOpen);
-        }, triggeringEvents_1);
-        const removeReposition = makeReposition(el_2)(view.Dispatch);
-        const destroy = () => {
-            removeReposition();
-            iterate((te_1) => {
-                el_2.removeEventListener(te_1, dispatchOpen);
-            }, triggeringEvents_1);
+        const container_3 = document.createElement("div");
+        container_3.style["position"] = "absolute";
+        void parent.appendChild(container_3);
+        const view = DSL_MakeProgram_1C1F9AE9(panel, container_3)(update)(middleware)(payload.State);
+        return [container_3, new ComponentView$3(view.Impl, view.Dispatch, view.Change, () => {
+            remove_1(container_3);
             view.Destroy();
+        }, view.Query)];
+    };
+    return lifecycleAttribute((_arg7) => {
+        const state = _arg7.State;
+        const dispatch_1 = _arg7.Dispatch;
+        const button_1 = _arg7.Element;
+        const payload_1 = new PopoverImpl_Payload$3(state, void 0);
+        const openPopover = (ev) => {
+            ev.cancelBubble = true;
+            const patternInput_1 = makePanelView(payload_1, dispatch_1, container_1);
+            const view_1 = patternInput_1[1];
+            const containerEl = patternInput_1[0];
+            applyPositioning(button_1, containerEl);
+            let removeWiring;
+            const clo2 = wireReposition(button_1)(containerEl);
+            removeWiring = (() => {
+                clo2();
+            });
+            const closePopover = (ev_1) => {
+                if (!targetHasSpecifiedAncestor(ev_1.target, containerEl)) {
+                    removeWiring();
+                    iterate((te) => {
+                        button_1.addEventListener(te, openPopover);
+                    }, triggeringEvents_1);
+                    iterate((ce) => {
+                        document.removeEventListener(ce, closePopover);
+                    }, closingEvents_1);
+                    payload_1.MaybeView = (void 0);
+                    view_1.Destroy();
+                }
+            };
+            iterate((te_1) => {
+                button_1.removeEventListener(te_1, openPopover);
+            }, triggeringEvents_1);
+            iterate((ce_1) => {
+                document.addEventListener(ce_1, closePopover);
+            }, closingEvents_1);
+            button_1.addEventListener("click", closePopover);
+            payload_1.MaybeView = view_1;
         };
-        return new ComponentView$3(view.Impl, view.Dispatch, view.Change, destroy, view.Query);
-    }, (_arg12_1) => {
-        const payload_2 = _arg12_1.Payload;
+        iterate((te_2) => {
+            button_1.addEventListener(te_2, openPopover);
+        }, triggeringEvents_1);
+        return payload_1;
+    }, (_arg12) => {
+        const payload_2 = _arg12.Payload;
         return [true, payload_2];
-    }, (_arg10_1) => {
-        const view_1 = _arg10_1.Payload;
-        const state_3 = _arg10_1.State;
-        view_1.Dispatch(new PopoverImpl_Action$2(4, state_3));
-        return view_1;
-    }, (_arg11_1) => {
-        const view_2 = _arg11_1.Payload;
-        view_2.Destroy();
-    }, (_arg11_2, _arg10_2) => {
-        const payload_3 = _arg10_2.Payload;
+    }, (_arg8) => {
+        const state_1 = _arg8.State;
+        const p = _arg8.Payload;
+        p.State = state_1;
+        iterate_1((v) => {
+            v.Change(state_1);
+        }, toArray(p.MaybeView));
+        return p;
+    }, (_arg9) => {
+        const p_1 = _arg9.Payload;
+        iterate_1((v_1) => {
+            v_1.Destroy();
+        }, toArray(p_1.MaybeView));
+    }, (_arg11, _arg10) => {
+        const payload_3 = _arg10.Payload;
         return payload_3;
     });
 }

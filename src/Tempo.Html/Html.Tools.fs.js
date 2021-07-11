@@ -1,4 +1,5 @@
 import { empty, cons } from "../../../src/.fable/fable-library.3.1.10/List.js";
+import { equals } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 
 export function remove(n) {
     if (n instanceof HTMLElement) {
@@ -31,5 +32,33 @@ export function collectElementAndAncestors(el) {
         }
     };
     return go(el, empty());
+}
+
+export function hasSpecifiedAncestor(element_mut, ancestor_mut) {
+    hasSpecifiedAncestor:
+    while (true) {
+        const element = element_mut, ancestor = ancestor_mut;
+        if (element == null) {
+            return false;
+        }
+        else if (equals(element, ancestor)) {
+            return true;
+        }
+        else {
+            element_mut = element.parentElement;
+            ancestor_mut = ancestor;
+            continue hasSpecifiedAncestor;
+        }
+        break;
+    }
+}
+
+export function targetHasSpecifiedAncestor(target, ancestor) {
+    if (target["tagName"] !== null) {
+        return hasSpecifiedAncestor(target, ancestor);
+    }
+    else {
+        return false;
+    }
 }
 
