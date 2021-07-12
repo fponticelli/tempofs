@@ -94,54 +94,11 @@ type DSL =
               Attributes = attributes
               Children = children }
 
-    static member inline El<'S, 'A, 'Q>
-        (
-            name: string,
-            attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list
-        ) : HTMLTemplate<'S, 'A, 'Q> =
-        DSL.El<'S, 'A, 'Q>(name, attributes, [])
-
-    static member inline El<'S, 'A, 'Q>
-        (
-            name: string,
-            children: HTMLTemplate<'S, 'A, 'Q> list
-        ) : HTMLTemplate<'S, 'A, 'Q> =
-        DSL.El<'S, 'A, 'Q>(name, [], children)
-
-    static member inline El<'S, 'A, 'Q>
-        (
-            name: string,
-            attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list,
-            child: HTMLTemplate<'S, 'A, 'Q>
-        ) : HTMLTemplate<'S, 'A, 'Q> =
-        DSL.El<'S, 'A, 'Q>(name, attributes, [ child ])
-
-    static member inline El<'S, 'A, 'Q>(name: string, child: HTMLTemplate<'S, 'A, 'Q>) : HTMLTemplate<'S, 'A, 'Q> =
-        DSL.El<'S, 'A, 'Q>(name, [], [ child ])
-
-    static member inline El<'S, 'A, 'Q>(name: string) : HTMLTemplate<'S, 'A, 'Q> = DSL.El<'S, 'A, 'Q>(name, [], [])
-
     static member inline El<'S, 'A, 'Q>(name: string, value: string) : HTMLTemplate<'S, 'A, 'Q> =
         DSL.El<'S, 'A, 'Q>(name, [], [ DSL.Text value ])
 
     static member inline El<'S, 'A, 'Q>(name: string, f: 'S -> string) : HTMLTemplate<'S, 'A, 'Q> =
         DSL.El<'S, 'A, 'Q>(name, [], [ DSL.Text f ])
-
-    static member inline El<'S, 'A, 'Q>
-        (
-            name: string,
-            attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list,
-            value: string
-        ) : HTMLTemplate<'S, 'A, 'Q> =
-        DSL.El<'S, 'A, 'Q>(name, attributes, [ DSL.Text value ])
-
-    static member inline El<'S, 'A, 'Q>
-        (
-            name: string,
-            attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list,
-            f: 'S -> string
-        ) : HTMLTemplate<'S, 'A, 'Q> =
-        DSL.El<'S, 'A, 'Q>(name, attributes, [ DSL.Text f ])
 
     static member Text() : HTMLTemplate<string, 'A, 'Q> =
         id |> Derived |> HTMLTemplateText |> Node
