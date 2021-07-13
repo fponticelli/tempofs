@@ -2,12 +2,13 @@ import { Record, Union } from "../../../src/.fable/fable-library.3.1.10/Types.js
 import { class_type, float64_type, record_type, option_type, union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
 import { ComponentView$3, ComponentView$3$reflection } from "../Tempo.Core/Core.fs.js";
 import { toArray, defaultArg } from "../../../src/.fable/fable-library.3.1.10/Option.js";
-import { iterate, ofArray } from "../../../src/.fable/fable-library.3.1.10/List.js";
+import { iterate, ofArray, singleton } from "../../../src/.fable/fable-library.3.1.10/List.js";
 import { interpolate, toText } from "../../../src/.fable/fable-library.3.1.10/String.js";
-import { targetHasSpecifiedAncestor, remove as remove_1, collectElementAndAncestors } from "../Tempo.Html/Html.Tools.fs.js";
+import { getFocusable, targetHasSpecifiedAncestor, remove as remove_1, collectElementAndAncestors } from "../Tempo.Html/Html.Tools.fs.js";
 import { DSL_MakeProgram_1C1F9AE9 } from "../Tempo.Html/Html.DSL.fs.js";
 import { lifecycleAttribute } from "../Tempo.Html/Html.Impl.fs.js";
 import { iterate as iterate_1 } from "../../../src/.fable/fable-library.3.1.10/Seq.js";
+import { tryItem } from "../../../src/.fable/fable-library.3.1.10/Array.js";
 
 export class PopoverModule_Position extends Union {
     constructor(tag, ...fields) {
@@ -156,8 +157,8 @@ export function Popover$reflection() {
 export function Popover_MakeAttr_2F44AA22(panel, position, triggeringEvents, closingEvents, distance, container, startOpen, closeOnAction) {
     const position_1 = defaultArg(position, new PopoverModule_Position(7));
     const distance_1 = defaultArg(distance, 2);
-    const triggeringEvents_1 = defaultArg(triggeringEvents, ofArray(["click", "hover"]));
-    const closingEvents_1 = defaultArg(closingEvents, ofArray(["click", "keyup"]));
+    const triggeringEvents_1 = defaultArg(triggeringEvents, singleton("click"));
+    const closingEvents_1 = defaultArg(closingEvents, ofArray(["mousedown", "keyup"]));
     const container_1 = defaultArg(container, document.body);
     const startOpen_1 = defaultArg(startOpen, (_arg1) => false);
     const closeOnAction_1 = defaultArg(closeOnAction, (_arg2) => true);
@@ -215,6 +216,7 @@ export function Popover_MakeAttr_2F44AA22(panel, position, triggeringEvents, clo
         const button_1 = _arg7.Element;
         const payload_1 = new PopoverImpl_Payload$3(state, void 0);
         const openPopover = (ev) => {
+            document.activeElement.blur();
             ev.cancelBubble = true;
             const patternInput_1 = makePanelView(payload_1, dispatch_1, container_1);
             const view_1 = patternInput_1[1];
@@ -235,6 +237,7 @@ export function Popover_MakeAttr_2F44AA22(panel, position, triggeringEvents, clo
                         document.removeEventListener(ce, closePopover);
                     }, closingEvents_1);
                     payload_1.MaybeView = (void 0);
+                    button_1.focus();
                     view_1.Destroy();
                 }
             };
@@ -246,6 +249,9 @@ export function Popover_MakeAttr_2F44AA22(panel, position, triggeringEvents, clo
             }, closingEvents_1);
             button_1.addEventListener("click", closePopover);
             payload_1.MaybeView = view_1;
+            iterate_1((el_1) => {
+                el_1.focus();
+            }, toArray(tryItem(0, getFocusable(containerEl))));
         };
         iterate((te_2) => {
             button_1.addEventListener(te_2, openPopover);

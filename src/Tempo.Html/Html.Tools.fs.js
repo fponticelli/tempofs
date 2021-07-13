@@ -1,5 +1,6 @@
 import { empty, cons } from "../../../src/.fable/fable-library.3.1.10/List.js";
 import { equals } from "../../../src/.fable/fable-library.3.1.10/Util.js";
+import { join } from "../../../src/.fable/fable-library.3.1.10/String.js";
 
 export function remove(n) {
     if (n instanceof HTMLElement) {
@@ -60,5 +61,11 @@ export function targetHasSpecifiedAncestor(target, ancestor) {
     else {
         return false;
     }
+}
+
+export const focusableSelector = join(",", ["[contentEditable=true]", "[tabindex]", "a[href]", "area[href]", "button:not([disabled])", "iframe", "input:not([disabled])", "select:not([disabled])", "textarea:not([disabled])"]);
+
+export function getFocusable(container) {
+    return Array.prototype.slice.call(container.querySelectorAll(focusableSelector));
 }
 

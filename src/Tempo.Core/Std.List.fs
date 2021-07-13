@@ -39,7 +39,6 @@ module List =
 
     let moveItem<'T> (oldIndex: int) (newIndex: int) (list: List<'T>) : List<'T> =
         if oldIndex = newIndex then
-            printfn "NO CHANGE"
             list
         else if oldIndex > newIndex then
             List.permute

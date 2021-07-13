@@ -132,10 +132,10 @@ type Popover =
         let distance = Option.defaultValue 2.0 distance
 
         let triggeringEvents =
-            Option.defaultValue [ "click"; "hover" ] triggeringEvents
+            Option.defaultValue [ "click" ] triggeringEvents
 
         let closingEvents =
-            Option.defaultValue [ "click"; "keyup" ] closingEvents
+            Option.defaultValue [ "mousedown"; "keyup" ] closingEvents
 
         let container =
             Option.defaultValue (document.body :> Element) container
@@ -205,6 +205,7 @@ type Popover =
                     let payload : PopoverImpl.Payload<'S, 'A, 'Q> = { State = state; MaybeView = None }
 
                     let rec openPopover (ev: Event) =
+                        (document.activeElement :?> HTMLElement).blur ()
                         ev.cancelBubble <- true
 
                         let (containerEl, view) = makePanelView payload dispatch container
@@ -212,18 +213,22 @@ type Popover =
                         let removeWiring = wireReposition button containerEl
 
                         let rec closePopover (ev: Event) =
-
                             if not (targetHasSpecifiedAncestor ev.target containerEl) then
                                 removeWiring ()
                                 List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
                                 List.iter (fun ce -> document.removeEventListener (ce, closePopover)) closingEvents
                                 payload.MaybeView <- None
+                                (button :?> HTMLElement).focus ()
                                 view.Destroy()
 
                         List.iter (fun te -> button.removeEventListener (te, openPopover)) triggeringEvents
                         List.iter (fun ce -> document.addEventListener (ce, closePopover)) closingEvents
                         button.addEventListener ("click", closePopover)
+
                         payload.MaybeView <- Some view
+
+                        Array.tryItem 0 (getFocusable (containerEl))
+                        |> Option.iter (fun (el) -> (el :?> HTMLElement).focus ())
 
                     List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
                     payload),

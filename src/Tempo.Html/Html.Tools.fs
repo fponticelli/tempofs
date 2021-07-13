@@ -1,6 +1,7 @@
 namespace Tempo.Html
 
 open Fable.Core
+open Browser.Dom
 open Browser.Types
 
 module Tools =
@@ -24,6 +25,9 @@ module Tools =
 
     [<Emit("$0")>]
     let unsafeCast<'T, 'F> (target: 'F) : 'T = jsNative
+
+    [<Emit("Array.prototype.slice.call($0)")>]
+    let nodeListToArray<'T when 'T :> Element> (nl: NodeListOf<'T>) : 'T array = jsNative
 
     let remove (n: Node) : unit =
         if isHTMLElement n then
@@ -71,3 +75,22 @@ module Tools =
             hasSpecifiedAncestor (target :?> Element) ancestor
         else
             false
+
+    [<Emit("new Event($0)")>]
+    let rec createEvent (name: string) : Browser.Types.Event = jsNative
+
+    let focusableSelector =
+        String.concat
+            ","
+            [ "[contentEditable=true]"
+              "[tabindex]"
+              "a[href]"
+              "area[href]"
+              "button:not([disabled])"
+              "iframe"
+              "input:not([disabled])"
+              "select:not([disabled])"
+              "textarea:not([disabled])" ]
+
+    let getFocusable (container: Element) : Element array =
+        nodeListToArray (container.querySelectorAll focusableSelector)
