@@ -4,7 +4,6 @@ import { Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
 import { union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
 import { compare, structuralHash, equals, uncurry } from "../../../src/.fable/fable-library.3.1.10/Util.js";
 import { List_groupBy } from "../../../src/.fable/fable-library.3.1.10/Seq2.js";
-import { printf, toConsole } from "../../../src/.fable/fable-library.3.1.10/String.js";
 
 export function filterMap(f, ls) {
     return foldBack((curr, acc) => {
@@ -76,7 +75,6 @@ export function rank(getScore, strategy, ls) {
 
 export function moveItem(oldIndex, newIndex, list) {
     if (oldIndex === newIndex) {
-        toConsole(printf("NO CHANGE"));
         return list;
     }
     else if (oldIndex > newIndex) {
