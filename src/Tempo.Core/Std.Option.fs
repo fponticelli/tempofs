@@ -10,7 +10,7 @@ module Option =
             (fun acc opt ->
                 match (acc, opt) with
                 | (Some ls, Some v) -> Some(v :: ls)
-                | _ -> acc)
+                | _ -> None)
             (Some [])
             ls
 

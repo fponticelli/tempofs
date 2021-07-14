@@ -27,6 +27,7 @@ module List =
         let (_, ls) =
             List.groupBy getScore ls
             |> List.sortBy (fun (s, _) -> s)
+            |> List.rev
             |> List.map (fun (_, v) -> v)
             |> List.fold
                 (fun (currRank: int, ls: (int * 'A) list) rest ->

@@ -1,4 +1,4 @@
-import { permute, sortBy, append, map, length, fold, empty, cons, foldBack } from "../../../src/.fable/fable-library.3.1.10/List.js";
+import { permute, sortBy, reverse, append, map, length, fold, empty, cons, foldBack } from "../../../src/.fable/fable-library.3.1.10/List.js";
 import { value } from "../../../src/.fable/fable-library.3.1.10/Option.js";
 import { Union } from "../../../src/.fable/fable-library.3.1.10/Types.js";
 import { union_type } from "../../../src/.fable/fable-library.3.1.10/Reflection.js";
@@ -61,7 +61,7 @@ export function rank(getScore, strategy, ls) {
     }), [0, empty()], map((tupledArg_1) => {
         const v = tupledArg_1[1];
         return v;
-    }, sortBy((tupledArg) => {
+    }, reverse(sortBy((tupledArg) => {
         const s = tupledArg[0];
         return s;
     }, List_groupBy(getScore, ls, {
@@ -69,7 +69,7 @@ export function rank(getScore, strategy, ls) {
         GetHashCode: (x) => structuralHash(x),
     }), {
         Compare: (x_1, y_1) => compare(x_1, y_1),
-    })))[1];
+    }))))[1];
     return ls_2;
 }
 
