@@ -14,6 +14,9 @@ module Tools =
     [<Emit("$0[$1] = $2")>]
     let assign<'X, 'T> (target: 'X) (prop: string) (v: 'T) : unit = jsNative
 
+    [<Emit("$0[$1] = $2")>]
+    let setProperty<'X, 'T> (target: 'X, prop: string, v: 'T) : unit = jsNative
+
     [<Emit("$0[$1] !== null")>]
     let hasProperty<'X> (target: 'X, prop: string) : bool = jsNative
 
