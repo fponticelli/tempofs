@@ -11,4 +11,8 @@ output/
 .fake/
 temp/
 
-.ionide
+.idea
+.idea
+.vs
+
+*.fs.js
