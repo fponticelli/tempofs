@@ -999,6 +999,9 @@ type DSL =
 
     static member inline INPUT_CHECKBOX<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
         DSL.El("input", DSL.Attr("type", "checkbox") :: attrs, [])
+
+    static member inline INPUT_RANGE<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "range") :: attrs, [])
     // fsharplint:enable
 
     static member inline SELECT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("select", attrs, children)
