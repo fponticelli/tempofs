@@ -196,7 +196,7 @@ type Popover =
                            view.Destroy()) })
 
         // Button/Control lifecycle
-        Lifecycle<'S, 'A, 'Q, Element, _>(
+        LifecycleAttr<'S, 'A, 'Q, Element, _>(
             afterRender =
                 (fun { State = state
                        Dispatch = dispatch

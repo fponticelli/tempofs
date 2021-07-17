@@ -63,9 +63,14 @@ and HTMLLifecycleInitialPayload<'S, 'A, 'EL when 'EL :> Element> =
       Element: 'EL
       Dispatch: 'A -> unit }
 
-and HTMLLifecyclePayload<'S, 'A, 'EL, 'P when 'EL :> Element> =
+and HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P when 'EL :> Element> =
     { State: 'S
       Element: 'EL
+      Payload: 'P
+      Dispatch: 'A -> unit }
+
+and HTMLLifecyclePayload<'A, 'EL, 'P when 'EL :> Element> =
+    { Element: 'EL
       Payload: 'P
       Dispatch: 'A -> unit }
 
@@ -78,10 +83,10 @@ and HTMLLifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
         respond
     ) =
     member this.AfterRender : HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P = afterRender
-    member this.BeforeChange : HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P) = beforeChange
-    member this.AfterChange : HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P = afterChange
-    member this.BeforeDestroy : HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit = beforeDestroy
-    member this.Respond : 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P = respond
+    member this.BeforeChange : HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> (bool * 'P) = beforeChange
+    member this.AfterChange : HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> 'P = afterChange
+    member this.BeforeDestroy : HTMLLifecyclePayload<'A, 'EL, 'P> -> unit = beforeDestroy
+    member this.Respond : 'Q -> HTMLLifecyclePayload<'A, 'EL, 'P> -> 'P = respond
     with
         interface IHTMLLifecycle<'S, 'A, 'Q> with
             member this.Accept f = f.Invoke<'EL, 'P> this
@@ -104,32 +109,30 @@ type HTMLLifecycle =
                           Element = payload.Element
                           Dispatch = payload.Dispatch }),
             beforeChange =
-                (fun (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                (fun (payload: HTMLLifecycleStatePayload<'S1, 'A, 'EL, 'P>) ->
                     src.BeforeChange
                         { State = mapState payload.State
                           Element = payload.Element
                           Payload = payload.Payload
                           Dispatch = payload.Dispatch }),
             afterChange =
-                (fun (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                (fun (payload: HTMLLifecycleStatePayload<'S1, 'A, 'EL, 'P>) ->
                     src.AfterChange
                         { State = mapState payload.State
                           Element = payload.Element
                           Payload = payload.Payload
                           Dispatch = payload.Dispatch }),
             beforeDestroy =
-                (fun (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                (fun (payload: HTMLLifecyclePayload<'A, 'EL, 'P>) ->
                     src.BeforeDestroy
-                        { State = mapState payload.State
-                          Element = payload.Element
+                        { Element = payload.Element
                           Payload = payload.Payload
                           Dispatch = payload.Dispatch }),
             respond =
-                (fun (q: 'Q) (payload: HTMLLifecyclePayload<'S1, 'A, 'EL, 'P>) ->
+                (fun (q: 'Q) (payload: HTMLLifecyclePayload<'A, 'EL, 'P>) ->
                     src.Respond
                         q
-                        { State = mapState payload.State
-                          Element = payload.Element
+                        { Element = payload.Element
                           Payload = payload.Payload
                           Dispatch = payload.Dispatch })
         )

@@ -143,9 +143,9 @@ module Impl =
 
     let makeTrigger<'S, 'A, 'EL, 'E when 'E :> Event and 'EL :> Element> (f: TriggerPayload<'S, 'EL, 'E> -> Dispatch<'A> -> unit) = packHTMLTrigger <| HTMLTrigger(f)
 
-    let packProperty (trigger: Property<'S, 'V>) = trigger :> IProperty<'S>
+    let packProperty<'S, 'V> (trigger: Property<'S, 'V>) = trigger :> IProperty<'S>
 
-    let unpackProperty (trigger: IProperty<'S>) (f: IPropertyInvoker<'S, 'R>) : 'R = trigger.Accept f
+    let unpackProperty<'S, 'R> (trigger: IProperty<'S>) (f: IPropertyInvoker<'S, 'R>) : 'R = trigger.Accept f
 
     let inline property<'S, 'A, 'Q, 'V> (name: string) (value: Value<'S, 'V>) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         HTMLNamedAttribute
@@ -159,12 +159,34 @@ module Impl =
     let unpackHTMLLifecycle (lifecycle: IHTMLLifecycle<'S, 'A, 'Q>) (f: IHTMLLifecycleInvoker<'S, 'A, 'Q, 'R>) : 'R = lifecycle.Accept f
 
     // TODO this should be optimizable and wrapped in Transform without the need for special treatment
-    let makeLifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) =
+    let makeLifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P) (beforeChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'A, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'A, 'EL, 'P> -> 'P) =
         packHTMLLifecycle
         <| HTMLLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond)
 
-    let lifecycleAttribute<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P) (beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P) =
+    let lifecycleAttribute<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element> (afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P) (beforeChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> (bool * 'P)) (afterChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> 'P) (beforeDestroy: HTMLLifecyclePayload<'A, 'EL, 'P> -> unit) (respond: 'Q -> HTMLLifecyclePayload<'A, 'EL, 'P> -> 'P) =
         HTMLTemplateAttribute<'S, 'A, 'Q>.Lifecycle (makeLifecycle<'S, 'A, 'Q, 'EL, 'P> afterRender beforeChange afterChange beforeDestroy respond)
+
+    let mapTrigger<'S1, 'S2, 'A1, 'A2> (mapState: 'S1 -> 'S2) (mapAction: 'A2 -> 'A1 option) (domTrigger: IHTMLTrigger<'S2, 'A2>) =
+        unpackHTMLTrigger
+            domTrigger
+            { new IHTMLTriggerInvoker<'S2, 'A2, IHTMLTrigger<'S1, 'A1>> with
+                override this.Invoke<'EL, 'E when 'E :> Event and 'EL :> Element>(trigger: HTMLTrigger<'S2, 'A2, 'EL, 'E>) =
+                    (fun { State = state
+                           Element = el
+                           Event = e } dispatch ->
+                        let payload =
+                            { State = mapState state
+                              Element = el
+                              Event = e }
+
+                        let dispatch a =
+                            match mapAction a with
+                            | Some a -> dispatch a
+                            | None -> ()
+
+                        trigger.Handler payload dispatch)
+                    |> HTMLTrigger
+                    |> packHTMLTrigger }
 
     let applyTrigger<'S, 'A> (name: string) (domTrigger: IHTMLTrigger<'S, 'A>) (impl: HTMLElementImpl) (dispatch: 'A -> unit) (getState: unit -> 'S) =
         unpackHTMLTrigger
@@ -175,6 +197,15 @@ module Impl =
 
                     0 }
         |> ignore
+
+    let mapProperty<'S1, 'S2> (map: 'S1 -> 'S2) (prop: IProperty<'S2>) : IProperty<'S1> =
+        unpackProperty
+            prop
+            { new IPropertyInvoker<'S2, IProperty<'S1>> with
+                override this.Invoke<'V>(prop: Property<'S2, 'V>) =
+                    Value.MapState map prop.Value
+                    |> Property
+                    |> packProperty }
 
     let applyProperty<'S> (name: string) (prop: IProperty<'S>) (impl: HTMLElementImpl) (state) =
         unpackProperty
@@ -193,6 +224,83 @@ module Impl =
                     match prop.Value with
                     | Derived f -> Some(fun impl state -> impl.SetProperty(name, f state))
                     | Literal _ -> None }
+
+    let mapLifecycle<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (mapState: 'S1 -> 'S2) (mapAction: 'A2 -> 'A1 option) (mapQuery: 'Q1 -> 'Q2 option) (lc: IHTMLLifecycle<'S2, 'A2, 'Q2>) : IHTMLLifecycle<'S1, 'A1, 'Q1> =
+        unpackHTMLLifecycle
+            lc
+            { new IHTMLLifecycleInvoker<'S2, 'A2, 'Q2, IHTMLLifecycle<'S1, 'A1, 'Q1>> with
+                override this.Invoke<'EL, 'P when 'EL :> Element>(prop: HTMLLifecycle<'S2, 'A2, 'Q2, 'EL, 'P>) =
+                    let makeDispatch dispatch =
+                        fun a ->
+                            match mapAction a with
+                            | Some a -> dispatch a
+                            | _ -> ()
+
+                    let afterRender
+                        ({ Element = el
+                           State = state
+                           Dispatch = dispatch }: HTMLLifecycleInitialPayload<'S1, 'A1, 'EL>)
+                        : 'P =
+                        prop.AfterRender(
+                            { Element = el
+                              State = mapState state
+                              Dispatch = makeDispatch dispatch }
+                        )
+
+                    let beforeChange
+                        ({ Element = el
+                           State = state
+                           Payload = payload
+                           Dispatch = dispatch }: HTMLLifecycleStatePayload<'S1, 'A1, 'EL, 'P>)
+                        : (bool * 'P) =
+                        prop.BeforeChange(
+                            { Element = el
+                              State = mapState state
+                              Dispatch = makeDispatch dispatch
+                              Payload = payload }
+                        )
+
+                    let afterChange
+                        ({ Element = el
+                           State = state
+                           Payload = payload
+                           Dispatch = dispatch }: HTMLLifecycleStatePayload<'S1, 'A1, 'EL, 'P>)
+                        : 'P =
+                        prop.AfterChange(
+                            { Element = el
+                              State = mapState state
+                              Dispatch = makeDispatch dispatch
+                              Payload = payload }
+                        )
+
+                    let beforeDestroy
+                        ({ Element = el
+                           Payload = payload
+                           Dispatch = dispatch }: HTMLLifecyclePayload<'A1, 'EL, 'P>)
+                        : unit =
+                        prop.BeforeDestroy(
+                            { Element = el
+                              Dispatch = makeDispatch dispatch
+                              Payload = payload }
+                        )
+
+                    let respond
+                        (query: 'Q1)
+                        ({ Element = el
+                           Payload = payload
+                           Dispatch = dispatch }: HTMLLifecyclePayload<'A1, 'EL, 'P>)
+                        : 'P =
+                        match mapQuery query with
+                        | Some query ->
+                            prop.Respond
+                                query
+                                { Element = el
+                                  Dispatch = makeDispatch dispatch
+                                  Payload = payload }
+                        | _ -> payload
+
+                    HTMLLifecycle(afterRender, beforeChange, afterChange, beforeDestroy, respond)
+                    |> packHTMLLifecycle }
 
     let extractLifecycle<'S, 'A, 'Q> (lc: IHTMLLifecycle<'S, 'A, 'Q>) (dispatch: Dispatch<'A>) =
         unpackHTMLLifecycle
@@ -227,8 +335,7 @@ module Impl =
 
                         let beforeDestroy () =
                             t.BeforeDestroy
-                                { State = state
-                                  Element = el :?> 'EL
+                                { Element = el :?> 'EL
                                   Payload = payload
                                   Dispatch = dispatch }
 
@@ -236,8 +343,7 @@ module Impl =
                             payload <-
                                 t.Respond
                                     query
-                                    { State = state
-                                      Element = el :?> 'EL
+                                    { Element = el :?> 'EL
                                       Payload = payload
                                       Dispatch = dispatch }
 

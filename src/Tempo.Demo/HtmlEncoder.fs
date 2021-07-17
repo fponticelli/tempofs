@@ -36,7 +36,7 @@ module HtmlParser =
 
     let makeAttribute (name: string) value =
         if name.StartsWith "aria-" then
-            $"aria ({quote <| name.Substring 5}, {quote value})"
+            $"aria ({quote <| name.[5..]}, {quote value})"
         else
             let func = Map.tryFind name knownAttributes
 

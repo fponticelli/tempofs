@@ -526,84 +526,156 @@ type DSL =
         ) : HTMLTemplate<'S1, 'A1, 'Q1> =
         transform transformf template
 
+    static member MapAttrSAQ<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
+        (
+            mapState: 'S1 -> 'S2,
+            mapAction: 'A2 -> 'A1 option,
+            mapQuery: 'Q1 -> 'Q2 option,
+            attribute: HTMLTemplateAttribute<'S2, 'A2, 'Q2>
+        ) : HTMLTemplateAttribute<'S1, 'A1, 'Q1> =
+        match attribute with
+        | HTMLNamedAttribute { Name = name
+                               Value = StringAttr (value) } ->
+            HTMLNamedAttribute
+                { Name = name
+                  Value = StringAttr(Value.MapState mapState value) }
+        | HTMLNamedAttribute { Name = name; Value = Property (prop) } ->
+            let value =
+                mapProperty mapState prop
+                |> HTMLTemplateAttributeValue.Property
 
-    // static member inline MapAttrState<'S1, 'S2, 'A, 'Q>
-    //     (
-    //         map: 'S1 -> 'S2,
-    //         attribute: HTMLTemplateAttribute<'S2, 'A, 'Q>
-    //     ) : HTMLTemplateAttribute<'S1, 'A, 'Q> =
-    //     match attribute with
-    //     | Lifecycle lc ->
-    //         HTMLTemplateAttribute<'S1, 'A, 'Q>.Lifecycle
-    //         <| failwith "not implemented"
-    //     | HTMLNamedAttribute { Name = name; Value = value } ->
-    //         HTMLNamedAttribute
-    //             { Name = name
-    //               Value =
-    //                   match value with
-    //                   | StringAttr v -> (Value.MapState map v) |> StringAttr
-    //                   | Property v -> failwith "not implemented"
-    //                   | Trigger v -> failwith "not implemented" }
+            HTMLNamedAttribute { Name = name; Value = value }
+        | HTMLNamedAttribute { Name = name
+                               Value = Trigger (handler) } ->
+            let value =
+                mapTrigger mapState mapAction handler |> Trigger
 
-    (*
-and HTMLNamedAttribute<'S, 'A, 'Q> =
-    { Name: string
-      Value: HTMLTemplateAttributeValue<'S, 'A, 'Q> }
+            HTMLNamedAttribute { Name = name; Value = value }
+        | Lifecycle lc ->
+            mapLifecycle mapState mapAction mapQuery lc
+            |> Lifecycle
 
-and HTMLTemplateAttribute<'S, 'A, 'Q> =
-    | HTMLNamedAttribute of HTMLNamedAttribute<'S, 'A, 'Q>
-    | Lifecycle of IHTMLLifecycle<'S, 'A, 'Q>
+    static member inline MapAttrSA<'S1, 'S2, 'A1, 'A2, 'Q>
+        (
+            mapState: 'S1 -> 'S2,
+            mapAction: 'A2 -> 'A1 option,
+            attribute: HTMLTemplateAttribute<'S2, 'A2, 'Q>
+        ) : HTMLTemplateAttribute<'S1, 'A1, 'Q> =
+        DSL.MapAttrSAQ(mapState, mapAction, Some, attribute)
 
-and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
-    | StringAttr of Value<'S, string option>
-    | Property of IProperty<'S>
-    | Trigger of IHTMLTrigger<'S, 'A>
-*)
+    static member inline MapAttrSQ<'S1, 'S2, 'A, 'Q1, 'Q2>
+        (
+            mapState: 'S1 -> 'S2,
+            mapQuery: 'Q1 -> 'Q2 option,
+            attribute: HTMLTemplateAttribute<'S2, 'A, 'Q2>
+        ) : HTMLTemplateAttribute<'S1, 'A, 'Q1> =
+        DSL.MapAttrSAQ(mapState, Some, mapQuery, attribute)
+
+    static member inline MapAttrSQ<'S, 'A1, 'A2, 'Q1, 'Q2>
+        (
+            mapAction: 'A2 -> 'A1 option,
+            mapQuery: 'Q1 -> 'Q2 option,
+            attribute: HTMLTemplateAttribute<'S, 'A2, 'Q2>
+        ) : HTMLTemplateAttribute<'S, 'A1, 'Q1> =
+        DSL.MapAttrSAQ(id, mapAction, mapQuery, attribute)
+
+    static member inline MapAttrState<'S1, 'S2, 'A, 'Q>
+        (
+            mapState: 'S1 -> 'S2,
+            attribute: HTMLTemplateAttribute<'S2, 'A, 'Q>
+        ) : HTMLTemplateAttribute<'S1, 'A, 'Q> =
+        DSL.MapAttrSAQ(mapState, Some, Some, attribute)
+
+    static member inline MapAttrAction<'S, 'A1, 'A2, 'Q>
+        (
+            mapAction: 'A2 -> 'A1 option,
+            attribute: HTMLTemplateAttribute<'S, 'A2, 'Q>
+        ) : HTMLTemplateAttribute<'S, 'A1, 'Q> =
+        DSL.MapAttrSAQ(id, mapAction, Some, attribute)
+
+    static member inline MapAttrQuery<'S, 'A, 'Q1, 'Q2>
+        (
+            mapQuery: 'Q1 -> 'Q2 option,
+            attribute: HTMLTemplateAttribute<'S, 'A, 'Q2>
+        ) : HTMLTemplateAttribute<'S, 'A, 'Q1> =
+        DSL.MapAttrSAQ(id, Some, mapQuery, attribute)
 
     static member inline Lifecycle<'S, 'A, 'Q, 'P>
         (
-            afterRender: 'S -> 'P,
-            beforeChange: 'S -> 'P -> bool,
-            afterChange: 'S -> 'P -> 'P,
-            beforeDestroy: 'P -> unit,
-            respond: 'Q -> 'P -> 'P,
+            afterRender: LifecycleInitialPayload<'S, 'A> -> 'P,
+            beforeChange: LifecycleStatePayload<'S, 'A, 'P> -> (bool * 'P),
+            afterChange: LifecycleStatePayload<'S, 'A, 'P> -> 'P,
+            beforeDestroy: LifecyclePayload<'A, 'P> -> unit,
+            respond: 'Q -> LifecyclePayload<'A, 'P> -> 'P,
             template: HTMLTemplate<'S, 'A, 'Q>
         ) : HTMLTemplate<'S, 'A, 'Q> =
         lifecycle afterRender beforeChange afterChange beforeDestroy respond template
 
-    static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+    static member inline Lifecycle<'S, 'A, 'Q, 'P>
+        (
+            afterRender: LifecycleInitialPayload<'S, 'A> -> 'P,
+            afterChange: LifecycleStatePayload<'S, 'A, 'P> -> 'P,
+            beforeDestroy: LifecyclePayload<'A, 'P> -> unit,
+            respond: 'Q -> LifecyclePayload<'A, 'P> -> 'P,
+            template: HTMLTemplate<'S, 'A, 'Q>
+        ) : HTMLTemplate<'S, 'A, 'Q> =
+        DSL.Lifecycle(
+            afterRender,
+            (fun { Payload = payload } -> (true, payload)),
+            afterChange,
+            beforeDestroy,
+            respond,
+            template
+        )
+
+    static member inline Lifecycle<'S, 'A, 'Q, 'P>
+        (
+            afterRender: LifecycleInitialPayload<'S, 'A> -> 'P,
+            afterChange: LifecycleStatePayload<'S, 'A, 'P> -> 'P,
+            beforeDestroy: LifecyclePayload<'A, 'P> -> unit,
+            template: HTMLTemplate<'S, 'A, 'Q>
+        ) : HTMLTemplate<'S, 'A, 'Q> =
+        DSL.Lifecycle(afterRender, afterChange, beforeDestroy, (fun _ { Payload = payload } -> payload), template)
+
+    static member inline LifecycleAttr<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
         (
             afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P,
-            beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P),
-            afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P,
-            beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit,
-            respond: 'Q -> HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P
+            beforeChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> (bool * 'P),
+            afterChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> 'P,
+            beforeDestroy: HTMLLifecyclePayload<'A, 'EL, 'P> -> unit,
+            respond: 'Q -> HTMLLifecyclePayload<'A, 'EL, 'P> -> 'P
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
         lifecycleAttribute afterRender beforeChange afterChange beforeDestroy respond
 
-    static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+    static member inline LifecycleAttr<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
         (
             afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P,
-            beforeChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> (bool * 'P),
-            afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P,
-            beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit
+            beforeChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> (bool * 'P),
+            afterChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> 'P,
+            beforeDestroy: HTMLLifecyclePayload<'A, 'EL, 'P> -> unit
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        DSL.Lifecycle(afterRender, beforeChange, afterChange, beforeDestroy, (fun _ { Payload = payload } -> payload))
+        DSL.LifecycleAttr(
+            afterRender,
+            beforeChange,
+            afterChange,
+            beforeDestroy,
+            (fun _ { Payload = payload } -> payload)
+        )
 
-    static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+    static member inline LifecycleAttr<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
         (
             afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P,
-            afterChange: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> 'P,
-            beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit
+            afterChange: HTMLLifecycleStatePayload<'S, 'A, 'EL, 'P> -> 'P,
+            beforeDestroy: HTMLLifecyclePayload<'A, 'EL, 'P> -> unit
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        DSL.Lifecycle(afterRender, (fun { Payload = payload } -> (true, payload)), afterChange, beforeDestroy)
+        DSL.LifecycleAttr(afterRender, (fun { Payload = payload } -> (true, payload)), afterChange, beforeDestroy)
 
-    static member inline Lifecycle<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
+    static member inline LifecycleAttr<'S, 'A, 'Q, 'EL, 'P when 'EL :> Element>
         (
             afterRender: HTMLLifecycleInitialPayload<'S, 'A, 'EL> -> 'P,
-            beforeDestroy: HTMLLifecyclePayload<'S, 'A, 'EL, 'P> -> unit
+            beforeDestroy: HTMLLifecyclePayload<'A, 'EL, 'P> -> unit
         ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        DSL.Lifecycle(
+        DSL.LifecycleAttr(
             afterRender,
             (fun { Payload = payload } -> (true, payload)),
             (fun { Payload = payload } -> payload),
@@ -615,14 +687,24 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
             f: 'S -> 'S -> bool,
             template: HTMLTemplate<'S, 'A, 'Q>
         ) : HTMLTemplate<'S, 'A, 'Q> =
-        lifecycle id f (fun state _ -> state) ignore (fun _ p -> p) template
+        lifecycle
+            (fun { State = state } -> state)
+            (fun { State = newState; Payload = oldState } ->
+                if f newState oldState then
+                    (true, newState)
+                else
+                    (false, oldState))
+            (fun { State = state } -> state)
+            ignore
+            (fun _ { Payload = state } -> state)
+            template
 
     static member inline Filter<'S, 'A, 'Q>
         (
             f: 'S -> bool,
             template: HTMLTemplate<'S, 'A, 'Q>
         ) : HTMLTemplate<'S, 'A, 'Q> =
-        lifecycle ignore ((fun s _ -> f s)) (fun _ _ -> ()) ignore (fun _ _ -> ()) template
+        lifecycle ignore ((fun { State = s } -> (f s, ()))) ignore ignore (fun _ _ -> ()) template
 
     static member inline WhenStateChanges<'S, 'A, 'Q when 'S: equality>
         (
@@ -637,6 +719,109 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
     //         whenMatchesTemplate: HTMLTemplate<'S, 'A, 'Q>,
     //         unlessMatchesTemplate: HTMLTemplate<'S, 'A, 'Q>
     //     ) : HTMLTemplate<'S, 'A, 'Q> = TODO
+
+    static member MakeCaptureAttrSAFromNode<'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q>
+        ()
+        : ((HTMLTemplate<'S1, 'A1, 'Q> -> HTMLTemplate<'S1, 'A1, 'Q>) * (('S1 -> 'S2 -> 'S3) * ('A3 -> Choice<'A1, 'A2, 'A1 * 'A2> option) * HTMLTemplateAttribute<'S3, 'A3, 'Q> -> HTMLTemplateAttribute<'S2, 'A2, 'Q>)) =
+        let mutable localState = None
+        let mutable localDispatch = None
+
+        let catch (template1: Template<'N1, 'S1, 'A1, 'Q1>) : Template<'N1, 'S1, 'A1, 'Q1> =
+            transform<'N1, 'N1, 'S1, 'S1, 'A1, 'A1, 'Q1, 'Q1>
+                (fun render ->
+                    (fun impl state dispatch ->
+                        localState <- Some state
+                        localDispatch <- Some dispatch
+                        let view = render impl state dispatch
+
+                        { view with
+                              Change =
+                                  fun s ->
+                                      localState <- Some s
+                                      view.Change s
+                              Destroy =
+                                  fun () ->
+                                      localState <- None
+                                      localDispatch <- None
+                                      view.Destroy() }))
+                template1
+
+        let release
+            (
+                mergeState: 'S1 -> 'S2 -> 'S3,
+                mapAction: 'A3 -> Choice<'A1, 'A2, 'A1 * 'A2> option,
+                attribute: HTMLTemplateAttribute<'S3, 'A3, 'Q>
+            ) : HTMLTemplateAttribute<'S2, 'A2, 'Q> =
+            let mapState s2 =
+                let s1 = Option.get localState
+                mergeState s1 s2
+
+            let mapAction a3 =
+                match mapAction a3 with
+                | Some (Choice1Of3 a1) ->
+                    (Option.iter (fun f -> f a1) localDispatch)
+                    None
+                | Some (Choice2Of3 a2) -> Some a2
+                | Some (Choice3Of3 (a1, a2)) ->
+                    (Option.iter (fun f -> f a1) localDispatch)
+                    Some a2
+                | None -> None
+
+            DSL.MapAttrSA(mapState, mapAction, attribute = attribute)
+
+        (catch, release)
+
+    static member MakeCaptureAttrSA<'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1>() =
+        let mutable localState = None
+        let mutable localDispatch = None
+
+        let catch : HTMLTemplateAttribute<'S1, 'A1, 'Q1> =
+            let afterRender ({ State = state; Dispatch = dispatch }: HTMLLifecycleInitialPayload<'S1, 'A1, _>) =
+                localState <- Some state
+                localDispatch <- Some dispatch
+
+            let afterChange ({ State = state; Dispatch = dispatch }: HTMLLifecycleStatePayload<'S1, 'A1, _, _>) =
+                localState <- Some state
+                localDispatch <- Some dispatch
+
+            let beforeDestroy ({ Dispatch = dispatch }: HTMLLifecyclePayload<'A1, _, _>) =
+                localState <- None
+                localDispatch <- None
+
+            DSL.LifecycleAttr(afterRender, afterChange, beforeDestroy)
+
+        let release
+            (
+                mergeState: 'S1 -> 'S2 -> 'S3,
+                mapAction: 'A3 -> Choice<'A1, 'A2, 'A1 * 'A2> option,
+                attribute: HTMLTemplateAttribute<'S3, 'A3, 'Q1>
+            ) : HTMLTemplateAttribute<'S2, 'A2, 'Q1> =
+            let mapState s2 =
+                let s1 = Option.get localState
+                mergeState s1 s2
+
+            let mapAction a3 =
+                match mapAction a3 with
+                | Some (Choice1Of3 a1) ->
+                    (Option.iter (fun f -> f a1) localDispatch)
+                    None
+                | Some (Choice2Of3 a2) -> Some a2
+                | Some (Choice3Of3 (a1, a2)) ->
+                    (Option.iter (fun f -> f a1) localDispatch)
+                    Some a2
+                | None -> None
+
+            DSL.MapAttrSA(mapState, mapAction, attribute = attribute)
+
+        (catch, release)
+
+    static member MakeCaptureAttrState<'S1, 'S2, 'S3, 'A, 'Q>() =
+        let (catch, release) = DSL.MakeCaptureAttrSA()
+        (catch, (fun (mergeState, attribute) -> release (mergeState, Some << Choice1Of3, attribute)))
+
+    static member MakeCaptureAttrAction<'S, 'A1, 'A2, 'A3, 'Q>() =
+        let (catch, release) = DSL.MakeCaptureAttrSA()
+        (catch, (fun (mapAction, attribute) -> release (id, mapAction, attribute)))
 
     static member MakeCaptureSA<'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1>
         ()
@@ -683,6 +868,7 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
                     view)
             template
 
+    // fsharplint:disable
     static member inline cls(text: string) = DSL.Attr("class", text)
     static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
     static member inline cls(f: 'S -> string option) = DSL.cls (Option.defaultValue "" << f)
@@ -716,6 +902,7 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
             (fun _ { Payload = old } -> old)
 
     static member inline innerHTML<'A, 'Q>(html: string -> string) : HTMLTemplateAttribute<string, 'A, 'Q> = DSL.innerHTML<string, 'A, 'Q> id
+    // fsharplint:enable
 
     static member inline DIV<'S, 'A, 'Q>(attributes: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("div", attributes, children)
 
@@ -803,6 +990,7 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
 
     static member inline TEXTAREA<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) = DSL.El("textarea", attrs, [])
 
+    // fsharplint:disable
     static member inline INPUT_TEXT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
         DSL.El("input", DSL.Attr("type", "text") :: attrs, [])
 
@@ -811,5 +999,6 @@ and HTMLTemplateAttributeValue<'S, 'A, 'Q> =
 
     static member inline INPUT_CHECKBOX<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list) =
         DSL.El("input", DSL.Attr("type", "checkbox") :: attrs, [])
+    // fsharplint:enable
 
     static member inline SELECT<'S, 'A, 'Q>(attrs: HTMLTemplateAttribute<'S, 'A, 'Q> list, children: HTMLTemplate<'S, 'A, 'Q> list) = DSL.El("select", attrs, children)

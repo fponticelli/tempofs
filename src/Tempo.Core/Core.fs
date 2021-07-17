@@ -423,33 +423,65 @@ module Core =
 
         (catch, (fun (mapStateF: 'S1 -> 'S2 -> 'S3, template) -> release (mapStateF, Some << Choice2Of3, template)))
 
+    type LifecycleInitialPayload<'S, 'A> = { State: 'S; Dispatch: 'A -> unit }
+
+    type LifecycleStatePayload<'S, 'A, 'P> =
+        { State: 'S
+          Payload: 'P
+          Dispatch: 'A -> unit }
+
+    type LifecyclePayload<'A, 'P> = { Payload: 'P; Dispatch: 'A -> unit }
+
     let lifecycle<'N, 'S, 'A, 'Q, 'P>
-        (afterRender: 'S -> 'P)
-        (beforeChange: 'S -> 'P -> bool)
-        (afterChange: 'S -> 'P -> 'P)
-        (beforeDestroy: 'P -> unit)
-        (respond: 'Q -> 'P -> 'P)
+        (afterRender: LifecycleInitialPayload<'S, 'A> -> 'P)
+        (beforeChange: LifecycleStatePayload<'S, 'A, 'P> -> (bool * 'P))
+        (afterChange: LifecycleStatePayload<'S, 'A, 'P> -> 'P)
+        (beforeDestroy: LifecyclePayload<'A, 'P> -> unit)
+        (respond: 'Q -> LifecyclePayload<'A, 'P> -> 'P)
         (template: Template<'N, 'S, 'A, 'Q>)
         : Template<'N, 'S, 'A, 'Q> =
         transform<'N, 'N, 'S, 'S, 'A, 'A, 'Q, 'Q>
             (fun render ->
                 (fun impl state dispatch ->
                     let view = render impl state dispatch
-                    let mutable payload = afterRender state
+
+                    let mutable payload =
+                        afterRender { State = state; Dispatch = dispatch }
 
                     { Impl = impl
                       Change =
                           fun s ->
-                              if beforeChange s payload then
+                              let (applyChanges, newPayload) =
+                                  beforeChange
+                                      { State = s
+                                        Payload = payload
+                                        Dispatch = dispatch }
+
+                              payload <- newPayload
+
+                              if applyChanges then
                                   view.Change s
-                                  payload <- afterChange s payload
+
+                                  payload <-
+                                      afterChange
+                                          { State = s
+                                            Payload = payload
+                                            Dispatch = dispatch }
                       Query =
                           fun q ->
                               view.Query q
-                              payload <- respond q payload
+
+                              payload <-
+                                  respond
+                                      q
+                                      { Payload = payload
+                                        Dispatch = dispatch }
                       Destroy =
                           fun () ->
-                              beforeDestroy payload
+                              beforeDestroy
+                                  { Payload = payload
+                                    Dispatch = dispatch }
+
                               view.Destroy() }))
             template
 
