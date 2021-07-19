@@ -6,7 +6,7 @@ open Browser.Types
 
 module Tools =
     [<Emit("$0 == null")>]
-    let nullOrUndefined<'T> (v: 'T) : bool = jsNative
+    let isNullOrUndefined<'T> (v: 'T) : bool = jsNative
 
     [<Emit("$0 != null")>]
     let exists<'T> (v: 'T) : bool = jsNative
@@ -16,6 +16,9 @@ module Tools =
 
     [<Emit("$0[$1] = $2")>]
     let setProperty<'X, 'T> (target: 'X, prop: string, v: 'T) : unit = jsNative
+
+    [<Emit("delete $0[$1]")>]
+    let deleteProperty<'X, 'T> (target: 'X, prop: string) : unit = jsNative
 
     [<Emit("$0[$1] !== null")>]
     let hasProperty<'X> (target: 'X, prop: string) : bool = jsNative
