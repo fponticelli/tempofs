@@ -11,6 +11,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Html.Tools.fs" />
+    <Compile Include="Template.fs" />
+    <Compile Include="Render.fs" />
     <Compile Include="Html.fs" />
     <Compile Include="Html.Impl.fs" />
     <Compile Include="Html.DSL.fs" />

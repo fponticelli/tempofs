@@ -20,6 +20,27 @@ module Tools =
     [<Emit("delete $0[$1]")>]
     let deleteProperty<'X, 'T> (target: 'X, prop: string) : unit = jsNative
 
+    let setPropertyOption<'X, 'T> (target: 'X, prop: string, v: 'T option) : unit =
+        match v with
+        | Some v -> setProperty (target, prop, v)
+        | None -> deleteProperty (target, prop)
+
+    let setAttributeOption<'T> (target: Element, attr: string, v: string option) : unit =
+        match v with
+        | Some v -> target.setAttribute (attr, v)
+        | None -> target.removeAttribute (attr)
+
+    [<Emit("$0.style[$1] = $2")>]
+    let setStyle (target: Element, prop: string, v: string) : unit = jsNative
+
+    [<Emit("delete $0.style[$1]")>]
+    let deleteStyle (target: Element, prop: string) : unit = jsNative
+
+    let setStyleOption (target: Element, prop: string, v: string option) : unit =
+        match v with
+        | Some v -> setStyle (target, prop, v)
+        | None -> deleteStyle (target, prop)
+
     [<Emit("$0[$1] !== null")>]
     let hasProperty<'X> (target: 'X, prop: string) : bool = jsNative
 
@@ -65,9 +86,6 @@ module Tools =
     [<Emit("atob($0)")>]
     let fromBase64String (s: string) : string = jsNative
 
-    [<Emit("$0.style[$1] = $2")>]
-    let setStyle (target: Element, style: string, value: string) : unit = jsNative
-
     let rec hasSpecifiedAncestor (element: Element) (ancestor: Element) : bool =
         if isNull element then
             false
@@ -84,6 +102,9 @@ module Tools =
 
     [<Emit("new Event($0)")>]
     let rec createEvent (name: string) : Browser.Types.Event = jsNative
+
+    [<Emit("$0")>]
+    let optionToMaybe<'T> (v: 'T option) : 'T = jsNative
 
     let focusableSelector =
         String.concat

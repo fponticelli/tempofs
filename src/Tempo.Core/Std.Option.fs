@@ -18,3 +18,10 @@ module Option =
         match value with
         | Some _ -> true
         | None -> false
+
+    let merge<'V> (f: 'V -> 'V -> 'V) (a: Option<'V>) (b: Option<'V>) : Option<'V> =
+        match (a, b) with
+        | (Some a, Some b) -> f a b |> Some
+        | (Some _ as a, None) -> a
+        | (None, (Some _ as b)) -> b
+        | (None, None) -> None
