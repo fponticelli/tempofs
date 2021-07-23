@@ -3,7 +3,7 @@ namespace Tempo.Html
 open Browser.Types
 open Tempo.Value
 open Tempo.View
-open Tempo.Html.Tools
+open Tempo.Browser
 open Tempo.Html.Template
 
 module Render =
@@ -41,14 +41,14 @@ module Render =
 
             mergeViews (view :: views)
 
-    and makeFragmentRender ({ Children = children }: TFragment<'S, 'A, 'Q>) isRoot : Render<'S, 'A, 'Q> =
+    and makeFragmentRender (children: TFragment<'S, 'A, 'Q>) isRoot : Render<'S, 'A, 'Q> =
         fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
             let views =
                 List.map (fun child -> (makeRender child false) state container reference dispatch) children
 
             mergeViews views
 
-    and makeTextRender ({ Value = value }: TText<'S>) isRoot : Render<'S, 'A, 'Q> =
+    and makeTextRender (value: TText<'S>) isRoot : Render<'S, 'A, 'Q> =
         let makeDestroy node =
             if isRoot then
                 (fun () -> remove node) |> Some
@@ -133,19 +133,23 @@ module Render =
                   Destroy = makeDestroy (container)
                   Request = None }
 
-    and makeTransformRender (t: ITTransform<'S, 'A, 'Q>) isRoot : Render<'S, 'A, 'Q> =
+    and makeTransformRender (t: ITTransform<'S1, 'A1, 'Q1>) isRoot : Render<'S1, 'A1, 'Q1> =
         unpackTransform
             t
-            { new ITTransformInvoker<'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
-                member __.Invoke<'S2, 'A2, 'Q2>(transform: TTransform<'S, 'S2, 'A, 'A2, 'Q, 'Q2>) : Render<'S, 'A, 'Q> =
-                    let render = makeRender (transform.Template) isRoot
+            { new ITTransformInvoker<'S1, 'A1, 'Q1, Render<'S1, 'A1, 'Q1>> with
+                member __.Invoke<'S2, 'A2, 'Q2>
+                    (transform: TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>)
+                    : Render<'S1, 'A1, 'Q1> =
+                    let render =
+                        makeRender<'S2, 'A2, 'Q2> (transform.Template) isRoot
+
                     transform.Transform(render) }
 
     and makeOneOf2Render (t: ITOneOf2<'S, 'A, 'Q>) isRoot : Render<'S, 'A, 'Q> =
         unpackOneOf2
             t
             { new ITOneOf2Invoker<'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
-                member __.Invoke<'S1, 'S2>(oneOf2: TOneOf2<'S, 'S1, 'S2, 'A, 'Q>) : Render<'S, 'A, 'Q> =
+                member __.Invoke<'S1, 'S2>(oneOf2: TVOneOf2<'S, 'S1, 'S2, 'A, 'Q>) : Render<'S, 'A, 'Q> =
                     fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
                         let ref =
                             container.ownerDocument.createTextNode ("") :> Node
@@ -153,7 +157,7 @@ module Render =
                         container.insertBefore (ref, optionToMaybe reference)
                         |> ignore
 
-                        let mutable assignament : Choice<View2<'S1, 'Q>, View2<'S2, 'Q>> =
+                        let mutable assignament : Choice<View<'S1, 'Q>, View<'S2, 'Q>> =
                             match oneOf2.Choose state with
                             | Choice1Of2 s ->
                                 Choice1Of2(makeRender (oneOf2.Template1) true s container (Some ref) dispatch)
@@ -194,7 +198,7 @@ module Render =
         unpackProperty
             t
             { new ITPropertyInvoker<'S, Render<'S, 'A, 'Q>> with
-                member __.Invoke<'V>(prop: TProperty<'S, 'V>) : Render<'S, 'A, 'Q> =
+                member __.Invoke<'V>(prop: TVProperty<'S, 'V>) : Render<'S, 'A, 'Q> =
                     let destroy el =
                         if isRoot then
                             (fun () -> deleteProperty (el, prop.Name)) |> Some
@@ -252,7 +256,7 @@ module Render =
               Destroy = None
               Request = t container |> Some }
 
-    and makeRender<'S, 'A, 'Q> (template: TTemplate<'S, 'A, 'Q>) (isRoot: bool) : Render<'S, 'A, 'Q> =
+    and makeRender<'S, 'A, 'Q> (template: Template<'S, 'A, 'Q>) (isRoot: bool) : Render<'S, 'A, 'Q> =
         match template with
         | TEmpty -> makeEmptyRender isRoot
         | TElement t -> makeElementRender t isRoot

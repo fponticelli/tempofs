@@ -1,10 +1,9 @@
-namespace Tempo.Html
+namespace Tempo
 
 open Fable.Core
-open Browser.Dom
 open Browser.Types
 
-module Tools =
+module Browser =
     [<Emit("$0 == null")>]
     let isNullOrUndefined<'T> (v: 'T) : bool = jsNative
 
