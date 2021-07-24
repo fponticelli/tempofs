@@ -3,6 +3,7 @@ namespace Tempo.Html
 open Browser.Types
 open Tempo.Value
 open Tempo.View
+open Tempo.Browser
 
 module Template =
     type Dispatch<'A> = 'A -> unit
@@ -96,26 +97,64 @@ module Template =
         | THandler of THandler<'S, 'A>
         | TRespond of TRespond<'Q>
 
-    let packTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (t: TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>) =
-        t :> ITTransform<'S1, 'A1, 'Q1>
+    let private aggregatedAttributes =
+        [ "class", " "; "style", "; " ] |> Map.ofList
 
-    let makeTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
-        (
-            transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
-            template: Template<'S2, 'A2, 'Q2>
-        ) : Template<'S1, 'A1, 'Q1> =
+    // this fails at runtime if the list is empty
+    let private foldSelf<'T> (f: 'T -> 'T -> 'T) (ls: 'T list) =
+        let head = ls.Head
+        let tail = ls.Tail
+        List.fold f head tail
+
+    let simplify (ls: Template<'S, 'A, 'Q> list) : Template<'S, 'A, 'Q> list =
+        let flattened =
+            List.collect
+                (function
+                | TFragment ls -> ls
+                | TEmpty -> []
+                | other -> [ other ])
+                ls
+
+        let (toMerge, ls) =
+            List.fold
+                (fun (map, ls) curr ->
+                    match curr with
+                    | TAttribute { Name = name; Value = value } when Map.containsKey name aggregatedAttributes ->
+                        let existing =
+                            Map.tryFind name map |> Option.defaultValue []
+
+                        (Map.add name (value :: existing) map, ls)
+                    | other -> (map, other :: ls))
+                (Map.empty, [])
+                flattened
+
+        let append =
+            Map.fold
+                (fun acc name ls ->
+                    let sep = Map.find name aggregatedAttributes
+
+                    let value =
+                        foldSelf
+                            (fun acc value -> Value.Combine(Option.map2 (fun a b -> $"{a}{sep}{b}"), value, acc))
+                            ls
+
+                    (name, value) :: acc)
+                []
+                toMerge
+            |> List.map (fun (name, value) -> TAttribute { Name = name; Value = value })
+
+        append @ (List.rev ls)
+
+    let packTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (t: TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>) = t :> ITTransform<'S1, 'A1, 'Q1>
+
+    let makeTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>, template: Template<'S2, 'A2, 'Q2>) : Template<'S1, 'A1, 'Q1> =
         TTransform(packTransform (TVTransform(transform, template)))
 
     let unpackTransform (t: ITTransform<'S, 'A, 'Q>) (f: ITTransformInvoker<'S, 'A, 'Q, 'R>) : 'R = t.Accept f
 
     let packOneOf2<'S, 'S1, 'S2, 'A, 'Q> (t: TVOneOf2<'S, 'S1, 'S2, 'A, 'Q>) = t :> ITOneOf2<'S, 'A, 'Q>
 
-    let makeOneOf2<'S, 'S1, 'S2, 'A, 'Q>
-        (
-            choose: 'S -> Choice<'S1, 'S2>,
-            template1: Template<'S1, 'A, 'Q>,
-            template2: Template<'S2, 'A, 'Q>
-        ) : Template<'S, 'A, 'Q> =
+    let makeOneOf2<'S, 'S1, 'S2, 'A, 'Q> (choose: 'S -> Choice<'S1, 'S2>, template1: Template<'S1, 'A, 'Q>, template2: Template<'S2, 'A, 'Q>) : Template<'S, 'A, 'Q> =
         TOneOf2(packOneOf2 (TVOneOf2(choose, template1, template2)))
 
     let unpackOneOf2 (t: ITOneOf2<'S, 'A, 'Q>) (f: ITOneOf2Invoker<'S, 'A, 'Q, 'R>) : 'R = t.Accept f
@@ -126,3 +165,48 @@ module Template =
 
     let makeProperty<'S, 'A, 'Q, 'V> (name: string, value: Value<'S, 'V option>) : Template<'S, 'A, 'Q> =
         TProperty(packProperty (TVProperty(name, value)))
+
+    let forEach<'S, 'A, 'Q> (template: Template<'S, 'A, 'Q>) : Template<'S seq, 'A, 'Q> =
+        makeTransform (
+            (fun render ->
+                (fun (states: 'S seq) (container: Element) (reference: Node option) dispatch ->
+                    let ref =
+                        container.ownerDocument.createTextNode ("") :> Node
+
+                    let maybeRef = ref |> Some
+
+                    container.insertBefore (ref, optionToMaybe reference)
+                    |> ignore
+
+                    let mutable views =
+                        Seq.map (fun state -> render state container maybeRef dispatch) states
+
+                    let change states =
+                        let min =
+                            System.Math.Min(Seq.length views, Seq.length states)
+
+                        Seq.zip views states
+                        |> Seq.iter (fun (view, state) -> Option.iter (fun c -> c state) view.Change)
+
+                        Seq.skip min views
+                        |> Seq.iter (fun view -> Option.iter (fun d -> d ()) view.Destroy)
+
+                        views <- Seq.take min views
+
+                        let newViews =
+                            Seq.skip min states
+                            |> Seq.map (fun state -> render state container maybeRef dispatch)
+
+                        views <- Seq.concat [ views; newViews ]
+
+                    let request q =
+                        Seq.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun r -> r q) view.Request) views
+
+                    let destroy () =
+                        Seq.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun d -> d ()) view.Destroy) views
+
+                    { Change = Some change
+                      Destroy = Some destroy
+                      Request = Some request })),
+            template
+        )

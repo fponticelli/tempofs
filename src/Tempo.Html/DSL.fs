@@ -9,6 +9,8 @@ open Browser.Types
 
 [<AbstractClass; Sealed>]
 type DSL =
+    static member Empty<'S, 'A, 'Q>() : Template<'S, 'A, 'Q> = TEmpty
+
     static member NSEl<'S, 'A, 'Q>
         (
             ns: string,
@@ -271,7 +273,7 @@ type DSL =
                 | Some v -> Choice1Of2(v)
                 | None -> Choice2Of2(())),
             template,
-            DSL.Text ""
+            DSL.Empty()
         )
 
     static member OneOf<'S, 'S1, 'S2, 'S3, 'A, 'Q>
@@ -403,272 +405,126 @@ type DSL =
         )
 
     static member When<'S, 'A, 'Q>(predicate: 'S -> bool, template: Template<'S, 'A, 'Q>) =
-        DSL.If(predicate, template, DSL.Fragment [])
+        DSL.If(predicate, template, DSL.Empty())
 
     static member Unless<'S, 'A, 'Q>(predicate: 'S -> bool, template: Template<'S, 'A, 'Q>) =
         DSL.When(predicate >> not, template)
 
-// static member Seq<'S1, 'S2, 'A, 'Q>
-//     (
-//         f: 'S1 -> 'S2 list,
-//         template: Template<'S2, 'A, 'Q>
-//     ) : Template<'S1, 'A, 'Q> =
-//     iterator createGroupNode f template
-
-// static member inline Transform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
-//     (
-//         transformf: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
-//         template: Template<'S2, 'A2, 'Q2>
-//     ) : Template<'S1, 'A1, 'Q1> =
-//     transform transformf template
-
-// static member inline Lifecycle<'S, 'A, 'Q, 'P>
-//     (
-//         afterRender: LifecycleInitialPayload<'S, 'A> -> 'P,
-//         beforeChange: LifecycleStatePayload<'S, 'A, 'P> -> (bool * 'P),
-//         afterChange: LifecycleStatePayload<'S, 'A, 'P> -> 'P,
-//         beforeDestroy: LifecyclePayload<'A, 'P> -> unit,
-//         respond: 'Q -> LifecyclePayload<'A, 'P> -> 'P,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     lifecycle afterRender beforeChange afterChange beforeDestroy respond template
-
-// static member inline Lifecycle<'S, 'A, 'Q, 'P>
-//     (
-//         afterRender: LifecycleInitialPayload<'S, 'A> -> 'P,
-//         afterChange: LifecycleStatePayload<'S, 'A, 'P> -> 'P,
-//         beforeDestroy: LifecyclePayload<'A, 'P> -> unit,
-//         respond: 'Q -> LifecyclePayload<'A, 'P> -> 'P,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     DSL.Lifecycle(
-//         afterRender,
-//         (fun { Payload = payload } -> (true, payload)),
-//         afterChange,
-//         beforeDestroy,
-//         respond,
-//         template
-//     )
-
-// static member inline Lifecycle<'S, 'A, 'Q, 'P>
-//     (
-//         afterRender: LifecycleInitialPayload<'S, 'A> -> 'P,
-//         afterChange: LifecycleStatePayload<'S, 'A, 'P> -> 'P,
-//         beforeDestroy: LifecyclePayload<'A, 'P> -> unit,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     DSL.Lifecycle(afterRender, afterChange, beforeDestroy, (fun _ { Payload = payload } -> payload), template)
-
-// static member CompareStates<'S, 'A, 'Q>
-//     (
-//         f: 'S -> 'S -> bool,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     lifecycle
-//         (fun { State = state } -> state)
-//         (fun { State = newState; Payload = oldState } ->
-//             if f newState oldState then
-//                 (true, newState)
-//             else
-//                 (false, oldState))
-//         (fun { State = state } -> state)
-//         ignore
-//         (fun _ { Payload = state } -> state)
-//         template
-
-// static member inline Filter<'S, 'A, 'Q>
-//     (
-//         f: 'S -> bool,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     lifecycle ignore ((fun { State = s } -> (f s, ()))) ignore ignore (fun _ _ -> ()) template
-
-// static member inline WhenStateChanges<'S, 'A, 'Q when 'S: equality>
-//     (
-//         f: 'S -> bool,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     DSL.CompareStates((<>), template)
-
-// static member MakeCaptureSA<'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1>
-//     ()
-//     : CaptureResult<HTMLTemplateNode<'S1, 'A1, 'Q1>, HTMLTemplateNode<'S2, 'A2, 'Q1>, HTMLTemplateNode<'S3, 'A3, 'Q1>, 'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q1> =
-//     makeCaptureSA ()
-
-// static member MakeCaptureState<'S1, 'S2, 'S3, 'A1, 'Q1>
-//     ()
-//     : CaptureStateResult<HTMLTemplateNode<'S1, 'A1, 'Q1>, HTMLTemplateNode<'S2, 'A1, 'Q1>, HTMLTemplateNode<'S3, 'A1, 'Q1>, 'S1, 'S2, 'S3, 'A1, 'Q1> =
-//     makeCaptureState ()
-
-// static member MakeCaptureAction<'S1, 'A1, 'A2, 'A3, 'Q1>
-//     ()
-//     : CaptureActionResult<HTMLTemplateNode<'S1, 'A1, 'Q1>, HTMLTemplateNode<'S1, 'A2, 'Q1>, HTMLTemplateNode<'S1, 'A3, 'Q1>, 'S1, 'A1, 'A2, 'A3, 'Q1> =
-//     makeCaptureAction ()
-
-// static member Component<'S, 'A, 'Q>
-//     (
-//         update: 'S -> 'A -> 'S,
-//         middleware: MiddlewarePayload<'S, 'A, 'Q> -> unit,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     comp update middleware template
+    static member inline ForEach<'S, 'A, 'Q>(template: Template<'S, 'A, 'Q>) : Template<'S seq, 'A, 'Q> =
+        forEach (template)
+
+    static member inline ForEach<'S1, 'S2, 'A, 'Q>
+        (
+            map: 'S1 -> 'S2 seq,
+            template: Template<'S2, 'A, 'Q>
+        ) : Template<'S1, 'A, 'Q> =
+        DSL.MapState(map, forEach (template))
+
+    static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>
+        (
+            transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
+            template: Template<'S2, 'A2, 'Q2>
+        ) =
+        makeTransform (transform, template)
+
+    static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>(transform) = makeTransform (transform, DSL.Empty())
+
+    // FilterChange
+    // OnMount
+    // OnUpdate
+    // OnRender
+    // OnDestroy
+    // Lifecycle (afterRender, afterChange, beforeDestroy)
+    // Respond
+    // MakeCapture
+    // Component (with Middleware)
+    static member Portal<'S, 'A, 'Q>(selector: string, template: Template<'S, 'A, 'Q>) : Template<'S, 'A, 'Q> =
+        DSL.Transform(
+            (fun render ->
+                fun state container reference dispatch ->
+                    // TODO this will fail at runtime if parent doesn't exist
+                    let parent = document.querySelector selector
+                    render state parent None dispatch),
+            template
+        )
+
+    // fsharplint:disable
+    static member inline cls(text: string) = DSL.Attr("class", text)
+    static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
+    static member inline cls(f: 'S -> string option) = DSL.cls (Option.defaultValue "" << f)
+    static member inline cls(whenTrue: string, whenFalse: string) = DSL.Attr("class", whenTrue, whenFalse)
+
+    static member inline cls(predicate: 'S -> bool, whenTrue: string, whenFalse: string) =
+        DSL.Attr("class", predicate, whenTrue, whenFalse)
+
+    static member inline elId(text: string) = DSL.Attr("id", text)
+    static member inline elId(f: 'S -> string) = DSL.Attr("id", f)
+    static member inline elId(whenTrue: string, whenFalse: string) = DSL.Attr("id", whenTrue, whenFalse)
+
+    static member inline aria(name: string, text: string) = DSL.Attr($"aria-{name}", text)
+    static member inline aria(name: string, f: 'S -> string) = DSL.Attr($"aria-{name}", f)
+
+    static member inline aria(name: string, whenTrue: string, whenFalse: string) =
+        DSL.Attr($"aria-{name}", whenTrue, whenFalse)
+
+    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string option>) : Template<'S, 'A, 'Q> = DSL.Prop("innerHTML", html)
+
+    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string>) : Template<'S, 'A, 'Q> = DSL.Prop("innerHTML", html)
+
+    static member inline innerHTML<'S, 'A, 'Q>(html: 'S -> string option) : Template<'S, 'A, 'Q> = DSL.innerHTML (html |> Derived)
+
+    static member inline innerHTML<'S, 'A, 'Q>(html: 'S -> string) : Template<'S, 'A, 'Q> = DSL.innerHTML (html |> Derived)
+    // fsharplint:enable
+
+    static member inline DIV<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("div", children)
+    static member inline DIV<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.DIV([ child ])
+    static member inline DIV<'S, 'A, 'Q>() = DSL.DIV([])
+
+    static member inline MAIN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("main", children)
+    static member inline MAIN<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.MAIN([ child ])
+    static member inline MAIN<'S, 'A, 'Q>() = DSL.MAIN([])
+
+    static member inline ASIDE<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("aside", children)
+    static member inline ASIDE<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.ASIDE([ child ])
+    static member inline ASIDE<'S, 'A, 'Q>() = DSL.ASIDE([])
+
+    static member inline BUTTON<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("button", children)
+    static member inline BUTTON<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.BUTTON([ child ])
+    static member inline BUTTON<'S, 'A, 'Q>() = DSL.BUTTON([])
+
+    static member inline IMG<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("img", children)
+    static member inline IMG<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.IMG([ child ])
+    static member inline IMG<'S, 'A, 'Q>() = DSL.IMG([])
+
+    static member inline SPAN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("span", children)
+    static member inline SPAN<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.SPAN([ child ])
+    static member inline SPAN<'S, 'A, 'Q>() = DSL.SPAN([])
+
+    static member inline Svg<'S, 'A, 'Q>(name: string, children: Template<'S, 'A, 'Q> list) =
+        DSL.NSEl("http://www.w3.org/2000/svg", name, children)
+
+    static member inline SVG<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.Svg("svg", children)
+    static member inline SVG<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.SVG([ child ])
+    static member inline SVG<'S, 'A, 'Q>() = DSL.SVG([])
+
+    static member inline PATH<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.Svg("path", children)
+
+    static member inline INPUT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("input", children)
+
+    static member inline TEXTAREA<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("textarea", children)
 
-// static member Component<'S, 'A, 'Q>
-//     (
-//         update: 'S -> 'A -> 'S,
-//         template: Template<'S, 'A, 'Q>
-//     ) : Template<'S, 'A, 'Q> =
-//     comp update ignore template
+    // fsharplint:disable
+    static member inline INPUT_TEXT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "text") :: children)
 
-// static member Portal<'S, 'A, 'Q>(selector: string, template: Template<'S, 'A, 'Q>) : Template<'S, 'A, 'Q> =
-//     transform
-//         (fun render2 ->
-//             fun impl state dispatch ->
-//                 // TODO this will fail at runtime if parent doesn't exist
-//                 let parent = document.querySelector selector
-//                 let parent = HTMLElementImpl(parent) :> Impl
+    static member inline INPUT_NUMBER<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "number") :: children)
 
-//                 // render in source parent to not break the flow
-//                 let view = render2 impl state dispatch
-//                 // attach to physical parent
-//                 parent.Append view.Impl
-//                 view)
-//         template
+    static member inline INPUT_CHECKBOX<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "checkbox") :: children)
 
-// // fsharplint:disable
-// static member inline cls(text: string) = DSL.Attr("class", text)
-// static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
-// static member inline cls(f: 'S -> string option) = DSL.cls (Option.defaultValue "" << f)
-// static member inline cls(whenTrue: string, whenFalse: string) = DSL.Attr("class", whenTrue, whenFalse)
+    static member inline INPUT_RANGE<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) =
+        DSL.El("input", DSL.Attr("type", "range") :: children)
+    // fsharplint:enable
 
-// static member inline cls(predicate: 'S -> bool, whenTrue: string, whenFalse: string) =
-//     DSL.Attr("class", predicate, whenTrue, whenFalse)
-
-// static member inline elId(text: string) = DSL.Attr("id", text)
-// static member inline elId(f: 'S -> string) = DSL.Attr("id", f)
-// static member inline elId(whenTrue: string, whenFalse: string) = DSL.Attr("id", whenTrue, whenFalse)
-
-// static member inline aria(name: string, text: string) = DSL.Attr($"aria-{name}", text)
-// static member inline aria(name: string, f: 'S -> string) = DSL.Attr($"aria-{name}", f)
-
-// static member inline aria(name: string, whenTrue: string, whenFalse: string) =
-//     DSL.Attr($"aria-{name}", whenTrue, whenFalse)
-
-// static member inline innerHTML<'S, 'A, 'Q>(html: string) : Template<'S, 'A, 'Q> =
-//     lifecycleAttribute (fun { Element = el } -> el.innerHTML <- html) (fun _ -> (true, ())) ignore ignore (fun _ _ -> ())
-
-// static member inline innerHTML<'S, 'A, 'Q>(f: 'S -> string) : Template<'S, 'A, 'Q> =
-//     lifecycleAttribute
-//         (fun { Element = el; State = state } ->
-//             let html = f state
-//             el.innerHTML <- html
-//             html)
-//         (fun { Payload = old } -> (true, old))
-//         (fun { Payload = old } -> old)
-//         ignore
-//         (fun _ { Payload = old } -> old)
-
-// static member inline innerHTML<'A, 'Q>(html: string -> string) : Template<string, 'A, 'Q> = DSL.innerHTML<string, 'A, 'Q> id
-// // fsharplint:enable
-
-// static member inline DIV<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) = DSL.El("div", attributes, children)
-
-// static member inline DIV<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.DIV(attributes, [])
-
-// static member inline DIV<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.DIV([], children)
-// static member inline DIV<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.DIV([], [ child ])
-
-// static member inline DIV<'S, 'A, 'Q>() = DSL.DIV([], [])
-
-// static member inline DIV<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, child: Template<'S, 'A, 'Q>) = DSL.DIV(attributes, [ child ])
-
-// static member inline MAIN<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) = DSL.El("main", attributes, children)
-
-// static member inline MAIN<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.MAIN(attributes, [])
-
-// static member inline MAIN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.MAIN([], children)
-// static member inline MAIN<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.MAIN([], [ child ])
-
-// static member inline MAIN<'S, 'A, 'Q>() = DSL.MAIN([], [])
-
-// static member inline MAIN<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, child: Template<'S, 'A, 'Q>) = DSL.MAIN(attributes, [ child ])
-
-// static member inline ASIDE<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) = DSL.El("aside", attributes, children)
-
-// static member inline ASIDE<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.ASIDE(attributes, [])
-
-// static member inline ASIDE<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.ASIDE([], children)
-// static member inline ASIDE<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.ASIDE([], [ child ])
-
-// static member inline ASIDE<'S, 'A, 'Q>() = DSL.ASIDE([], [])
-
-// static member inline ASIDE<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, child: Template<'S, 'A, 'Q>) = DSL.ASIDE(attributes, [ child ])
-
-// static member inline BUTTON<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) = DSL.El("button", attributes, children)
-
-// static member inline BUTTON<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.BUTTON(attributes, [])
-
-// static member inline BUTTON<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.BUTTON([], children)
-
-// static member inline BUTTON<'S, 'A, 'Q>() = DSL.BUTTON([], [])
-
-// static member inline BUTTON<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, child: Template<'S, 'A, 'Q>) = DSL.BUTTON(attributes, [ child ])
-// static member inline BUTTON<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.BUTTON([], [ child ])
-
-// static member inline IMG<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.El("img", attributes, [])
-
-// static member inline IMG<'S, 'A, 'Q>() = DSL.IMG([])
-
-// static member inline SPAN<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) = DSL.El("span", attributes, children)
-
-// static member inline SPAN<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.SPAN(attributes, [])
-
-// static member inline SPAN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.SPAN([], children)
-// static member inline SPAN<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.SPAN([], [ child ])
-
-// static member inline SPAN<'S, 'A, 'Q>() = DSL.SPAN([], [])
-
-// static member inline SPAN<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, child: Template<'S, 'A, 'Q>) = DSL.SPAN(attributes, [ child ])
-
-// static member inline SVG<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) =
-//     DSL.NSEl("http://www.w3.org/2000/svg", "svg", attributes, children)
-
-// static member inline SVG<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.SVG(attributes, [])
-
-// static member inline SVG<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.SVG([], children)
-// static member inline SVG<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.SVG([], [ child ])
-
-// static member inline SVG<'S, 'A, 'Q>() = DSL.SVG([], [])
-
-// static member inline SVG<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, child: Template<'S, 'A, 'Q>) = DSL.SVG(attributes, [ child ])
-
-// static member inline PATH<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) =
-//     DSL.NSEl("http://www.w3.org/2000/svg", "path", attributes, children)
-
-// static member inline PATH<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list) = DSL.PATH(attributes, [])
-
-// static member inline PATH<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.PATH([], children)
-
-// static member inline PATH<'S, 'A, 'Q>() = DSL.PATH([], [])
-
-// static member inline PATH<'S, 'A, 'Q>(attributes: Template<'S, 'A, 'Q> list, child: Template<'S, 'A, 'Q>) = DSL.PATH(attributes, [ child ])
-
-// static member inline INPUT<'S, 'A, 'Q>(attrs: Template<'S, 'A, 'Q> list) = DSL.El("input", attrs, [])
-
-// static member inline TEXTAREA<'S, 'A, 'Q>(attrs: Template<'S, 'A, 'Q> list) = DSL.El("textarea", attrs, [])
-
-// // fsharplint:disable
-// static member inline INPUT_TEXT<'S, 'A, 'Q>(attrs: Template<'S, 'A, 'Q> list) =
-//     DSL.El("input", DSL.Attr("type", "text") :: attrs, [])
-
-// static member inline INPUT_NUMBER<'S, 'A, 'Q>(attrs: Template<'S, 'A, 'Q> list) =
-//     DSL.El("input", DSL.Attr("type", "number") :: attrs, [])
-
-// static member inline INPUT_CHECKBOX<'S, 'A, 'Q>(attrs: Template<'S, 'A, 'Q> list) =
-//     DSL.El("input", DSL.Attr("type", "checkbox") :: attrs, [])
-
-// static member inline INPUT_RANGE<'S, 'A, 'Q>(attrs: Template<'S, 'A, 'Q> list) =
-//     DSL.El("input", DSL.Attr("type", "range") :: attrs, [])
-// // fsharplint:enable
-
-// static member inline SELECT<'S, 'A, 'Q>(attrs: Template<'S, 'A, 'Q> list, children: Template<'S, 'A, 'Q> list) = DSL.El("select", attrs, children)
+    static member inline SELECT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("select", children)

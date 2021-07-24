@@ -25,7 +25,8 @@ module Render =
                 |> Option.defaultWith (fun () -> container.ownerDocument.createElement (name) :> Element)
 
             let views =
-                List.map (fun child -> (makeRender child false) state element None dispatch) children
+                simplify children
+                |> List.map (fun child -> (makeRender child false) state element None dispatch)
 
             container.insertBefore (element, optionToMaybe reference)
             |> ignore
@@ -44,7 +45,8 @@ module Render =
     and makeFragmentRender (children: TFragment<'S, 'A, 'Q>) isRoot : Render<'S, 'A, 'Q> =
         fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
             let views =
-                List.map (fun child -> (makeRender child false) state container reference dispatch) children
+                simplify children
+                |> List.map (fun child -> (makeRender child false) state container reference dispatch)
 
             mergeViews views
 
