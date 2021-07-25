@@ -2,10 +2,27 @@ namespace Tempo.Html
 
 open Browser
 open Tempo.Std
+open Tempo.Update
+open Tempo.View
 open Tempo.Value
 open Tempo.Html.Template
-open Tempo.Html.Render
 open Browser.Types
+
+type LifecycleMount<'S, 'A> =
+    { Element: Element
+      State: 'S
+      Dispatch: Dispatch<'A> }
+
+type LifecycleChange<'S, 'A, 'P> =
+    { Element: Element
+      State: 'S
+      Dispatch: Dispatch<'A>
+      Payload: 'P }
+
+type LifecycleDestroy<'A, 'P> =
+    { Element: Element
+      Dispatch: Dispatch<'A>
+      Payload: 'P }
 
 [<AbstractClass; Sealed>]
 type DSL =
@@ -121,14 +138,18 @@ type DSL =
     static member inline Send<'S, 'A, 'Q>(name: string, handler: unit -> 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(name, (fun (_: THandlerSendPayload<'S>) -> handler ()))
 
-    static member inline Send<'S, 'A, 'Q>(name: string, handler: 'S -> 'A) : Template<'S, 'A, 'Q> =
+    static member inline SendState<'S, 'A, 'Q>(name: string, handler: 'S -> 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(name, (fun ({ State = s }: THandlerSendPayload<'S>) -> handler s))
 
-    static member inline Send<'S, 'A, 'Q>(name: string, handler: Event -> 'A) : Template<'S, 'A, 'Q> =
+    static member inline SendEvent<'S, 'A, 'Q>(name: string, handler: Event -> 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(name, (fun ({ Event = e }: THandlerSendPayload<'S>) -> handler e))
 
     static member inline SendTextInput<'S, 'A, 'Q>(name: string, handler: 'S -> string -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun p -> handler p.State (p.Element :?> HTMLInputElement).value))
+        DSL.Send<'S, 'A, 'Q>(
+            name,
+            (fun ({ State = state; Element = element }: THandlerSendPayload<'S>) ->
+                handler state (element :?> HTMLInputElement).value)
+        )
 
     static member SendNumberInput<'S, 'A, 'Q>(name: string, handler: 'S -> float -> 'A) : Template<'S, 'A, 'Q> =
         DSL.On<'S, 'A, 'Q>(
@@ -160,9 +181,9 @@ type DSL =
     static member MapState<'S1, 'S2, 'A, 'Q>(map: 'S1 -> 'S2, template: Template<'S2, 'A, 'Q>) : Template<'S1, 'A, 'Q> =
         makeTransform (
             (fun render ->
-                fun state element reference dispatch ->
+                fun (state, element, reference, dispatch) ->
                     let view =
-                        render (map (state)) element reference dispatch
+                        render (map (state), element, reference, dispatch)
 
                     let change =
                         Option.map (fun f -> f << map) view.Change
@@ -180,13 +201,13 @@ type DSL =
         ) : Template<'S, 'A1, 'Q> =
         makeTransform (
             (fun render ->
-                fun state element reference dispatch ->
+                fun (state, element, reference, dispatch) ->
                     let mappedDispatch a =
                         match map a with
                         | Some a -> dispatch a
                         | None -> ()
 
-                    render state element reference mappedDispatch),
+                    render (state, element, reference, mappedDispatch)),
             template
         )
 
@@ -197,8 +218,9 @@ type DSL =
         ) : Template<'S, 'A, 'Q1> =
         makeTransform<'S, 'S, 'A, 'A, 'Q1, 'Q2> (
             (fun (render: Render<'S, 'A, 'Q2>) ->
-                fun state element reference dispatch ->
-                    let view = render state element reference dispatch
+                fun (state, element, reference, dispatch) ->
+                    let view =
+                        render (state, element, reference, dispatch)
 
                     let request =
                         Option.map
@@ -429,24 +451,223 @@ type DSL =
 
     static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>(transform) = makeTransform (transform, DSL.Empty())
 
-    // FilterChange
-    // OnMount
-    // OnUpdate
-    // OnRender
-    // OnDestroy
-    // Lifecycle (afterRender, afterChange, beforeDestroy)
-    // Respond
-    // MakeCapture
-    // Component (with Middleware)
     static member Portal<'S, 'A, 'Q>(selector: string, template: Template<'S, 'A, 'Q>) : Template<'S, 'A, 'Q> =
         DSL.Transform(
             (fun render ->
-                fun state container reference dispatch ->
+                fun (state, container, reference, dispatch) ->
                     // TODO this will fail at runtime if parent doesn't exist
                     let parent = document.querySelector selector
-                    render state parent None dispatch),
+                    render (state, parent, None, dispatch)),
             template
         )
+
+    static member ControlChange<'S, 'A, 'Q>
+        (
+            controller: 'S -> 'S -> ('S -> unit) -> unit,
+            template: Template<'S, 'A, 'Q>
+        ) =
+        DSL.Transform(
+            (fun render ->
+                fun (state, container, reference, dispatch) ->
+                    let mutable localState = state
+
+                    let view =
+                        render (localState, container, reference, dispatch)
+
+                    let change =
+                        Option.map
+                            (fun c ->
+                                fun currState ->
+                                    controller currState localState c
+                                    localState <- currState)
+                            view.Change
+
+                    { Change = change
+                      Destroy = view.Destroy
+                      Request = view.Request }),
+            template
+        )
+
+    static member ControlDestroy<'S, 'A, 'Q>(controller: (unit -> unit) -> unit, template: Template<'S, 'A, 'Q>) =
+        DSL.Transform(
+            (fun render ->
+                fun (state, container, reference, dispatch) ->
+                    let view =
+                        render (state, container, reference, dispatch)
+
+                    let destroy =
+                        Option.map (fun d -> fun () -> controller d) view.Destroy
+
+                    { Change = view.Change
+                      Destroy = destroy
+                      Request = view.Request }),
+            template
+        )
+
+    static member FilterChange<'S, 'A, 'Q>(predicate: 'S -> 'S -> bool, template: Template<'S, 'A, 'Q>) =
+        DSL.ControlChange(
+            (fun curr prev change ->
+                if (predicate curr prev) then
+                    change curr),
+            template
+        )
+
+    static member inline FilterChange<'S, 'A, 'Q when 'S: equality>(template: Template<'S, 'A, 'Q>) =
+        DSL.FilterChange((<>), template)
+
+    static member inline Respond<'S, 'A, 'Q>(responder: Element -> 'Q -> unit) : Template<'S, 'A, 'Q> =
+        respond responder
+
+    static member OnMount<'S, 'A, 'Q>(handler: 'S -> Element -> unit) =
+        DSL.Transform(
+            (fun render ->
+                fun (state, container, reference, dispatch) ->
+                    handler state container
+
+                    { Change = None
+                      Destroy = None
+                      Request = None }),
+            DSL.Empty()
+        )
+
+    static member OnUpdate<'S, 'A, 'Q>(handler: 'S -> Element -> unit) =
+        DSL.Transform(
+            (fun render ->
+                fun (state, container, reference, dispatch) ->
+                    handler state container
+
+                    { Change = Some(fun s -> handler s container)
+                      Destroy = None
+                      Request = None }),
+            DSL.Empty()
+        )
+
+    static member OnRemove<'S, 'A, 'Q>(handler: Element -> unit) =
+        DSL.Transform(
+            (fun render ->
+                fun (state, container, reference, dispatch) ->
+                    { Change = None
+                      Destroy = None
+                      Request = Some(fun () -> handler container) }),
+            DSL.Empty()
+        )
+
+    static member Lifecycle<'S, 'A, 'Q, 'P>
+        (
+            onMount: LifecycleMount<'S, 'A> -> 'P,
+            onChange: LifecycleChange<'S, 'A, 'P> -> 'P,
+            onRemove: LifecycleDestroy<'A, 'P> -> unit,
+            respond: 'P -> 'Q -> unit
+        ) =
+        DSL.Transform(
+            (fun render ->
+                fun (state, container, reference, dispatch) ->
+                    let mutable payload =
+                        onMount
+                            { Element = container
+                              State = state
+                              Dispatch = dispatch }
+
+                    let change s =
+                        payload <-
+                            onChange
+                                { Element = container
+                                  State = s
+                                  Payload = payload
+                                  Dispatch = dispatch }
+
+                    let destroy () =
+                        onRemove
+                            { Element = container
+                              Payload = payload
+                              Dispatch = dispatch }
+
+                    let request q = respond payload q
+
+                    { Change = Some change
+                      Destroy = Some destroy
+                      Request = Some request }),
+            DSL.Empty()
+        )
+
+    static member Lifecycle<'S, 'A, 'Q, 'P>
+        (
+            onMount: LifecycleMount<'S, 'A> -> 'P,
+            onChange: LifecycleChange<'S, 'A, 'P> -> 'P,
+            onRemove: LifecycleDestroy<'A, 'P> -> unit
+        ) =
+        DSL.Lifecycle(onMount, onChange, onRemove, (fun _ _ -> ()))
+
+    static member Lifecycle<'S, 'A, 'Q, 'P>
+        (
+            onMount: LifecycleMount<'S, 'A> -> 'P,
+            onRemove: LifecycleDestroy<'A, 'P> -> unit,
+            respond: 'P -> 'Q -> unit
+        ) =
+        DSL.Lifecycle(onMount, (fun { Payload = payload } -> payload), onRemove, respond)
+
+    static member Lifecycle<'S, 'A, 'Q, 'P>
+        (
+            onMount: LifecycleMount<'S, 'A> -> 'P,
+            onRemove: LifecycleDestroy<'A, 'P> -> unit
+        ) =
+        DSL.Lifecycle(onMount, (fun { Payload = payload } -> payload), onRemove, (fun _ _ -> ()))
+
+
+    static member MakeCaptureState<'S1, 'S2, 'S3, 'A, 'Q>() =
+        let mutable localState1 = None
+
+        let hold (template: Template<'S1, 'A, 'Q>) =
+            DSL.Transform(
+                (fun render ->
+                    (fun (state, container, reference, dispatch) ->
+                        let view =
+                            render (state, container, reference, dispatch)
+
+                        localState1 <- Some state
+
+                        let change s =
+                            localState1 <- Some state
+                            Option.iter (fun c -> c s) view.Change
+
+                        { Change = Some change
+                          Destroy = view.Destroy
+                          Request = view.Request })),
+                template
+            )
+
+        let release (merge: 'S1 -> 'S2 -> 'S3, template: Template<'S3, 'A, 'Q>) =
+            DSL.Transform(
+                (fun render ->
+                    (fun (state, container, reference, dispatch) ->
+                        let view =
+                            render (merge (Option.get localState1) state, container, reference, dispatch)
+
+                        let change s =
+                            Option.iter (fun c -> c (merge (Option.get localState1) s)) view.Change
+
+                        { Change = Some change
+                          Destroy = view.Destroy
+                          Request = view.Request })),
+                template
+            )
+
+        (hold, release)
+
+    static member inline Component<'S, 'A, 'Q>
+        (
+            update: Update<'S, 'A>,
+            middleware: Middleware<'S, 'A, 'Q>,
+            template: Template<'S, 'A, 'Q>
+        ) : Template<'S, 'A, 'Q> =
+        ``component`` update middleware template
+
+    static member inline Component<'S, 'A, 'Q>
+        (
+            update: Update<'S, 'A>,
+            template: Template<'S, 'A, 'Q>
+        ) : Template<'S, 'A, 'Q> =
+        DSL.Component(update, ignore, template)
 
     // fsharplint:disable
     static member inline cls(text: string) = DSL.Attr("class", text)

@@ -1,6 +1,7 @@
 namespace Tempo.Html
 
 open Browser.Types
+open Tempo.Update
 open Tempo.Value
 open Tempo.View
 open Tempo.Browser
@@ -8,7 +9,7 @@ open Tempo.Browser
 module Template =
     type Dispatch<'A> = 'A -> unit
 
-    type Render<'S, 'A, 'Q> = 'S -> Element -> Node option -> Dispatch<'A> -> View<'S, 'Q>
+    type Render<'S, 'A, 'Q> = ('S * Element * Node option * Dispatch<'A>) -> View<'S, 'Q>
 
     type TElement<'S, 'A, 'Q> =
         { Name: string
@@ -169,7 +170,7 @@ module Template =
     let forEach<'S, 'A, 'Q> (template: Template<'S, 'A, 'Q>) : Template<'S seq, 'A, 'Q> =
         makeTransform (
             (fun render ->
-                (fun (states: 'S seq) (container: Element) (reference: Node option) dispatch ->
+                (fun (states: 'S seq, container: Element, reference: Node option, dispatch) ->
                     let ref =
                         container.ownerDocument.createTextNode ("") :> Node
 
@@ -179,7 +180,7 @@ module Template =
                     |> ignore
 
                     let mutable views =
-                        Seq.map (fun state -> render state container maybeRef dispatch) states
+                        Seq.map (fun state -> render (state, container, maybeRef, dispatch)) states
 
                     let change states =
                         let min =
@@ -195,7 +196,7 @@ module Template =
 
                         let newViews =
                             Seq.skip min states
-                            |> Seq.map (fun state -> render state container maybeRef dispatch)
+                            |> Seq.map (fun state -> render (state, container, maybeRef, dispatch))
 
                         views <- Seq.concat [ views; newViews ]
 
@@ -210,3 +211,31 @@ module Template =
                       Request = Some request })),
             template
         )
+
+    let ``component`` update middleware template =
+        makeTransform (
+            (fun render ->
+                fun (state, container, reference, dispatch) ->
+                    let mutable localState = state
+
+                    let rec iDispatch (a: 'A) =
+                        let currState = update localState a
+                        Option.iter (fun (c: 'S -> unit) -> c currState) view.Change
+
+                        middleware
+                            { Dispatch = iDispatch
+                              Current = currState
+                              Previous = localState
+                              Action = a
+                              Request = (fun q -> Option.iter (fun r -> r q) view.Request) }
+
+                        dispatch a
+
+                    and view : View<'S, 'Q> =
+                        render (localState, container, reference, iDispatch)
+
+                    view),
+            template
+        )
+
+    let respond (responder: Element -> 'Q -> unit) = TRespond(responder)

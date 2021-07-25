@@ -1,61 +1,62 @@
 namespace Tempo.Html
 
+open Browser.Types
+open Browser.Dom
+open Tempo.Html.Render
+open Tempo.Html.Template
+open Tempo.Update
+open Tempo.View
+
+type ProgramOptions<'S, 'A, 'Q> =
+    { Template: Template<'S, 'A, 'Q>
+      Container: Element
+      Update: Update<'S, 'A>
+      Middleware: Middleware<'S, 'A, 'Q> option
+      State: 'S }
+
+[<RequireQualifiedAccess>]
 type Program =
-    static member make() = 1
-// static member private MakeRender<'S, 'A, 'Q>() =
-//     MakeRender<HTMLTemplateNode<'S, 'A, 'Q>, 'S, 'A, 'Q>(makeHTMLNodeRender, createGroupNode)
+    static member Make<'S, 'A, 'Q>
+        ({ Template = template
+           Update = update
+           Middleware = middleware
+           Container = container
+           State = state }: ProgramOptions<'S, 'A, 'Q>)
+        =
+        let render = makeRender template true
+        let mutable localState = state
 
-// static member MakeProgram<'S, 'A, 'Q>(template: HTMLTemplate<'S, 'A, 'Q>, el: Element) =
-//     let renderInstance = DSL.MakeRender()
+        let rec dispatch action =
+            let newState = update localState action
+            Option.iter (fun c -> c newState) view.Change
+            localState <- newState
 
-//     let f = renderInstance.Make template
-//     let parent = HTMLElementImpl(el)
+            Option.iter
+                (fun m ->
+                    m
+                        { Previous = localState
+                          Current = newState
+                          Action = action
+                          Dispatch = dispatch
+                          Request = fun q -> Option.iter (fun r -> r q) view.Request })
+                middleware
 
-//     let render = f parent
+            localState <- newState
 
-//     fun update middleware state ->
-//         let mutable localState = state
+        and view : View<'S, 'Q> =
+            render (state, container, None, dispatch)
 
-//         let rec dispatch action =
-//             let newState = update localState action
-//             view.Change newState
+        { Change = view.Change
+          Dispatch = dispatch
+          Destroy = view.Destroy
+          Request = view.Request }: ComponentView<'S, 'A, 'Q>
 
-//             middleware
-//                 { Previous = localState
-//                   Current = newState
-//                   Action = action
-//                   Dispatch = dispatch
-//                   Query = view.Query }
+    static member MakeOnContentLoaded<'S, 'A, 'Q>
+        (
+            options: ProgramOptions<'S, 'A, 'Q>,
+            callback: ComponentView<'S, 'A, 'Q> -> unit
+        ) =
+        let make () = Program.Make(options) |> callback
 
-//             localState <- newState
-
-//         and view = render localState dispatch
-
-//         { Impl = view.Impl
-//           Change = view.Change
-//           Dispatch = dispatch
-//           Destroy = view.Destroy
-//           Query = view.Query }: ComponentView<'S, 'A, 'Q>
-
-// static member MakeProgramOnContentLoaded<'S, 'A, 'Q>
-//     (
-//         template: HTMLTemplate<'S, 'A, 'Q>,
-//         parent: Element,
-//         f: (ComponentView<'S, 'A, 'Q> -> unit)
-//     ) =
-//     fun update middleware state ->
-//         window.addEventListener (
-//             "DOMContentLoaded",
-//             fun _ ->
-//                 let render = DSL.MakeProgram(template, parent)
-//                 render update middleware state |> f
-//         )
-//         |> ignore
-
-// static member MakeProgramOnContentLoaded<'S, 'A, 'Q>
-//     (
-//         template: HTMLTemplate<'S, 'A, 'Q>,
-//         selector: string,
-//         f: (ComponentView<'S, 'A, 'Q> -> unit)
-//     ) =
-//     DSL.MakeProgramOnContentLoaded<'S, 'A, 'Q>(template, (document.querySelector selector), f)
+        window.addEventListener ("DOMContentLoaded", (fun _ -> make ()))
+        |> ignore

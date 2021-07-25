@@ -8,6 +8,6 @@ module Update =
           Previous: 'S
           Action: 'A
           Dispatch: 'A -> unit
-          Query: 'Q -> unit }
+          Request: 'Q -> unit }
 
     type Middleware<'S, 'A, 'Q> = MiddlewarePayload<'S, 'A, 'Q> -> unit

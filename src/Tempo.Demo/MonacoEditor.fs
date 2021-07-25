@@ -2,8 +2,10 @@ namespace Tempo.Demo.Utils
 
 open Fable.Core
 open Browser.Types
-open Tempo.Html
-open Tempo.Html.Impl
+open Browser.Dom
+open Tempo.Html.Template
+
+open type Tempo.Html.DSL
 
 module Monaco =
     type MonacoEditorOptions =
@@ -32,11 +34,12 @@ module Monaco =
         [<Emit("$0.dispose()")>]
         member this.dispose() : unit = jsNative
 
+        [<Emit("$0.layout()")>]
+        member this.layout() : unit = jsNative
+
 
     [<AbstractClass>]
     type MonacoEditorClass =
-        // [<CompiledName("create")>]
-        // abstract create : HTMLElement * MonacoEditorOptions -> MonacoEditorInstance
         [<Emit("$0.create($1, $2)")>]
         member this.create(element: HTMLElement, options: MonacoEditorOptions) : MonacoEditorInstance = jsNative
 
@@ -45,37 +48,38 @@ module Monaco =
     [<Import("*", from = "monaco-editor")>]
     let monaco : MonacoModule = jsNative
 
-    let MonacoEditorAttribute<'S, 'A, 'Q>
+    let MonacoEditor<'S, 'A, 'Q>
         (
             mapToOptions: 'S -> MonacoEditorOptions,
             mapAction: MonacoEvent -> 'A option,
             respond: 'Q -> MonacoEditorInstance -> unit
-        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
-        lifecycleAttribute<'S, 'A, 'Q, _, MonacoEditorInstance>
-            (fun { Element = element
-                   State = state
-                   Dispatch = dispatch } ->
-                let editor =
-                    monaco.editor.create (element, mapToOptions state)
+        ) : Template<'S, 'A, 'Q> =
+        Lifecycle<'S, 'A, 'Q, MonacoEditorInstance>(
+            onMount =
+                (fun { Element = element
+                       State = state
+                       Dispatch = dispatch } ->
 
-                editor.onDidChangeModelContent
-                    (fun () ->
-                        match mapAction OnChange with
-                        | Some a -> dispatch a
-                        | None -> ())
+                    let editor =
+                        monaco.editor.create (element :?> HTMLElement, mapToOptions state)
 
-                editor.onDidPaste
-                    (fun () ->
-                        match mapAction OnPaste with
-                        | Some a -> dispatch a
-                        | None -> ())
+                    editor.onDidChangeModelContent
+                        (fun () ->
+                            match mapAction OnChange with
+                            | Some a -> dispatch a
+                            | None -> ())
 
-                editor)
+                    editor.onDidPaste
+                        (fun () ->
+                            match mapAction OnPaste with
+                            | Some a -> dispatch a
+                            | None -> ())
 
-            (fun { Payload = editor } -> (true, editor))
+                    // refresh layout sizing after dom is settled, could be avoided by inserting node BEFORE children
+                    // window.setImmediate (fun () -> editor.layout ())
+                    // |> ignore
 
-            (fun { Payload = editor } -> editor)
-            (fun { Payload = editor } -> editor.dispose ())
-            (fun q { Payload = editor } ->
-                respond q editor
-                editor)
+                    editor),
+            onRemove = (fun { Payload = editor } -> editor.dispose ()),
+            respond = (fun editor q -> respond q editor)
+        )

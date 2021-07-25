@@ -8,7 +8,7 @@ open Tempo.Html.Template
 
 module Render =
     let rec makeEmptyRender _ : Render<'S, 'A, 'Q> =
-        fun (_: 'S) (_: Element) (_: Node option) (dispatch: Dispatch<'A>) ->
+        fun (_: 'S, _: Element, _: Node option, dispatch: Dispatch<'A>) ->
             { Change = None
               Destroy = None
               Request = None }
@@ -19,17 +19,19 @@ module Render =
            Children = children }: TElement<'S, 'A, 'Q>)
         isRoot
         : Render<'S, 'A, 'Q> =
-        fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+        fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
             let element =
                 Option.map (fun ns -> container.ownerDocument.createElementNS (ns, name)) ns
                 |> Option.defaultWith (fun () -> container.ownerDocument.createElement (name) :> Element)
 
-            let views =
-                simplify children
-                |> List.map (fun child -> (makeRender child false) state element None dispatch)
-
+            // any significant performance gain in puttin this after children views are rendered?
+            // That would force libraries that rely on DOM characteristic to delay their assumptions.
             container.insertBefore (element, optionToMaybe reference)
             |> ignore
+
+            let views =
+                simplify children
+                |> List.map (fun child -> (makeRender child false) (state, element, None, dispatch))
 
             let view =
                 { Change = None
@@ -43,10 +45,10 @@ module Render =
             mergeViews (view :: views)
 
     and makeFragmentRender (children: TFragment<'S, 'A, 'Q>) isRoot : Render<'S, 'A, 'Q> =
-        fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+        fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
             let views =
                 simplify children
-                |> List.map (fun child -> (makeRender child false) state container reference dispatch)
+                |> List.map (fun child -> (makeRender child false) (state, container, reference, dispatch))
 
             mergeViews views
 
@@ -59,13 +61,13 @@ module Render =
 
         match value with
         | Derived f ->
-            fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+            fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                 let v = f state
 
                 let textNode =
                     container.ownerDocument.createTextNode (v)
 
-                container.insertBefore (container, optionToMaybe reference)
+                container.insertBefore (textNode, optionToMaybe reference)
                 |> ignore
 
                 let change s = textNode.nodeValue <- f s
@@ -74,11 +76,11 @@ module Render =
                   Destroy = makeDestroy (textNode)
                   Request = None }
         | Literal v ->
-            fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+            fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                 let textNode =
                     container.ownerDocument.createTextNode (v)
 
-                container.insertBefore (container, optionToMaybe reference)
+                container.insertBefore (textNode, optionToMaybe reference)
                 |> ignore
 
                 { Change = None
@@ -94,7 +96,7 @@ module Render =
 
         match value with
         | Derived f ->
-            fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+            fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                 let change s =
                     setAttributeOption (container, name, f s)
 
@@ -104,7 +106,7 @@ module Render =
                   Destroy = makeDestroy (container)
                   Request = None }
         | Literal v ->
-            fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+            fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                 setAttributeOption (container, name, v)
 
                 { Change = None
@@ -120,7 +122,7 @@ module Render =
 
         match value with
         | Derived f ->
-            fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+            fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                 let change s = setStyleOption (container, name, f s)
                 change state
 
@@ -128,7 +130,7 @@ module Render =
                   Destroy = makeDestroy (container)
                   Request = None }
         | Literal v ->
-            fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+            fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                 setStyleOption (container, name, v)
 
                 { Change = None
@@ -152,7 +154,7 @@ module Render =
             t
             { new ITOneOf2Invoker<'S, 'A, 'Q, Render<'S, 'A, 'Q>> with
                 member __.Invoke<'S1, 'S2>(oneOf2: TVOneOf2<'S, 'S1, 'S2, 'A, 'Q>) : Render<'S, 'A, 'Q> =
-                    fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+                    fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                         let ref =
                             container.ownerDocument.createTextNode ("") :> Node
 
@@ -162,9 +164,9 @@ module Render =
                         let mutable assignament : Choice<View<'S1, 'Q>, View<'S2, 'Q>> =
                             match oneOf2.Choose state with
                             | Choice1Of2 s ->
-                                Choice1Of2(makeRender (oneOf2.Template1) true s container (Some ref) dispatch)
+                                Choice1Of2(makeRender (oneOf2.Template1) true (s, container, (Some ref), dispatch))
                             | Choice2Of2 s ->
-                                Choice2Of2(makeRender (oneOf2.Template2) true s container (Some ref) dispatch)
+                                Choice2Of2(makeRender (oneOf2.Template2) true (s, container, (Some ref), dispatch))
 
                         let change s =
                             assignament <-
@@ -177,10 +179,10 @@ module Render =
                                     c
                                 | (Choice1Of2 v), (Choice2Of2 s) ->
                                     Option.iter (fun f -> f ()) v.Destroy
-                                    Choice2Of2(makeRender (oneOf2.Template2) true s container (Some ref) dispatch)
+                                    Choice2Of2(makeRender oneOf2.Template2 true (s, container, (Some ref), dispatch))
                                 | (Choice2Of2 v), (Choice1Of2 s) ->
                                     Option.iter (fun f -> f ()) v.Destroy
-                                    Choice1Of2(makeRender (oneOf2.Template1) true s container (Some ref) dispatch)
+                                    Choice1Of2(makeRender oneOf2.Template1 true (s, container, (Some ref), dispatch))
 
                         let destroy () =
                             match assignament with
@@ -209,7 +211,7 @@ module Render =
 
                     match prop.Value with
                     | Derived f ->
-                        fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+                        fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                             let change s =
                                 setPropertyOption (container, prop.Name, f s)
 
@@ -219,7 +221,7 @@ module Render =
                               Destroy = destroy container
                               Request = None }
                     | Literal v ->
-                        fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+                        fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
                             setPropertyOption (container, prop.Name, v)
 
                             { Change = None
@@ -227,7 +229,7 @@ module Render =
                               Request = None } }
 
     and makeHandlerRender ({ Name = name; Handler = handler }: THandler<'S, 'A>) isRoot : Render<'S, 'A, 'Q> =
-        fun (state: 'S) (container: Element) (reference: Node option) (dispatch: Dispatch<'A>) ->
+        fun (state: 'S, container: Element, reference: Node option, dispatch: Dispatch<'A>) ->
             let mutable localState = state
             let change s = localState <- s
 
@@ -253,7 +255,7 @@ module Render =
               Request = None }
 
     and makeRespondRender (t: TRespond<'Q>) isRoot : Render<'S, 'A, 'Q> =
-        fun (_: 'S) (container: Element) (_: Node option) (dispatch: Dispatch<'A>) ->
+        fun (_: 'S, container: Element, _: Node option, dispatch: Dispatch<'A>) ->
             { Change = None
               Destroy = None
               Request = t container |> Some }

@@ -2,9 +2,11 @@ namespace Tempo.Html.UI
 
 open Browser.Types
 open Browser.Dom
-open Tempo.Core
+open Tempo.Browser
+open Tempo.View
+open Tempo.Html.Template
 open Tempo.Html
-open Tempo.Html.Tools
+open Tempo.Update
 
 open type Tempo.Html.DSL
 
@@ -115,9 +117,9 @@ module private PopoverImpl =
                 { X = x; Y = y })
 
 type Popover =
-    static member MakeAttr<'S, 'A, 'Q>
+    static member Popover<'S, 'A, 'Q>
         (
-            panel: HTMLTemplate<'S, 'A, 'Q>,
+            panel: Template<'S, 'A, 'Q>,
             ?position: Popover.Position,
             ?triggeringEvents: string list,
             ?closingEvents: string list,
@@ -125,7 +127,7 @@ type Popover =
             ?container: Element,
             ?startOpen: 'S -> bool,
             ?closeOnAction: 'A -> bool
-        ) : HTMLTemplateAttribute<'S, 'A, 'Q> =
+        ) : Template<'S, 'A, 'Q> =
         let position =
             Option.defaultValue Popover.BottomLeft position
 
@@ -179,63 +181,74 @@ type Popover =
 
         let makePanelView (payload: PopoverImpl.Payload<'S, 'A, 'Q>) (dispatch: Dispatch<'A>) (parent: Element) =
             let update (s: 'S) (_: 'A) = s
-            let middleware { Action = action } = dispatch action
+            let middleware ({ Action = action }: MiddlewarePayload<'S, 'A, 'Q>) = dispatch action
 
             let container = document.createElement ("div")
             setStyle (container, "position", "absolute")
             (parent.appendChild container) |> ignore
 
             let view =
-                MakeProgram(panel, container) update middleware payload.State
+                Program.Make(
+                    { Template = panel
+                      Container = container
+                      State = payload.State
+                      Update = update
+                      Middleware = Some middleware }
+                )
 
             (container,
              { view with
                    Destroy =
-                       (fun () ->
-                           remove container
-                           view.Destroy()) })
+                       Some
+                           (fun () ->
+                               remove container
+                               Option.iter (fun d -> d ()) view.Destroy) })
 
         // Button/Control lifecycle
-        LifecycleAttr<'S, 'A, 'Q, Element, _>(
-            afterRender =
-                (fun { State = state
-                       Dispatch = dispatch
-                       Element = button } ->
+        DSL.Lifecycle<'S, 'A, 'Q, PopoverImpl.Payload<'S, 'A, 'Q>>(
+            (fun { State = state
+                   Dispatch = dispatch
+                   Element = button } ->
 
-                    let payload : PopoverImpl.Payload<'S, 'A, 'Q> = { State = state; MaybeView = None }
+                let payload : PopoverImpl.Payload<'S, 'A, 'Q> = { State = state; MaybeView = None }
 
-                    let rec openPopover (ev: Event) =
-                        (document.activeElement :?> HTMLElement).blur ()
-                        ev.cancelBubble <- true
+                let rec openPopover (ev: Event) =
+                    (document.activeElement :?> HTMLElement).blur ()
+                    ev.cancelBubble <- true
 
-                        let (containerEl, view) = makePanelView payload dispatch container
-                        applyPositioning button containerEl
-                        let removeWiring = wireReposition button containerEl
+                    let (containerEl, view) = makePanelView payload dispatch container
+                    applyPositioning button containerEl
+                    let removeWiring = wireReposition button containerEl
 
-                        let rec closePopover (ev: Event) =
-                            if not (targetHasSpecifiedAncestor ev.target containerEl) then
-                                removeWiring ()
-                                List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
-                                List.iter (fun ce -> document.removeEventListener (ce, closePopover)) closingEvents
-                                payload.MaybeView <- None
-                                (button :?> HTMLElement).focus ()
-                                view.Destroy()
+                    let rec closePopover (ev: Event) =
+                        if not (targetHasSpecifiedAncestor ev.target containerEl) then
+                            removeWiring ()
+                            List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
+                            List.iter (fun ce -> document.removeEventListener (ce, closePopover)) closingEvents
+                            payload.MaybeView <- None
+                            (button :?> HTMLElement).focus ()
+                            Option.iter (fun d -> d ()) view.Destroy
 
-                        List.iter (fun te -> button.removeEventListener (te, openPopover)) triggeringEvents
-                        List.iter (fun ce -> document.addEventListener (ce, closePopover)) closingEvents
-                        button.addEventListener ("click", closePopover)
+                    List.iter (fun te -> button.removeEventListener (te, openPopover)) triggeringEvents
+                    List.iter (fun ce -> document.addEventListener (ce, closePopover)) closingEvents
+                    button.addEventListener ("click", closePopover)
 
-                        payload.MaybeView <- Some view
+                    payload.MaybeView <- Some view
 
-                        Array.tryItem 0 (getFocusable (containerEl))
-                        |> Option.iter (fun (el) -> (el :?> HTMLElement).focus ())
+                    Array.tryItem 0 (getFocusable (containerEl))
+                    |> Option.iter (fun (el) -> (el :?> HTMLElement).focus ())
 
-                    List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
-                    payload),
-            afterChange =
-                (fun { State = state; Payload = p } ->
-                    p.State <- state
-                    Option.iter (fun (v: ComponentView<'S, 'A, 'Q>) -> v.Change(state)) p.MaybeView
-                    p),
-            beforeDestroy = (fun { Payload = p } -> Option.iter (fun (v: ComponentView<'S, 'A, 'Q>) -> v.Destroy()) p.MaybeView)
+                List.iter (fun te -> button.addEventListener (te, openPopover)) triggeringEvents
+                payload),
+            (fun { State = state; Payload = p } ->
+                p.State <- state
+
+                Option.bind (fun view -> view.Change) p.MaybeView
+                |> Option.iter (fun change -> change state)
+
+                p),
+            (fun { Payload = p } ->
+                Option.bind (fun view -> view.Destroy) p.MaybeView
+                |> Option.iter (fun destroy -> destroy ())),
+            (fun _ _ -> ())
         )
