@@ -113,41 +113,41 @@ type DSL =
     static member Prop<'S, 'A, 'Q, 'T>(name: string, value: 'T) : Template<'S, 'A, 'Q> =
         DSL.PropValue(name, (value |> Some |> Literal))
 
-    static member On<'S, 'A, 'Q>(name: string, handler: THandlerPayload<'S, 'A> -> unit) : Template<'S, 'A, 'Q> =
+    static member On<'S, 'A, 'Q>(name: string, handler: OnPayload<'S, 'A> -> unit) : Template<'S, 'A, 'Q> =
         THandler { Name = name; Handler = handler }
 
-    static member Send<'S, 'A, 'Q>(name: string, handler: THandlerSendPayload<'S> -> 'A) : Template<'S, 'A, 'Q> =
-        THandler
-            { Name = name
-              Handler =
-                  (fun { State = state
-                         Dispatch = dispatch
-                         Event = event
-                         Element = element } ->
-                      dispatch (
-                          handler (
-                              { State = state
-                                Event = event
-                                Element = element }
-                          )
-                      )) }
-
-    static member inline Send<'S, 'A, 'Q>(name: string, action: 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun (_: THandlerSendPayload<'S>) -> action))
+    static member Send<'S, 'A, 'Q>(name: string, handler: SendPayload<'S> -> 'A) : Template<'S, 'A, 'Q> =
+        DSL.On(
+            name,
+            (fun { State = state
+                   Dispatch = dispatch
+                   Event = event
+                   Element = element } ->
+                dispatch (
+                    handler (
+                        { State = state
+                          Event = event
+                          Element = element }
+                    )
+                ))
+        )
 
     static member inline Send<'S, 'A, 'Q>(name: string, handler: unit -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun (_: THandlerSendPayload<'S>) -> handler ()))
+        DSL.Send<'S, 'A, 'Q>(name, (fun (_: SendPayload<'S>) -> handler ()))
+
+    static member inline SendAction<'S, 'A, 'Q>(name: string, action: 'A) : Template<'S, 'A, 'Q> =
+        DSL.Send<'S, 'A, 'Q>(name, (fun (_: SendPayload<'S>) -> action))
 
     static member inline SendState<'S, 'A, 'Q>(name: string, handler: 'S -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun ({ State = s }: THandlerSendPayload<'S>) -> handler s))
+        DSL.Send<'S, 'A, 'Q>(name, (fun ({ State = s }: SendPayload<'S>) -> handler s))
 
     static member inline SendEvent<'S, 'A, 'Q>(name: string, handler: Event -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun ({ Event = e }: THandlerSendPayload<'S>) -> handler e))
+        DSL.Send<'S, 'A, 'Q>(name, (fun ({ Event = e }: SendPayload<'S>) -> handler e))
 
     static member inline SendTextInput<'S, 'A, 'Q>(name: string, handler: 'S -> string -> 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(
             name,
-            (fun ({ State = state; Element = element }: THandlerSendPayload<'S>) ->
+            (fun ({ State = state; Element = element }: SendPayload<'S>) ->
                 handler state (element :?> HTMLInputElement).value)
         )
 
@@ -202,7 +202,7 @@ type DSL =
         makeTransform (
             (fun render ->
                 fun (state, element, reference, dispatch) ->
-                    let mappedDispatch a =
+                    let mappedDispatch (a: 'A2) =
                         match map a with
                         | Some a -> dispatch a
                         | None -> ()
@@ -432,12 +432,12 @@ type DSL =
     static member Unless<'S, 'A, 'Q>(predicate: 'S -> bool, template: Template<'S, 'A, 'Q>) =
         DSL.When(predicate >> not, template)
 
-    static member inline ForEach<'S, 'A, 'Q>(template: Template<'S, 'A, 'Q>) : Template<'S seq, 'A, 'Q> =
+    static member inline ForEach<'S, 'A, 'Q>(template: Template<'S, 'A, 'Q>) : Template<'S list, 'A, 'Q> =
         forEach (template)
 
     static member inline ForEach<'S1, 'S2, 'A, 'Q>
         (
-            map: 'S1 -> 'S2 seq,
+            map: 'S1 -> 'S2 list,
             template: Template<'S2, 'A, 'Q>
         ) : Template<'S1, 'A, 'Q> =
         DSL.MapState(map, forEach (template))
@@ -454,10 +454,9 @@ type DSL =
     static member Portal<'S, 'A, 'Q>(selector: string, template: Template<'S, 'A, 'Q>) : Template<'S, 'A, 'Q> =
         DSL.Transform(
             (fun render ->
-                fun (state, container, reference, dispatch) ->
-                    // TODO this will fail at runtime if parent doesn't exist
-                    let parent = document.querySelector selector
-                    render (state, parent, None, dispatch)),
+                (fun (state, _, _, dispatch: Dispatch<'A>) ->
+                    let parent = document.querySelector selector // TODO this will fail at runtime if parent doesn't exist
+                    render (state, parent, None, dispatch))),
             template
         )
 
@@ -518,37 +517,40 @@ type DSL =
     static member inline Respond<'S, 'A, 'Q>(responder: Element -> 'Q -> unit) : Template<'S, 'A, 'Q> =
         respond responder
 
-    static member OnMount<'S, 'A, 'Q>(handler: 'S -> Element -> unit) =
+    static member OnMount<'S, 'A, 'Q>(handler: LifecycleMount<'S, 'A> -> unit) =
         DSL.Transform(
             (fun render ->
-                fun (state, container, reference, dispatch) ->
-                    handler state container
+                (fun (state, container, _, dispatch) ->
+                    handler
+                        { State = state
+                          Element = container
+                          Dispatch = dispatch }
 
                     { Change = None
                       Destroy = None
-                      Request = None }),
+                      Request = None })),
             DSL.Empty()
         )
 
     static member OnUpdate<'S, 'A, 'Q>(handler: 'S -> Element -> unit) =
         DSL.Transform(
             (fun render ->
-                fun (state, container, reference, dispatch) ->
+                (fun (state, container, _, dispatch) ->
                     handler state container
 
                     { Change = Some(fun s -> handler s container)
                       Destroy = None
-                      Request = None }),
+                      Request = None })),
             DSL.Empty()
         )
 
     static member OnRemove<'S, 'A, 'Q>(handler: Element -> unit) =
         DSL.Transform(
             (fun render ->
-                fun (state, container, reference, dispatch) ->
+                (fun (_, container, _, dispatch) ->
                     { Change = None
                       Destroy = None
-                      Request = Some(fun () -> handler container) }),
+                      Request = Some(fun () -> handler container) })),
             DSL.Empty()
         )
 
@@ -558,10 +560,10 @@ type DSL =
             onChange: LifecycleChange<'S, 'A, 'P> -> 'P,
             onRemove: LifecycleDestroy<'A, 'P> -> unit,
             respond: 'P -> 'Q -> unit
-        ) =
+        ) : Template<'S, 'A, 'Q> =
         DSL.Transform(
             (fun render ->
-                fun (state, container, reference, dispatch) ->
+                (fun (state, container, _, dispatch) ->
                     let mutable payload =
                         onMount
                             { Element = container
@@ -586,7 +588,7 @@ type DSL =
 
                     { Change = Some change
                       Destroy = Some destroy
-                      Request = Some request }),
+                      Request = Some request })),
             DSL.Empty()
         )
 
@@ -595,7 +597,7 @@ type DSL =
             onMount: LifecycleMount<'S, 'A> -> 'P,
             onChange: LifecycleChange<'S, 'A, 'P> -> 'P,
             onRemove: LifecycleDestroy<'A, 'P> -> unit
-        ) =
+        ) : Template<'S, 'A, 'Q> =
         DSL.Lifecycle(onMount, onChange, onRemove, (fun _ _ -> ()))
 
     static member Lifecycle<'S, 'A, 'Q, 'P>
@@ -603,31 +605,34 @@ type DSL =
             onMount: LifecycleMount<'S, 'A> -> 'P,
             onRemove: LifecycleDestroy<'A, 'P> -> unit,
             respond: 'P -> 'Q -> unit
-        ) =
+        ) : Template<'S, 'A, 'Q> =
         DSL.Lifecycle(onMount, (fun { Payload = payload } -> payload), onRemove, respond)
 
     static member Lifecycle<'S, 'A, 'Q, 'P>
         (
             onMount: LifecycleMount<'S, 'A> -> 'P,
             onRemove: LifecycleDestroy<'A, 'P> -> unit
-        ) =
+        ) : Template<'S, 'A, 'Q> =
         DSL.Lifecycle(onMount, (fun { Payload = payload } -> payload), onRemove, (fun _ _ -> ()))
 
 
-    static member MakeCaptureState<'S1, 'S2, 'S3, 'A, 'Q>() =
+    static member MakeCaptureState<'S1, 'S2, 'S3, 'A1, 'A2, 'A3, 'Q>() =
         let mutable localState1 = None
+        let mutable localDispatch1 = None
 
-        let hold (template: Template<'S1, 'A, 'Q>) =
+        let hold (template: Template<'S1, 'A1, 'Q>) =
             DSL.Transform(
                 (fun render ->
                     (fun (state, container, reference, dispatch) ->
+                        localDispatch1 <- Some dispatch
+                        localState1 <- Some state
+
                         let view =
                             render (state, container, reference, dispatch)
 
-                        localState1 <- Some state
 
                         let change s =
-                            localState1 <- Some state
+                            localState1 <- Some s
                             Option.iter (fun c -> c s) view.Change
 
                         { Change = Some change
@@ -636,15 +641,25 @@ type DSL =
                 template
             )
 
-        let release (merge: 'S1 -> 'S2 -> 'S3, template: Template<'S3, 'A, 'Q>) =
+        let release
+            (
+                mergestates: 'S1 -> 'S2 -> 'S3,
+                propagateAction: 'A3 -> 'A1 option,
+                template: Template<'S3, 'A3, 'Q>
+            ) : Template<'S2, 'A2, 'Q> =
             DSL.Transform(
                 (fun render ->
                     (fun (state, container, reference, dispatch) ->
+                        let mappedDispatch (a: 'A3) =
+                            match (propagateAction a, localDispatch1) with
+                            | (Some a, Some dispatch) -> dispatch a
+                            | _ -> ()
+
                         let view =
-                            render (merge (Option.get localState1) state, container, reference, dispatch)
+                            render (mergestates (Option.get localState1) state, container, reference, mappedDispatch)
 
                         let change s =
-                            Option.iter (fun c -> c (merge (Option.get localState1) s)) view.Change
+                            Option.iter (fun c -> c (mergestates (Option.get localState1) s)) view.Change
 
                         { Change = Some change
                           Destroy = view.Destroy
@@ -698,42 +713,19 @@ type DSL =
     // fsharplint:enable
 
     static member inline DIV<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("div", children)
-    static member inline DIV<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.DIV([ child ])
-    static member inline DIV<'S, 'A, 'Q>() = DSL.DIV([])
-
     static member inline MAIN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("main", children)
-    static member inline MAIN<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.MAIN([ child ])
-    static member inline MAIN<'S, 'A, 'Q>() = DSL.MAIN([])
-
     static member inline ASIDE<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("aside", children)
-    static member inline ASIDE<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.ASIDE([ child ])
-    static member inline ASIDE<'S, 'A, 'Q>() = DSL.ASIDE([])
-
     static member inline BUTTON<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("button", children)
-    static member inline BUTTON<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.BUTTON([ child ])
-    static member inline BUTTON<'S, 'A, 'Q>() = DSL.BUTTON([])
-
     static member inline IMG<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("img", children)
-    static member inline IMG<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.IMG([ child ])
-    static member inline IMG<'S, 'A, 'Q>() = DSL.IMG([])
-
     static member inline SPAN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("span", children)
-    static member inline SPAN<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.SPAN([ child ])
-    static member inline SPAN<'S, 'A, 'Q>() = DSL.SPAN([])
 
     static member inline Svg<'S, 'A, 'Q>(name: string, children: Template<'S, 'A, 'Q> list) =
         DSL.NSEl("http://www.w3.org/2000/svg", name, children)
 
     static member inline SVG<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.Svg("svg", children)
-    static member inline SVG<'S, 'A, 'Q>(child: Template<'S, 'A, 'Q>) = DSL.SVG([ child ])
-    static member inline SVG<'S, 'A, 'Q>() = DSL.SVG([])
-
     static member inline PATH<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.Svg("path", children)
-
     static member inline INPUT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("input", children)
-
     static member inline TEXTAREA<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("textarea", children)
-
     // fsharplint:disable
     static member inline INPUT_TEXT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) =
         DSL.El("input", DSL.Attr("type", "text") :: children)

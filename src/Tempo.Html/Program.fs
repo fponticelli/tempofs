@@ -21,15 +21,14 @@ type Program =
            Update = update
            Middleware = middleware
            Container = container
-           State = state }: ProgramOptions<'S, 'A, 'Q>)
+           State = state' }: ProgramOptions<'S, 'A, 'Q>)
         =
-        let render = makeRender template true
-        let mutable localState = state
+        let mutable localState = state'
+        let render = makeRender (template, true)
 
-        let rec dispatch action =
+        let rec dispatch (action: 'A) =
             let newState = update localState action
             Option.iter (fun c -> c newState) view.Change
-            localState <- newState
 
             Option.iter
                 (fun m ->
@@ -44,7 +43,7 @@ type Program =
             localState <- newState
 
         and view : View<'S, 'Q> =
-            render (state, container, None, dispatch)
+            render (localState, container, None, dispatch)
 
         { Change = view.Change
           Dispatch = dispatch

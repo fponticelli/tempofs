@@ -41,20 +41,20 @@ module Template =
         { Name: string
           Value: Value<'S, string option> }
 
-    and THandlerPayload<'S, 'A> =
+    and OnPayload<'S, 'A> =
         { State: 'S
           Event: Event
           Element: Element
           Dispatch: Dispatch<'A> }
 
-    and THandlerSendPayload<'S> =
+    and SendPayload<'S> =
         { State: 'S
           Event: Event
           Element: Element }
 
     and THandler<'S, 'A> =
         { Name: string
-          Handler: THandlerPayload<'S, 'A> -> unit }
+          Handler: OnPayload<'S, 'A> -> unit }
 
     and ITTransform<'S, 'A, 'Q> =
         abstract Accept : ITTransformInvoker<'S, 'A, 'Q, 'R> -> 'R
@@ -167,10 +167,10 @@ module Template =
     let makeProperty<'S, 'A, 'Q, 'V> (name: string, value: Value<'S, 'V option>) : Template<'S, 'A, 'Q> =
         TProperty(packProperty (TVProperty(name, value)))
 
-    let forEach<'S, 'A, 'Q> (template: Template<'S, 'A, 'Q>) : Template<'S seq, 'A, 'Q> =
+    let forEach<'S, 'A, 'Q> (template: Template<'S, 'A, 'Q>) : Template<'S list, 'A, 'Q> =
         makeTransform (
             (fun render ->
-                (fun (states: 'S seq, container: Element, reference: Node option, dispatch) ->
+                (fun (states: 'S list, container: Element, reference: Node option, dispatch) ->
                     let ref =
                         container.ownerDocument.createTextNode ("") :> Node
 
@@ -180,31 +180,31 @@ module Template =
                     |> ignore
 
                     let mutable views =
-                        Seq.map (fun state -> render (state, container, maybeRef, dispatch)) states
+                        List.map (fun state -> render (state, container, maybeRef, dispatch)) states
 
                     let change states =
                         let min =
-                            System.Math.Min(Seq.length views, Seq.length states)
+                            System.Math.Min(List.length views, List.length states)
 
-                        Seq.zip views states
-                        |> Seq.iter (fun (view, state) -> Option.iter (fun c -> c state) view.Change)
+                        List.zip views states
+                        |> List.iter (fun (view, state) -> Option.iter (fun c -> c state) view.Change)
 
-                        Seq.skip min views
-                        |> Seq.iter (fun view -> Option.iter (fun d -> d ()) view.Destroy)
+                        List.skip min views
+                        |> List.iter (fun view -> Option.iter (fun d -> d ()) view.Destroy)
 
-                        views <- Seq.take min views
+                        views <- List.take min views
 
                         let newViews =
-                            Seq.skip min states
-                            |> Seq.map (fun state -> render (state, container, maybeRef, dispatch))
+                            List.skip min states
+                            |> List.map (fun state -> render (state, container, maybeRef, dispatch))
 
-                        views <- Seq.concat [ views; newViews ]
+                        views <- List.concat [ views; newViews ]
 
                     let request q =
-                        Seq.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun r -> r q) view.Request) views
+                        List.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun r -> r q) view.Request) views
 
                     let destroy () =
-                        Seq.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun d -> d ()) view.Destroy) views
+                        List.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun d -> d ()) view.Destroy) views
 
                     { Change = Some change
                       Destroy = Some destroy
@@ -230,6 +230,7 @@ module Template =
                               Request = (fun q -> Option.iter (fun r -> r q) view.Request) }
 
                         dispatch a
+                        localState <- currState
 
                     and view : View<'S, 'Q> =
                         render (localState, container, reference, iDispatch)
