@@ -26,6 +26,11 @@ type LifecycleDestroy<'A, 'P> =
 
 type MapActionPayload<'S, 'A> = { State: 'S; Action: 'A }
 
+
+type SelectOption<'S> =
+    | OptionValue of label: Value<'S, string> * value: 'S
+    | OptionGroup of string * (Value<'S, string> * 'S) list
+
 [<AbstractClass; Sealed>]
 type DSL =
     static member Empty<'S, 'A, 'Q>() : Template<'S, 'A, 'Q> = TEmpty
@@ -47,11 +52,13 @@ type DSL =
               NS = None
               Children = children }
 
-    static member Text<'S, 'A, 'Q>(f: 'S -> string) : Template<'S, 'A, 'Q> = f |> Derived |> TText
+    static member Text<'S, 'A, 'Q>(v: Value<'S, string>) : Template<'S, 'A, 'Q> = v |> TText
+
+    static member Text<'S, 'A, 'Q>(f: 'S -> string) : Template<'S, 'A, 'Q> = f |> Derived |> DSL.Text
 
     static member Text() : Template<string, 'A, 'Q> = DSL.Text id
 
-    static member Text<'S, 'A, 'Q>(value: string) : Template<'S, 'A, 'Q> = value |> Literal |> TText
+    static member Text<'S, 'A, 'Q>(value: string) : Template<'S, 'A, 'Q> = value |> Literal |> DSL.Text
 
     static member AttrValue<'S, 'A, 'Q>(name: string, value: Value<'S, string option>) : Template<'S, 'A, 'Q> =
         TAttribute { Name = name; Value = value }
@@ -106,13 +113,34 @@ type DSL =
     static member PropValue<'S, 'A, 'Q, 'T>(name: string, value: Value<'S, 'T option>) : Template<'S, 'A, 'Q> =
         makeProperty (name, value)
 
+    static member PropValue<'S, 'A, 'Q>(name: string, value: Value<'S, string>) : Template<'S, 'A, 'Q> =
+        makeProperty (name, Value.Map Some value)
+
+    static member PropValue<'S, 'A, 'Q>(name: string, value: Value<'S, float>) : Template<'S, 'A, 'Q> =
+        makeProperty (name, Value.Map Some value)
+
+    static member PropValue<'S, 'A, 'Q>(name: string, value: Value<'S, int>) : Template<'S, 'A, 'Q> =
+        makeProperty (name, Value.Map Some value)
+
+    static member PropValue<'S, 'A, 'Q>(name: string, value: Value<'S, bool>) : Template<'S, 'A, 'Q> =
+        makeProperty (name, Value.Map Some value)
+
     static member Prop<'S, 'A, 'Q, 'T>(name: string, f: 'S -> 'T option) : Template<'S, 'A, 'Q> =
         DSL.PropValue(name, (f |> Derived))
 
     static member Prop<'S, 'A, 'Q, 'T>(name: string, f: 'S -> 'T) : Template<'S, 'A, 'Q> =
         DSL.PropValue(name, (f >> Some |> Derived))
 
-    static member Prop<'S, 'A, 'Q, 'T>(name: string, value: 'T) : Template<'S, 'A, 'Q> =
+    static member Prop<'S, 'A, 'Q>(name: string, value: string) : Template<'S, 'A, 'Q> =
+        DSL.PropValue(name, (value |> Some |> Literal))
+
+    static member Prop<'S, 'A, 'Q>(name: string, value: float) : Template<'S, 'A, 'Q> =
+        DSL.PropValue(name, (value |> Some |> Literal))
+
+    static member Prop<'S, 'A, 'Q>(name: string, value: int) : Template<'S, 'A, 'Q> =
+        DSL.PropValue(name, (value |> Some |> Literal))
+
+    static member Prop<'S, 'A, 'Q>(name: string, value: bool) : Template<'S, 'A, 'Q> =
         DSL.PropValue(name, (value |> Some |> Literal))
 
     static member On<'S, 'A, 'Q>(name: string, handler: OnPayload<'S, 'A> -> unit) : Template<'S, 'A, 'Q> =
@@ -711,9 +739,9 @@ type DSL =
     static member inline aria(name: string, whenTrue: string, whenFalse: string) =
         DSL.Attr($"aria-{name}", whenTrue, whenFalse)
 
-    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string option>) : Template<'S, 'A, 'Q> = DSL.Prop("innerHTML", html)
+    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string option>) : Template<'S, 'A, 'Q> = DSL.PropValue("innerHTML", html)
 
-    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string>) : Template<'S, 'A, 'Q> = DSL.Prop("innerHTML", html)
+    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string>) : Template<'S, 'A, 'Q> = DSL.PropValue("innerHTML", html)
 
     static member inline innerHTML<'S, 'A, 'Q>(html: 'S -> string option) : Template<'S, 'A, 'Q> = DSL.innerHTML (html |> Derived)
 
@@ -749,3 +777,43 @@ type DSL =
     // fsharplint:enable
 
     static member inline SELECT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("select", children)
+
+    static member MakeSelect<'S, 'Q>(options: SelectOption<'S> list, isSelected: 'S -> 'S -> bool, children: Template<'S, 'S, 'Q> list) : Template<'S, 'S, 'Q> =
+        let makeOptionOption (label: Value<'S, string>, isSelected: 'S -> bool) =
+            DSL.El(
+                "option",
+                [ DSL.Prop("selected", isSelected)
+                  DSL.Text label ]
+            )
+
+        let makeOptionGroup (label: string) (values) =
+            DSL.El(
+                "optgroup",
+                DSL.Attr("label", label)
+                :: (List.map makeOptionOption values)
+            )
+
+        let makeOption option =
+            match option with
+            | OptionValue (label, value) -> makeOptionOption (label, (isSelected value))
+            | OptionGroup (label, values) -> makeOptionGroup label (List.map (fun (label, v) -> (label, isSelected v)) values)
+
+        let values =
+            List.fold
+                (fun acc opt ->
+                    match opt with
+                    | OptionValue (_, value) -> acc @ [ value ]
+                    | OptionGroup (_, values) -> acc @ List.map (fun (_, value) -> value) values)
+                []
+                options
+
+        DSL.SELECT(
+            DSL.SendElement<'S, 'S, 'Q>(
+                "change",
+                (fun el ->
+                    let index = (el :?> HTMLSelectElement).selectedIndex
+                    console.log (index)
+                    List.item index values)
+            )
+            :: (children @ List.map makeOption options)
+        )
