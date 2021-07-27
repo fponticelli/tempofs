@@ -24,6 +24,8 @@ type LifecycleDestroy<'A, 'P> =
       Dispatch: Dispatch<'A>
       Payload: 'P }
 
+type MapActionPayload<'S, 'A> = { State: 'S; Action: 'A }
+
 [<AbstractClass; Sealed>]
 type DSL =
     static member Empty<'S, 'A, 'Q>() : Template<'S, 'A, 'Q> = TEmpty
@@ -132,9 +134,6 @@ type DSL =
                 ))
         )
 
-    static member inline Send<'S, 'A, 'Q>(name: string, handler: unit -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun (_: SendPayload<'S>) -> handler ()))
-
     static member inline SendAction<'S, 'A, 'Q>(name: string, action: 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(name, (fun (_: SendPayload<'S>) -> action))
 
@@ -143,6 +142,9 @@ type DSL =
 
     static member inline SendEvent<'S, 'A, 'Q>(name: string, handler: Event -> 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(name, (fun ({ Event = e }: SendPayload<'S>) -> handler e))
+
+    static member inline SendElement<'S, 'A, 'Q>(name: string, handler: Element -> 'A) : Template<'S, 'A, 'Q> =
+        DSL.Send<'S, 'A, 'Q>(name, (fun ({ Element = e }: SendPayload<'S>) -> handler e))
 
     static member inline SendTextInput<'S, 'A, 'Q>(name: string, handler: 'S -> string -> 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(
@@ -196,18 +198,24 @@ type DSL =
 
     static member MapAction<'S, 'A1, 'A2, 'Q>
         (
-            map: 'A2 -> 'A1 option,
+            map: MapActionPayload<'S, 'A2> -> 'A1 option,
             template: Template<'S, 'A2, 'Q>
         ) : Template<'S, 'A1, 'Q> =
         makeTransform (
             (fun render ->
                 fun (state, element, reference, dispatch) ->
+                    let mutable localState = state
+
                     let mappedDispatch (a: 'A2) =
-                        match map a with
+                        match map { State = localState; Action = a } with
                         | Some a -> dispatch a
                         | None -> ()
 
-                    render (state, element, reference, mappedDispatch)),
+                    let view =
+                        render (state, element, reference, mappedDispatch)
+
+                    let change s = localState <- s
+                    mergeChange (change, view)),
             template
         )
 
@@ -246,19 +254,19 @@ type DSL =
     static member inline MapSA<'S1, 'S2, 'A1, 'A2, 'Q>
         (
             mapState: 'S1 -> 'S2,
-            mapAction: 'A2 -> 'A1 option,
+            mapAction: MapActionPayload<'S1, 'A2> -> 'A1 option,
             template: Template<'S2, 'A2, 'Q>
         ) : Template<'S1, 'A1, 'Q> =
-        DSL.MapState(mapState, DSL.MapAction(mapAction, template))
+        DSL.MapAction(mapAction, DSL.MapState(mapState, template))
 
     static member inline MapSAQ<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
         (
             mapState: 'S1 -> 'S2,
-            mapAction: 'A2 -> 'A1 option,
+            mapAction: MapActionPayload<'S1, 'A2> -> 'A1 option,
             mapQuery: 'Q1 -> 'Q2 option,
             template: Template<'S2, 'A2, 'Q2>
         ) : Template<'S1, 'A1, 'Q1> =
-        DSL.MapSA(mapState, mapAction, DSL.MapQuery(mapQuery, template))
+        DSL.MapQuery(mapQuery, DSL.MapSA(mapState, mapAction, template))
 
     static member inline MapSQ<'S1, 'S2, 'A, 'Q1, 'Q2>
         (
@@ -270,7 +278,7 @@ type DSL =
 
     static member inline MapAQ<'S, 'A1, 'A2, 'Q1, 'Q2>
         (
-            mapAction: 'A2 -> 'A1 option,
+            mapAction: MapActionPayload<'S, 'A2> -> 'A1 option,
             mapQuery: 'Q1 -> 'Q2 option,
             template: Template<'S, 'A2, 'Q2>
         ) : Template<'S, 'A1, 'Q1> =

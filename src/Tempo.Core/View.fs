@@ -30,3 +30,11 @@ module View =
                   Destroy = Option.merge (fun a b -> F.MergeEffects(a, b)) a.Destroy b.Destroy })
             empty
             ls
+
+    let mergeChange<'S, 'Q> (change: 'S -> unit, view: View<'S, 'Q>) : View<'S, 'Q> =
+        mergeViews (
+            [ { Change = Some change
+                Request = None
+                Destroy = None }
+              view ]
+        )
