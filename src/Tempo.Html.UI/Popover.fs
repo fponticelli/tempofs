@@ -210,7 +210,7 @@ type Popover =
                    Dispatch = dispatch
                    Element = button } ->
 
-                let payload : PopoverImpl.Payload<'S, 'A, 'Q> = { State = state; MaybeView = None }
+                let payload: PopoverImpl.Payload<'S, 'A, 'Q> = { State = state; MaybeView = None }
 
                 let rec openPopover (ev: Event) =
                     (document.activeElement :?> HTMLElement).blur ()
@@ -243,7 +243,7 @@ type Popover =
             (fun { State = state; Payload = p } ->
                 p.State <- state
 
-                Option.bind (fun view -> view.Change) p.MaybeView
+                Option.bind (fun (view: ComponentView<_, _, _>) -> view.Change) p.MaybeView
                 |> Option.iter (fun change -> change state)
 
                 p),

@@ -5,6 +5,7 @@ open Tempo.Std
 open Tempo.Update
 open Tempo.View
 open Tempo.Value
+open Tempo.Browser
 open Tempo.Html.Template
 open Browser.Types
 
@@ -30,6 +31,25 @@ type MapActionPayload<'S, 'A> = { State: 'S; Action: 'A }
 type SelectOption<'S> =
     | OptionValue of label: Value<'S, string> * value: 'S
     | OptionGroup of string * (Value<'S, string> * 'S) list
+
+type TransitionStateTime =
+    { Delta: float
+      Start: float
+      Timestamp: float }
+
+type TransitionStateOptions<'S> =
+    { Step: int
+      StartState: 'S
+      EndState: 'S
+      CurrentState: 'S
+      Delta: float
+      Start: float
+      Timestamp: float }
+
+type ControlChangeOptions<'S> =
+    { PrevState: 'S
+      CurrState: 'S
+      Change: 'S -> unit }
 
 [<AbstractClass; Sealed>]
 type DSL =
@@ -143,6 +163,18 @@ type DSL =
     static member Prop<'S, 'A, 'Q>(name: string, value: bool) : Template<'S, 'A, 'Q> =
         DSL.PropValue(name, (value |> Some |> Literal))
 
+    static member StyleValue<'S, 'A, 'Q>(name: string, value: Value<'S, string option>) : Template<'S, 'A, 'Q> =
+        TStyle { Name = name; Value = value }
+
+    static member inline Style<'S, 'A, 'Q>(name: string, value: 'S -> string option) : Template<'S, 'A, 'Q> =
+        DSL.StyleValue(name, Derived value)
+
+    static member inline Style<'S, 'A, 'Q>(name: string, value: 'S -> string) : Template<'S, 'A, 'Q> =
+        DSL.StyleValue(name, Value.Map Some (Derived value))
+
+    static member inline Style<'S, 'A, 'Q>(name: string, value: string) : Template<'S, 'A, 'Q> =
+        DSL.StyleValue(name, Literal(Some value))
+
     static member On<'S, 'A, 'Q>(name: string, handler: OnPayload<'S, 'A> -> unit) : Template<'S, 'A, 'Q> =
         THandler { Name = name; Handler = handler }
 
@@ -221,7 +253,8 @@ type DSL =
                     { Change = change
                       Request = view.Request
                       Destroy = view.Destroy }),
-            template
+            template,
+            false
         )
 
     static member MapAction<'S, 'A1, 'A2, 'Q>
@@ -244,7 +277,8 @@ type DSL =
 
                     let change s = localState <- s
                     mergeChange (change, view)),
-            template
+            template,
+            false
         )
 
     static member MapQuery<'S, 'A, 'Q1, 'Q2>
@@ -269,7 +303,8 @@ type DSL =
                     { Change = view.Change
                       Request = request
                       Destroy = view.Destroy }),
-            template
+            template,
+            false
         )
 
     static member inline MapQuery<'S, 'A, 'Q1, 'Q2>
@@ -481,11 +516,20 @@ type DSL =
     static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>
         (
             transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
+            template: Template<'S2, 'A2, 'Q2>,
+            forceRoot: bool
+        ) =
+        makeTransform (transform, template, forceRoot)
+
+    static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>
+        (
+            transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
             template: Template<'S2, 'A2, 'Q2>
         ) =
-        makeTransform (transform, template)
+        makeTransform (transform, template, false)
 
-    static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>(transform) = makeTransform (transform, DSL.Empty())
+    static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>(transform) =
+        makeTransform (transform, DSL.Empty(), false)
 
     static member Portal<'S, 'A, 'Q>(selector: string, template: Template<'S, 'A, 'Q>) : Template<'S, 'A, 'Q> =
         DSL.Transform(
@@ -498,7 +542,7 @@ type DSL =
 
     static member ControlChange<'S, 'A, 'Q>
         (
-            controller: 'S -> 'S -> ('S -> unit) -> unit,
+            makeController: unit -> (ControlChangeOptions<'S> -> unit),
             template: Template<'S, 'A, 'Q>
         ) =
         DSL.Transform(
@@ -509,11 +553,17 @@ type DSL =
                     let view =
                         render (localState, container, reference, dispatch)
 
+                    let controller = makeController ()
+
                     let change =
                         Option.map
                             (fun c ->
                                 fun currState ->
-                                    controller currState localState c
+                                    controller
+                                        { CurrState = currState
+                                          PrevState = localState
+                                          Change = c }
+
                                     localState <- currState)
                             view.Change
 
@@ -541,9 +591,12 @@ type DSL =
 
     static member FilterChange<'S, 'A, 'Q>(predicate: 'S -> 'S -> bool, template: Template<'S, 'A, 'Q>) =
         DSL.ControlChange(
-            (fun curr prev change ->
-                if (predicate curr prev) then
-                    change curr),
+            (fun _ ->
+                (fun { CurrState = curr
+                       PrevState = prev
+                       Change = change } ->
+                    if (predicate curr prev) then
+                        change curr)),
             template
         )
 
@@ -720,6 +773,82 @@ type DSL =
         ) : Template<'S, 'A, 'Q> =
         DSL.Component(update, ignore, template)
 
+    static member TransitionState<'S, 'A, 'Q>
+        (
+            makeTriggerNext: unit -> ((TransitionStateTime -> unit) -> (unit -> unit)),
+            interpolate: TransitionStateOptions<'S> -> ('S * bool),
+            template: Template<'S, 'A, 'Q>
+        ) : Template<'S, 'A, 'Q> =
+        let makeController () =
+            let triggerNext = makeTriggerNext ()
+            let mutable cancel = None
+
+            let controller
+                { CurrState = curr
+                  PrevState = prev
+                  Change = change }
+                =
+                let startState = prev
+                let step = 0
+                Option.iter (fun c -> c ()) cancel
+                let mutable current = None
+
+                let rec nextCallback (time: TransitionStateTime) : unit =
+                    let payload =
+                        { Step = step
+                          StartState = startState
+                          EndState = curr
+                          CurrentState = Option.defaultValue startState current
+                          Start = time.Start
+                          Delta = time.Delta
+                          Timestamp = time.Timestamp }
+
+                    let (stateToApply, isDone) = interpolate payload
+                    current <- Some stateToApply
+                    change stateToApply
+
+                    if not isDone then
+                        cancel <- triggerNext nextCallback |> Some
+                    else
+                        cancel <- None
+
+                cancel <- triggerNext nextCallback |> Some
+
+            controller
+
+        DSL.ControlChange(makeController, template)
+
+    static member TransitionState<'S, 'A, 'Q>
+        (
+            interpolate: TransitionStateOptions<'S> -> ('S * bool),
+            template: Template<'S, 'A, 'Q>
+        ) : Template<'S, 'A, 'Q> =
+        let makeTriggerNext () =
+            let mutable start = None
+
+            let triggerNext callback =
+                if Option.isNone start then
+                    start <- Some(performanceNow ())
+
+                let current = performanceNow ()
+
+                let frameCallback (timestamp: float) =
+                    callback
+                        { Delta = timestamp - current
+                          Start = Option.get start
+                          Timestamp = timestamp }
+
+                let cancelId =
+                    window.requestAnimationFrame frameCallback
+
+                fun () ->
+                    start <- None
+                    window.cancelAnimationFrame cancelId
+
+            triggerNext
+
+        DSL.TransitionState(makeTriggerNext, interpolate, template)
+
     // fsharplint:disable
     static member inline cls(text: string) = DSL.Attr("class", text)
     static member inline cls(f: 'S -> string) = DSL.Attr("class", f)
@@ -739,13 +868,17 @@ type DSL =
     static member inline aria(name: string, whenTrue: string, whenFalse: string) =
         DSL.Attr($"aria-{name}", whenTrue, whenFalse)
 
-    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string option>) : Template<'S, 'A, 'Q> = DSL.PropValue("innerHTML", html)
+    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string option>) : Template<'S, 'A, 'Q> =
+        DSL.PropValue("innerHTML", html)
 
-    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string>) : Template<'S, 'A, 'Q> = DSL.PropValue("innerHTML", html)
+    static member inline innerHTML<'S, 'A, 'Q>(html: Value<'S, string>) : Template<'S, 'A, 'Q> =
+        DSL.PropValue("innerHTML", html)
 
-    static member inline innerHTML<'S, 'A, 'Q>(html: 'S -> string option) : Template<'S, 'A, 'Q> = DSL.innerHTML (html |> Derived)
+    static member inline innerHTML<'S, 'A, 'Q>(html: 'S -> string option) : Template<'S, 'A, 'Q> =
+        DSL.innerHTML (html |> Derived)
 
-    static member inline innerHTML<'S, 'A, 'Q>(html: 'S -> string) : Template<'S, 'A, 'Q> = DSL.innerHTML (html |> Derived)
+    static member inline innerHTML<'S, 'A, 'Q>(html: 'S -> string) : Template<'S, 'A, 'Q> =
+        DSL.innerHTML (html |> Derived)
     // fsharplint:enable
 
     static member inline DIV<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("div", children)
@@ -778,7 +911,12 @@ type DSL =
 
     static member inline SELECT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("select", children)
 
-    static member MakeSelect<'S, 'Q>(options: SelectOption<'S> list, isSelected: 'S -> 'S -> bool, children: Template<'S, 'S, 'Q> list) : Template<'S, 'S, 'Q> =
+    static member MakeSelect<'S, 'Q>
+        (
+            options: SelectOption<'S> list,
+            isSelected: 'S -> 'S -> bool,
+            children: Template<'S, 'S, 'Q> list
+        ) : Template<'S, 'S, 'Q> =
         let makeOptionOption (label: Value<'S, string>, isSelected: 'S -> bool) =
             DSL.El(
                 "option",
@@ -796,7 +934,8 @@ type DSL =
         let makeOption option =
             match option with
             | OptionValue (label, value) -> makeOptionOption (label, (isSelected value))
-            | OptionGroup (label, values) -> makeOptionGroup label (List.map (fun (label, v) -> (label, isSelected v)) values)
+            | OptionGroup (label, values) ->
+                makeOptionGroup label (List.map (fun (label, v) -> (label, isSelected v)) values)
 
         let values =
             List.fold
@@ -812,7 +951,6 @@ type DSL =
                 "change",
                 (fun el ->
                     let index = (el :?> HTMLSelectElement).selectedIndex
-                    console.log (index)
                     List.item index values)
             )
             :: (children @ List.map makeOption options)

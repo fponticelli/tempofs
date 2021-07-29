@@ -11,6 +11,7 @@ module List =
             []
 
     type RankStrategy =
+        | Sequence
         | StandardCompetition
         | ModifiedCompetition
         | DenseRanking
@@ -18,11 +19,12 @@ module List =
     let rank<'A, 'B when 'B: comparison> (getScore: 'A -> 'B) (strategy: RankStrategy) (ls: 'A list) =
         let calcRank (current: int) (groupLength: int) =
             match strategy with
-            | StandardCompetition -> (current + 1, groupLength - 1)
+            | StandardCompetition -> (current + 1, groupLength - 1, false)
             | ModifiedCompetition ->
                 let assign = current + groupLength
-                (assign, 0)
-            | DenseRanking -> (current + 1, 0)
+                (assign, 0, false)
+            | DenseRanking -> (current + 1, 0, false)
+            | Sequence -> (current + 1, groupLength - 1, true)
 
         let (_, ls) =
             List.groupBy getScore ls
@@ -31,8 +33,11 @@ module List =
             |> List.map (fun (_, v) -> v)
             |> List.fold
                 (fun (currRank: int, ls: (int * 'A) list) rest ->
-                    let (assign, shift) = calcRank currRank rest.Length
-                    let accLs = List.map (fun v -> (assign, v)) rest
+                    let (assign, shift, incr) = calcRank currRank rest.Length
+
+                    let accLs =
+                        List.mapi (fun i v -> ((assign + if incr then i else 0), v)) rest
+
                     (assign + shift, ls @ accLs))
                 (0, List.empty)
 

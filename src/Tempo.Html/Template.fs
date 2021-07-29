@@ -28,8 +28,8 @@ module Template =
         abstract Accept : ITPropertyInvoker<'S, 'R> -> 'R
 
     and TVProperty<'S, 'V>(name, value) =
-        member this.Name : string = name
-        member this.Value : Value<'S, 'V option> = value
+        member this.Name: string = name
+        member this.Value: Value<'S, 'V option> = value
         with
             interface ITProperty<'S> with
                 member this.Accept f = f.Invoke<'V> this
@@ -59,9 +59,10 @@ module Template =
     and ITTransform<'S, 'A, 'Q> =
         abstract Accept : ITTransformInvoker<'S, 'A, 'Q, 'R> -> 'R
 
-    and TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>(transform, template) =
-        member this.Transform : Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1> = transform
-        member this.Template : Template<'S2, 'A2, 'Q2> = template
+    and TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>(transform, template, forceRoot) =
+        member this.Transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1> = transform
+        member this.Template: Template<'S2, 'A2, 'Q2> = template
+        member this.ForceRoot: bool = forceRoot
         with
             interface ITTransform<'S1, 'A1, 'Q1> with
                 member this.Accept f = f.Invoke<'S2, 'A2, 'Q2> this
@@ -73,9 +74,9 @@ module Template =
         abstract Accept : ITOneOf2Invoker<'S, 'A, 'Q, 'R> -> 'R
 
     and TVOneOf2<'S, 'S1, 'S2, 'A, 'Q>(m, t1, t2) =
-        member this.Choose : 'S -> Choice<'S1, 'S2> = m
-        member this.Template1 : Template<'S1, 'A, 'Q> = t1
-        member this.Template2 : Template<'S2, 'A, 'Q> = t2
+        member this.Choose: 'S -> Choice<'S1, 'S2> = m
+        member this.Template1: Template<'S1, 'A, 'Q> = t1
+        member this.Template2: Template<'S2, 'A, 'Q> = t2
         with
             interface ITOneOf2<'S, 'A, 'Q> with
                 member this.Accept f = f.Invoke<'S1, 'S2> this
@@ -146,16 +147,27 @@ module Template =
 
         append @ (List.rev ls)
 
-    let packTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (t: TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>) = t :> ITTransform<'S1, 'A1, 'Q1>
+    let packTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (t: TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>) =
+        t :> ITTransform<'S1, 'A1, 'Q1>
 
-    let makeTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2> (transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>, template: Template<'S2, 'A2, 'Q2>) : Template<'S1, 'A1, 'Q1> =
-        TTransform(packTransform (TVTransform(transform, template)))
+    let makeTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>
+        (
+            transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
+            template: Template<'S2, 'A2, 'Q2>,
+            forceRoot: bool
+        ) : Template<'S1, 'A1, 'Q1> =
+        TTransform(packTransform (TVTransform(transform, template, forceRoot)))
 
     let unpackTransform (t: ITTransform<'S, 'A, 'Q>) (f: ITTransformInvoker<'S, 'A, 'Q, 'R>) : 'R = t.Accept f
 
     let packOneOf2<'S, 'S1, 'S2, 'A, 'Q> (t: TVOneOf2<'S, 'S1, 'S2, 'A, 'Q>) = t :> ITOneOf2<'S, 'A, 'Q>
 
-    let makeOneOf2<'S, 'S1, 'S2, 'A, 'Q> (choose: 'S -> Choice<'S1, 'S2>, template1: Template<'S1, 'A, 'Q>, template2: Template<'S2, 'A, 'Q>) : Template<'S, 'A, 'Q> =
+    let makeOneOf2<'S, 'S1, 'S2, 'A, 'Q>
+        (
+            choose: 'S -> Choice<'S1, 'S2>,
+            template1: Template<'S1, 'A, 'Q>,
+            template2: Template<'S2, 'A, 'Q>
+        ) : Template<'S, 'A, 'Q> =
         TOneOf2(packOneOf2 (TVOneOf2(choose, template1, template2)))
 
     let unpackOneOf2 (t: ITOneOf2<'S, 'A, 'Q>) (f: ITOneOf2Invoker<'S, 'A, 'Q, 'R>) : 'R = t.Accept f
@@ -209,7 +221,8 @@ module Template =
                     { Change = Some change
                       Destroy = Some destroy
                       Request = Some request })),
-            template
+            template,
+            true
         )
 
     let ``component`` update middleware template =
@@ -232,11 +245,12 @@ module Template =
                         dispatch a
                         localState <- currState
 
-                    and view : View<'S, 'Q> =
+                    and view: View<'S, 'Q> =
                         render (localState, container, reference, iDispatch)
 
                     view),
-            template
+            template,
+            true
         )
 
     let respond (responder: Element -> 'Q -> unit) = TRespond(responder)

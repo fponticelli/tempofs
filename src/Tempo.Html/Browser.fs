@@ -105,6 +105,9 @@ module Browser =
     [<Emit("$0")>]
     let optionToMaybe<'T> (v: 'T option) : 'T = jsNative
 
+    [<Emit("performance.now")>]
+    let performanceNow: unit -> float = jsNative
+
     let focusableSelector =
         String.concat
             ","

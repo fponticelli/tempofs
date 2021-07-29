@@ -138,7 +138,7 @@ module Render =
                   Destroy = makeDestroy container
                   Request = None }
 
-    and makeTransformRender (t: ITTransform<'S1, 'A1, 'Q1>, isRoot) : Render<'S1, 'A1, 'Q1> =
+    and makeTransformRender (t: ITTransform<'S1, 'A1, 'Q1>, isRoot: bool) : Render<'S1, 'A1, 'Q1> =
         unpackTransform
             t
             { new ITTransformInvoker<'S1, 'A1, 'Q1, Render<'S1, 'A1, 'Q1>> with
@@ -146,7 +146,7 @@ module Render =
                     (transform: TVTransform<'S1, 'S2, 'A1, 'A2, 'Q1, 'Q2>)
                     : Render<'S1, 'A1, 'Q1> =
                     let render =
-                        makeRender<'S2, 'A2, 'Q2> (transform.Template, isRoot)
+                        makeRender<'S2, 'A2, 'Q2> (transform.Template, isRoot || transform.ForceRoot)
 
                     transform.Transform(render) }
 
@@ -164,7 +164,7 @@ module Render =
                         container.insertBefore (ref, optionToMaybe reference)
                         |> ignore
 
-                        let mutable assignament : Choice<View<'S1, 'Q>, View<'S2, 'Q>> =
+                        let mutable assignament: Choice<View<'S1, 'Q>, View<'S2, 'Q>> =
                             match oneOf2.Choose state' with
                             | Choice1Of2 s ->
                                 Choice1Of2(makeRender (oneOf2.Template1, true) (s, container, someRef, dispatch))
