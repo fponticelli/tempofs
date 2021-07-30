@@ -98,6 +98,7 @@ module Template =
         | TProperty of ITProperty<'S>
         | THandler of THandler<'S, 'A>
         | TRespond of TRespond<'Q>
+        | TLazy of (unit -> Template<'S, 'A, 'Q>)
 
     let private aggregatedAttributes =
         [ "class", " "; "style", "; " ] |> Map.ofList
@@ -225,6 +226,52 @@ module Template =
             true
         )
 
+    let forEachArray<'S, 'A, 'Q> (template: Template<'S, 'A, 'Q>) : Template<'S [], 'A, 'Q> =
+        makeTransform (
+            (fun render ->
+                (fun (states: 'S [], container: Element, reference: Node option, dispatch) ->
+                    let ref =
+                        container.ownerDocument.createTextNode ("") :> Node
+
+                    let maybeRef = ref |> Some
+
+                    container.insertBefore (ref, optionToMaybe reference)
+                    |> ignore
+
+                    let mutable views =
+                        Array.map (fun state -> render (state, container, maybeRef, dispatch)) states
+
+                    let change states =
+                        let min =
+                            System.Math.Min(Array.length views, Array.length states)
+
+                        Array.zip views states
+                        |> Array.iter (fun (view, state) -> Option.iter (fun c -> c state) view.Change)
+
+                        Array.skip min views
+                        |> Array.iter (fun view -> Option.iter (fun d -> d ()) view.Destroy)
+
+                        views <- Array.take min views
+
+                        let newViews =
+                            Array.skip min states
+                            |> Array.map (fun state -> render (state, container, maybeRef, dispatch))
+
+                        views <- Array.concat [ views; newViews ]
+
+                    let request q =
+                        Array.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun r -> r q) view.Request) views
+
+                    let destroy () =
+                        Array.iter (fun (view: View<'S, 'Q>) -> Option.iter (fun d -> d ()) view.Destroy) views
+
+                    { Change = Some change
+                      Destroy = Some destroy
+                      Request = Some request })),
+            template,
+            true
+        )
+
     let ``component`` update middleware template =
         makeTransform (
             (fun render ->
@@ -254,3 +301,5 @@ module Template =
         )
 
     let respond (responder: Element -> 'Q -> unit) = TRespond(responder)
+
+    let lazyt (templatef: unit -> Template<'S, 'A, 'Q>) : Template<'S, 'A, 'Q> = TLazy templatef

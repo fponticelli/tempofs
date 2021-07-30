@@ -278,3 +278,4 @@ module Render =
         | TProperty t -> makePropertyRender (t, isRoot)
         | THandler t -> makeHandlerRender (t, isRoot)
         | TRespond t -> makeRespondRender (t, isRoot)
+        | TLazy f -> makeRender (f (), isRoot)

@@ -46,10 +46,12 @@ type TransitionStateOptions<'S> =
       Start: float
       Timestamp: float }
 
-type ControlChangeOptions<'S> =
-    { PrevState: 'S
-      CurrState: 'S
-      Change: 'S -> unit }
+type ControlChangeOptions<'S1, 'S2> =
+    { PreviousState: 'S1
+      CurrentState: 'S1
+      Change: 'S2 -> unit }
+
+type ControlRenderOptions<'S1, 'S2> = { State: 'S1; Change: 'S2 -> unit }
 
 [<AbstractClass; Sealed>]
 type DSL =
@@ -369,6 +371,9 @@ type DSL =
             DSL.Empty()
         )
 
+    static member inline Maybe<'S, 'A, 'Q>(template: Template<'S, 'A, 'Q>) : Template<'S option, 'A, 'Q> =
+        DSL.Maybe(id, template)
+
     static member OneOf<'S, 'S1, 'S2, 'S3, 'A, 'Q>
         (
             f: 'S -> Choice<'S1, 'S2, 'S3>,
@@ -513,6 +518,16 @@ type DSL =
         ) : Template<'S1, 'A, 'Q> =
         DSL.MapState(map, forEach (template))
 
+    static member inline ForEachArr<'S, 'A, 'Q>(template: Template<'S, 'A, 'Q>) : Template<'S [], 'A, 'Q> =
+        forEachArray (template)
+
+    static member inline ForEachArr<'S1, 'S2, 'A, 'Q>
+        (
+            map: 'S1 -> 'S2 [],
+            template: Template<'S2, 'A, 'Q>
+        ) : Template<'S1, 'A, 'Q> =
+        DSL.MapState(map, forEachArray (template))
+
     static member inline Transform<'S1, 'A1, 'Q1, 'S2, 'A2, 'Q2>
         (
             transform: Render<'S2, 'A2, 'Q2> -> Render<'S1, 'A1, 'Q1>,
@@ -540,38 +555,114 @@ type DSL =
             template
         )
 
-    static member ControlChange<'S, 'A, 'Q>
+    static member ControlRender<'S1, 'S2, 'A, 'Q>
         (
-            makeController: unit -> (ControlChangeOptions<'S> -> unit),
-            template: Template<'S, 'A, 'Q>
-        ) =
+            makeController: unit -> (ControlRenderOptions<'S1, 'S2> -> unit),
+            template: Template<'S2, 'A, 'Q>
+        ) : Template<'S1, 'A, 'Q> =
         DSL.Transform(
-            (fun render ->
+            (fun (render: Render<'S2, 'A, 'Q>) ->
                 fun (state, container, reference, dispatch) ->
+                    let mutable destroyed = false
+                    let mutable view: View<'S2, 'Q> option = None
+                    let mutable localState = state
+
+                    let ref =
+                        container.ownerDocument.createTextNode ("") :> Node
+
+                    container.insertBefore (ref, optionToMaybe reference)
+                    |> ignore
+
+                    let controller = makeController ()
+
+                    controller
+                        { State = localState
+                          Change =
+                              fun (s) ->
+                                  if
+                                      not
+                                          (
+                                              destroyed
+                                              || isNullOrUndefined container.ownerDocument
+                                          )
+                                  then
+                                      match view with
+                                      | None -> view <- Some(render (s, container, Some ref, dispatch))
+                                      | Some view -> Option.iter (fun c -> c s) view.Change }
+
+                    let change s =
+                        localState <- s
+
+                        Option.iter
+                            (fun (view: View<_, _>) ->
+                                Option.iter
+                                    (fun c ->
+                                        let change v = if not destroyed then c v
+                                        controller { State = localState; Change = change })
+                                    view.Change)
+                            view
+
+                    let destroy () =
+                        destroyed <- true
+                        Option.iter (fun (view: View<_, _>) -> Option.iter (fun d -> d ()) view.Destroy) view
+
+                    let request q =
+                        Option.iter (fun (view: View<_, _>) -> Option.iter (fun r -> r q) view.Request) view
+
+                    { Change = Some change
+                      Destroy = Some destroy
+                      Request = Some request }),
+            template,
+            true
+        )
+
+    static member ControlChange<'S1, 'S2, 'A, 'Q>
+        (
+            mapRender: 'S1 -> 'S2,
+            makeController: unit -> (ControlChangeOptions<'S1, 'S2> -> unit),
+            template: Template<'S2, 'A, 'Q>
+        ) : Template<'S1, 'A, 'Q> =
+        DSL.Transform(
+            (fun (render: Render<'S2, 'A, 'Q>) ->
+                fun (state, container, reference, dispatch) ->
+                    let mutable destroyed = false
                     let mutable localState = state
 
                     let view =
-                        render (localState, container, reference, dispatch)
+                        render (mapRender localState, container, reference, dispatch)
 
                     let controller = makeController ()
 
                     let change =
                         Option.map
                             (fun c ->
-                                fun currState ->
-                                    controller
-                                        { CurrState = currState
-                                          PrevState = localState
-                                          Change = c }
+                                let change v = if not destroyed then c v
 
-                                    localState <- currState)
+                                fun currentState ->
+                                    controller
+                                        { CurrentState = currentState
+                                          PreviousState = localState
+                                          Change = change }
+
+                                    localState <- currentState)
                             view.Change
 
+                    let destroy () =
+                        destroyed <- true
+                        Option.iter (fun d -> d ()) view.Destroy
+
                     { Change = change
-                      Destroy = view.Destroy
+                      Destroy = Some destroy
                       Request = view.Request }),
             template
         )
+
+    static member ControlChange<'S, 'A, 'Q>
+        (
+            makeController: unit -> (ControlChangeOptions<'S, 'S> -> unit),
+            template: Template<'S, 'A, 'Q>
+        ) : Template<'S, 'A, 'Q> =
+        DSL.ControlChange(id, makeController, template)
 
     static member ControlDestroy<'S, 'A, 'Q>(controller: (unit -> unit) -> unit, template: Template<'S, 'A, 'Q>) =
         DSL.Transform(
@@ -592,8 +683,8 @@ type DSL =
     static member FilterChange<'S, 'A, 'Q>(predicate: 'S -> 'S -> bool, template: Template<'S, 'A, 'Q>) =
         DSL.ControlChange(
             (fun _ ->
-                (fun { CurrState = curr
-                       PrevState = prev
+                (fun { CurrentState = curr
+                       PreviousState = prev
                        Change = change } ->
                     if (predicate curr prev) then
                         change curr)),
@@ -784,8 +875,8 @@ type DSL =
             let mutable cancel = None
 
             let controller
-                { CurrState = curr
-                  PrevState = prev
+                { CurrentState = curr
+                  PreviousState = prev
                   Change = change }
                 =
                 let startState = prev
@@ -882,11 +973,18 @@ type DSL =
     // fsharplint:enable
 
     static member inline DIV<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("div", children)
+    static member inline UL<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("ul", children)
+    static member inline OL<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("ol", children)
+    static member inline LI<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("li", children)
+    static member inline DL<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("dl", children)
+    static member inline DT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("dt", children)
+    static member inline DD<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("dd", children)
     static member inline MAIN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("main", children)
     static member inline ASIDE<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("aside", children)
     static member inline BUTTON<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("button", children)
     static member inline IMG<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("img", children)
     static member inline SPAN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("span", children)
+    static member inline A<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("a", children)
 
     static member inline Svg<'S, 'A, 'Q>(name: string, children: Template<'S, 'A, 'Q> list) =
         DSL.NSEl("http://www.w3.org/2000/svg", name, children)
@@ -955,3 +1053,5 @@ type DSL =
             )
             :: (children @ List.map makeOption options)
         )
+
+    static member inline Lazy(f: unit -> Template<'S, 'A, 'Q>) : Template<'S, 'A, 'Q> = lazyt f
