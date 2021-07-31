@@ -4,7 +4,7 @@
     "description": "Tempo",
     "main": "index.js",
     "scripts": {
-        "postinstall": "dotnet tool restore && npm i",
+        "postinstall": "dotnet tool restore",
         "watch": "dotnet fable src/Tempo.Demo --watch --run webpack serve",
         "prebuild": "npx del-cli **/output && dotnet fable clean --yes",
         "build": "dotnet fable src/Tempo.Demo --run webpack build --mode production",
@@ -45,6 +45,7 @@
         "tailwindcss": "^2.2.4",
         "webpack": "^5.45.0",
         "webpack-cli": "^4.7.2",
-        "webpack-dev-server": "^3.11.2"
+        "webpack-dev-server": "^3.11.2",
+        "yarn": "^1.22.11"
     }
 }
