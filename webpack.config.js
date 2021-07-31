@@ -71,7 +71,8 @@ module.exports = (env, options) => {
             publicPath: "/",
             port: 8081,
             hot: true,
-            inline: true
+            inline: true,
+            historyApiFallback: true
         },
         module: {
             rules: [

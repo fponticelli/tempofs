@@ -18,20 +18,47 @@ module HtmlParser =
     let quote (value: string) = $"\"{value}\""
 
     let knownElements =
-        [ "div", "DIV"
-          "main", "MAIN"
-          "aside", "ASIDE"
-          "button", "BUTTON"
-          "img", "IMG"
-          "span", "SPAN"
-          "svg", "SVG"
-          "path", "PATH"
-          "input", "INPUT"
-          "textarea", "TEXTAREA" ]
-        |> Map.ofList
+        [ "a"
+          "article"
+          "aside"
+          "button"
+          "dd"
+          "div"
+          "dl"
+          "dt"
+          "h1"
+          "h2"
+          "h3"
+          "h4"
+          "h5"
+          "h6"
+          "img"
+          "input"
+          "li"
+          "main"
+          "nav"
+          "ol"
+          "p"
+          "path"
+          "select"
+          "span"
+          "svg"
+          "table"
+          "tbody"
+          "td"
+          "textarea"
+          "tfoot"
+          "th"
+          "thead"
+          "tr"
+          "ul" ]
+        |> Set.ofList
 
     let knownAttributes =
-        [ "class", (fun value -> $"cls {quote value}") ]
+        [ "class", (fun value -> $"cls {quote value}")
+          "href", (fun value -> $"href {quote value}")
+          "src", (fun value -> $"src {quote value}")
+          "id", (fun value -> $"elId {quote value}") ]
         |> Map.ofList
 
     let makeAttribute (name: string) value =
@@ -83,12 +110,10 @@ module HtmlParser =
 
         let name = element.tagName.ToLower()
 
-        let func = Map.tryFind name knownElements
-
         let func =
-            match func with
-            | Some v -> v
-            | None ->
+            if Set.contains name knownElements then
+                element.tagName.ToUpper()
+            else
                 args <- [ quote name ]
                 "El"
 
@@ -101,24 +126,17 @@ module HtmlParser =
                   let value = att.value
                   makeAttribute name value ]
 
-        if attributes.Length > 0 then
-            args <-
-                args
-                @ [ "[" + (String.concat "; " attributes) + "]" ]
-
         let children =
             renderDOMElementChildren filterComments element
 
-        if children.Length > 0 then
-            args <-
-                args
-                @ [ "[" + (String.concat "; " children) + "]" ]
+        let items =
+            String.concat "; " (attributes @ children)
 
-        if args.Length = 1 then
-            Some $"{func}({args.Head})"
-        else
+        if args.Length > 0 then
             let args = String.concat ", " args
-            Some $"{func}({args})"
+            Some $"{func}({args}, [{items}])"
+        else
+            Some $"{func} [{items}]"
 
     and renderDOMText (text: Text) : string option =
         let text = text.textContent.Trim()
@@ -126,7 +144,7 @@ module HtmlParser =
         if text.Length = 0 then
             None
         else
-            Some <| "Text(" + (quote text) + ")"
+            Some <| "Text " + (quote text)
 
     and renderDOMComment (comment: Comment) : string option =
         Some <| "(* " + (comment.textContent) + " *)"

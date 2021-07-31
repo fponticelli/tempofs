@@ -196,6 +196,26 @@ type DSL =
                 ))
         )
 
+    static member inline ClickLinkAction<'S, 'A, 'Q>(action: 'A) : Template<'S, 'A, 'Q> =
+        DSL.Send<'S, 'A, 'Q>(
+            "click",
+            (fun ({ Event = e; Element = el }: SendPayload<'S>) ->
+                let a = el :?> HTMLAnchorElement
+                history.pushState (null, a.title, a.href)
+                e.preventDefault ()
+                action)
+        )
+
+    static member inline ClickLinkState<'S, 'A, 'Q>(handler: 'S -> 'A) : Template<'S, 'A, 'Q> =
+        DSL.Send<'S, 'A, 'Q>(
+            "click",
+            (fun ({ Event = e; State = s; Element = el }: SendPayload<'S>) ->
+                let a = el :?> HTMLAnchorElement
+                history.pushState (null, a.title, a.href)
+                e.preventDefault ()
+                handler s)
+        )
+
     static member inline SendAction<'S, 'A, 'Q>(name: string, action: 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(name, (fun (_: SendPayload<'S>) -> action))
 
@@ -949,6 +969,12 @@ type DSL =
     static member inline cls(predicate: 'S -> bool, whenTrue: string, whenFalse: string) =
         DSL.Attr("class", predicate, whenTrue, whenFalse)
 
+    static member inline href(text: string) = DSL.Attr("href", text)
+    static member inline href(f: 'S -> string) = DSL.Attr("href", f)
+
+    static member inline src(text: string) = DSL.Attr("src", text)
+    static member inline src(f: 'S -> string) = DSL.Attr("src", f)
+
     static member inline elId(text: string) = DSL.Attr("id", text)
     static member inline elId(f: 'S -> string) = DSL.Attr("id", f)
     static member inline elId(whenTrue: string, whenFalse: string) = DSL.Attr("id", whenTrue, whenFalse)
@@ -985,6 +1011,22 @@ type DSL =
     static member inline IMG<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("img", children)
     static member inline SPAN<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("span", children)
     static member inline A<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("a", children)
+    static member inline P<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("p", children)
+    static member inline ARTICLE<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("article", children)
+    static member inline NAV<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("nav", children)
+    static member inline H1<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("h1", children)
+    static member inline H2<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("h2", children)
+    static member inline H3<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("h3", children)
+    static member inline H4<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("h4", children)
+    static member inline H5<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("h5", children)
+    static member inline H6<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("h6", children)
+    static member inline TABLE<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("table", children)
+    static member inline THEAD<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("thead", children)
+    static member inline TBODY<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("tbody", children)
+    static member inline TFOOT<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("tfoot", children)
+    static member inline TR<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("tr", children)
+    static member inline TD<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("td", children)
+    static member inline TH<'S, 'A, 'Q>(children: Template<'S, 'A, 'Q> list) = DSL.El("th", children)
 
     static member inline Svg<'S, 'A, 'Q>(name: string, children: Template<'S, 'A, 'Q> list) =
         DSL.NSEl("http://www.w3.org/2000/svg", name, children)
