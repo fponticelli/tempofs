@@ -27,7 +27,6 @@ type LifecycleDestroy<'A, 'P> =
 
 type MapActionPayload<'S, 'A> = { State: 'S; Action: 'A }
 
-
 type SelectOption<'S> =
     | OptionValue of label: Value<'S, string> * value: 'S
     | OptionGroup of string * (Value<'S, string> * 'S) list
@@ -165,6 +164,18 @@ type DSL =
     static member Prop<'S, 'A, 'Q>(name: string, value: bool) : Template<'S, 'A, 'Q> =
         DSL.PropValue(name, (value |> Some |> Literal))
 
+    static member inline valueAsNumber<'S, 'A, 'Q>(f: 'S -> float) : Template<'S, 'A, 'Q> =
+        DSL.Prop<'S, 'A, 'Q, float>("valueAsNumber", f)
+
+    static member inline valueAsNumber<'S, 'A, 'Q>(f: 'S -> int) : Template<'S, 'A, 'Q> =
+        DSL.Prop<'S, 'A, 'Q, int>("valueAsNumber", f)
+
+    static member inline valueAsText<'S, 'A, 'Q>(f: 'S -> string) : Template<'S, 'A, 'Q> =
+        DSL.Prop<'S, 'A, 'Q, string>("value", f)
+
+    static member inline isChecked<'S, 'A, 'Q>(f: 'S -> bool) : Template<'S, 'A, 'Q> =
+        DSL.Prop<'S, 'A, 'Q, bool>("checked", f)
+
     static member StyleValue<'S, 'A, 'Q>(name: string, value: Value<'S, string option>) : Template<'S, 'A, 'Q> =
         TStyle { Name = name; Value = value }
 
@@ -196,6 +207,9 @@ type DSL =
                 ))
         )
 
+    static member inline Click<'S, 'A, 'Q>(f: 'S -> 'A) : Template<'S, 'A, 'Q> =
+        DSL.Send<'S, 'A, 'Q>("click", (fun ({ State = state }: SendPayload<'S>) -> f state))
+
     static member inline ClickLinkAction<'S, 'A, 'Q>(action: 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(
             "click",
@@ -219,14 +233,8 @@ type DSL =
     static member inline SendAction<'S, 'A, 'Q>(name: string, action: 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(name, (fun (_: SendPayload<'S>) -> action))
 
-    static member inline SendState<'S, 'A, 'Q>(name: string, handler: 'S -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun ({ State = s }: SendPayload<'S>) -> handler s))
-
-    static member inline SendEvent<'S, 'A, 'Q>(name: string, handler: Event -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun ({ Event = e }: SendPayload<'S>) -> handler e))
-
-    static member inline SendElement<'S, 'A, 'Q>(name: string, handler: Element -> 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(name, (fun ({ Element = e }: SendPayload<'S>) -> handler e))
+    static member inline ClickAction<'S, 'A, 'Q>(action: 'A) : Template<'S, 'A, 'Q> =
+        DSL.Send<'S, 'A, 'Q>("click", (fun (_: SendPayload<'S>) -> action))
 
     static member inline SendTextInput<'S, 'A, 'Q>(name: string, handler: 'S -> string -> 'A) : Template<'S, 'A, 'Q> =
         DSL.Send<'S, 'A, 'Q>(
@@ -1087,9 +1095,9 @@ type DSL =
                 options
 
         DSL.SELECT(
-            DSL.SendElement<'S, 'S, 'Q>(
+            DSL.Send<'S, 'S, 'Q>(
                 "change",
-                (fun el ->
+                (fun { Element = el } ->
                     let index = (el :?> HTMLSelectElement).selectedIndex
                     List.item index values)
             )
