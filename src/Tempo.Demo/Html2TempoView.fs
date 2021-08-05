@@ -26,7 +26,7 @@ module View =
         | HtmlPasted
         | HtmlChanged -> state
 
-    let mutable timerId : float option = None
+    let mutable timerId: float option = None
 
     let middleware
         ({ Current = { FilterComments = filterComments }
@@ -79,7 +79,7 @@ module View =
 </div>
     """
 
-    let bar : Template<Html2TempoState, Html2TempoAction, Html2TempoQuery> =
+    let bar: Template<Html2TempoState, Html2TempoAction, Html2TempoQuery> =
         El(
             "header",
             [ cls "bg-white shadow-sm lg:static lg:overflow-y-visible"
@@ -125,7 +125,7 @@ module View =
                                                                                            )
                                                                                            aria ("hidden", "true")
                                                                                            SVG [ cls
-                                                                                                     "h-3 w-3 text-gray-400"
+                                                                                                     "h-3 w-3 text-gray-500"
                                                                                                  Attr("fill", "none")
                                                                                                  Attr(
                                                                                                      "viewBox",
@@ -187,7 +187,7 @@ module View =
                                                         ) ] ] ] ] ] ] ] ]
         )
 
-    let template : Template<Html2TempoState, Html2TempoAction, Html2TempoQuery> =
+    let template: Template<Html2TempoState, Html2TempoAction, Html2TempoQuery> =
         DIV [ cls "flex flex-col h-screen"
               bar
               DIV [ cls "flex h-full"

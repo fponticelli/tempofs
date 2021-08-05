@@ -211,13 +211,20 @@ type DSL =
         DSL.Send<'S, 'A, 'Q>("click", (fun ({ State = state }: SendPayload<'S>) -> f state))
 
     static member inline ClickLinkAction<'S, 'A, 'Q>(action: 'A) : Template<'S, 'A, 'Q> =
-        DSL.Send<'S, 'A, 'Q>(
+        DSL.On<'S, 'A, 'Q>(
             "click",
-            (fun ({ Event = e; Element = el }: SendPayload<'S>) ->
+            (fun ({ Event = e
+                    Element = el
+                    Dispatch = dispatch }) ->
                 let a = el :?> HTMLAnchorElement
-                history.pushState (null, a.title, a.href)
-                e.preventDefault ()
-                action)
+                let e = e :?> MouseEvent
+
+                let ctrlKey = if isMac then e.metaKey else e.ctrlKey
+
+                if not ctrlKey then
+                    e.preventDefault ()
+                    history.pushState (null, a.title, a.href)
+                    dispatch action)
         )
 
     static member inline ClickLinkState<'S, 'A, 'Q>(handler: 'S -> 'A) : Template<'S, 'A, 'Q> =

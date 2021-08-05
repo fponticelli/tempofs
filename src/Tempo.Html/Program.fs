@@ -42,7 +42,7 @@ type Program =
 
             localState <- newState
 
-        and view : View<'S, 'Q> =
+        and view: View<'S, 'Q> =
             render (localState, container, None, dispatch)
 
         { Change = view.Change
@@ -57,5 +57,8 @@ type Program =
         ) =
         let make () = Program.Make(options) |> callback
 
-        window.addEventListener ("DOMContentLoaded", (fun _ -> make ()))
-        |> ignore
+        if document.readyState <> "loading" then
+            make ()
+        else
+            window.addEventListener ("DOMContentLoaded", (fun _ -> make ()))
+            |> ignore

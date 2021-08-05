@@ -2,6 +2,7 @@ namespace Tempo
 
 open Fable.Core
 open Browser.Types
+open Browser.Dom
 
 module Browser =
     [<Emit("$0 == null")>]
@@ -45,6 +46,9 @@ module Browser =
 
     [<Emit("$0[$1]")>]
     let getProperty<'X, 'Y> (target: 'X, prop: string) : 'Y option = jsNative
+
+    [<Emit("$0[$1]")>]
+    let getKnownProperty<'X, 'Y> (target: 'X, prop: string) : 'Y = jsNative
 
     [<Emit("$0 instanceof HTMLElement")>]
     let isHTMLElement<'X> (target: 'X) : bool = jsNative
@@ -123,3 +127,6 @@ module Browser =
 
     let getFocusable (container: Element) : Element array =
         nodeListToArray (container.querySelectorAll focusableSelector)
+
+    let isMac =
+        getKnownProperty (getKnownProperty (window, "navigator"), "platform") = "MacIntel"
